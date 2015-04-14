@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- See https://www.facebook.com/groups/303159406399348/permalink/410968105618477/ -->
+<!-- @generated SignedSource<<6a726fdb82b1c2c045a65d75971cc34e>> -->
+<!-- @nolint -->
+<!-- @mobile export_name="fbandroid 2015-03-12 at 05:18:45 GMT" locale="ko_KR" lib_name="vr-lib" -->
+
+<resources>
+    <string name="do_not_disturb_on">차단 모드: 켜짐</string>
+    <string name="do_not_disturb_off">차단 모드: 꺼짐</string>
+    <string name="comfort_mode_on">편안한 모드: 켜짐</string>
+    <string name="comfort_mode_off">편안한 모드: 꺼짐</string>
+    <string name="passthrough_camera_on">후면 카메라: 켜짐</string>
+    <string name="passthrough_camera_off">후면 카메라: 꺼짐</string>
+    <string name="reorient">방향 조정</string>
+    <string name="oculus_home">Oculus Home</string>
+    <string name="brightness">밝기</string>
+    <string name="instr_reaching_global_menu">뒤로가기 버튼을 길게 누르면 언제든지 여기로 돌아올 수 있습니다. 계속하려면 아래에 있는 각 항목을 응시하세요.</string>
+    <string name="title_home">HOME</string>
+    <string name="instr_home">Oculus Home으로 이동합니다.</string>
+    <string name="title_reorient">방향 전환</string>
+    <string name="instr_reorient">시선 방향의 가운데에 맞추어 화면을 조정합니다.</string>
+    <string name="title_brightness">밝기</string>
+    <string name="instr_brightness">화면 밝기를 조절합니다.</string>
+    <string name="title_do_not_disturb">차단 모드</string>
+    <string name="instr_do_not_disturb">감상을 중단하지 않도록 전화 및 문자 메시지 등 알림을 차단합니다.</string>
+    <string name="title_comfort_mode">편안한 모드</string>
+    <string name="instr_comfort_mode">화면 색상을 따뜻한 톤으로 조정합니다.</string>
+    <string name="title_passthrough_camera">후면 카메라</string>
+    <string name="instr_passthrough_camera">후면 카메라를 선택 또는 해제합니다.</string>
+    <string name="title_back_btn">다시 돌아갈까요?</string>
+    <string name="instr_back_btn">돌아가기 버튼을 누르세요.</string>
+    <string name="exit_to_home">Oculus Home으로 나갈까요?</string>
+    <string name="yes">예</string>
+    <string name="no">아니요</string>
+    <string name="instr1_cool_down_l1">Gear VR 성능을 최적으로 유지하려면 발열이 가라앉을 때까지 기다려주세요.</string>
+    <string name="instr2_cool_down_l1">이 알림을 무시하려면 누르세요.</string>
+    <string name="instr_cool_down_l2">다시 시작하려면 모바일 장치를 분리하고 발열이 가라앉을 때까지 기다려주세요.</string>
+    <string name="health_safty_warning_title">안전을 위한 주의 사항</string>
+    <string name="health_safty_warning_description1">GearVR 을 사용하기 전에 GearVR 제품에 포함된 모든 경고 문구와 주의 사항을 반드시 읽고 숙지한 후 사용해주세요. GearVR은 귀하의 신체적 특성에 따라 조정할 필요가 있습니다. 만 13세 미만의 어린이는 사용할 수 없습니다. GearVR을 사용할 때에는 앉거나 고정된 상태를 유지해야 하며, 사용전 주변의 장애물을 치우세요. 사용시 불편함을 느끼거나 건강에 이상 징후가 발생한 경우 즉시 사용을 중단하세요.</string>
+    <string name="health_safty_warning_description2">oculus.com/warnings에서 자세한 정보를 확인하세요</string>
+    <string name="health_safty_warning_description3">모두 확인했다면 터치패드를 누르세요.</string>
+    <string name="swipe_to_browse">검색하려면 살짝 미세요</string>
+</resources>

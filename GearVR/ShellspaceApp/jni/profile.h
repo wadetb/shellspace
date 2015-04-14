@@ -1,0 +1,27 @@
+#ifndef __PROFILE_H__
+#define __PROFILE_H__
+
+enum EProfType
+{
+	PROF_FRAME,
+	PROF_CMD,
+	PROF_KEYBOARD,
+	PROF_VNC_WIDGET,
+	PROF_SCENE,
+	PROF_DRAW,
+	PROF_DRAW_EYE,
+	PROF_DRAW_KEYBOARD,
+	PROF_DRAW_VNC_WIDGET,
+	PROF_VNC_THREAD,
+	PROF_VNC_THREAD_INPUT,
+	PROF_VNC_THREAD_WAIT,
+	PROF_VNC_THREAD_HANDLE,
+	PROF_VNC_THREAD_OUTPUT,
+	PROF_COUNT
+};
+
+void Prof_Start( EProfType prof );
+void Prof_Stop( EProfType prof );
+void Prof_Frame();
+
+#endif

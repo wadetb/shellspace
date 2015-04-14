@@ -1,0 +1,8 @@
+{
+	"keys" : [
+		{ "x":  70,  "y": -30, "code": "globez -10" }
+		{ "x":  70,  "y":   0, "code": "globez +10" }
+		{ "x": -70,  "y": -30, "code": "globefov -2" }
+		{ "x": -70,  "y":   0, "code": "globefov +2" }
+	]
+}

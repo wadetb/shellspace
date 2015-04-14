@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- See https://www.facebook.com/groups/303159406399348/permalink/410968105618477/ -->
+<!-- @generated SignedSource<<d66e8300f1cc38c86d6d6fdd0149ba52>> -->
+<!-- @nolint -->
+<!-- @mobile export_name="fbandroid 2015-03-12 at 05:18:45 GMT" locale="it_IT" lib_name="vr-lib" -->
+
+<resources>
+    <string name="do_not_disturb_on">Non disturbare: attiva</string>
+    <string name="do_not_disturb_off">Non disturbare: non attiva</string>
+    <string name="comfort_mode_on">Modalità comfort: attiva</string>
+    <string name="comfort_mode_off">Modalità comfort: non attiva</string>
+    <string name="passthrough_camera_on">Fotocamera pass-through: attiva</string>
+    <string name="passthrough_camera_off">Fotocamera pass-through: non attiva</string>
+    <string name="reorient">Riorienta</string>
+    <string name="oculus_home">Oculus Home</string>
+    <string name="brightness">Luminosità</string>
+    <string name="instr_reaching_global_menu">Puoi raggiungere questo menu in qualsiasi momento tenendo premuto il pulsante Indietro. Fissa lo sguardo su ognuno degli elementi di seguito per continuare.</string>
+    <string name="title_home">Home</string>
+    <string name="instr_home">Ti porta a Oculus Home.</string>
+    <string name="title_reorient">RIORIENTA</string>
+    <string name="instr_reorient">Centra il tuo schermo nella direzione in cui stai guardando.</string>
+    <string name="title_brightness">LUMINOSITÀ</string>
+    <string name="instr_brightness">Controlla la luminosità del tuo schermo.</string>
+    <string name="title_do_not_disturb">NON DISTURBARE</string>
+    <string name="instr_do_not_disturb">Blocca le interruzioni causate da chiamate telefoniche e messaggi di testo.</string>
+    <string name="title_comfort_mode">MODALITÀ COMFORT</string>
+    <string name="instr_comfort_mode">Modifica i colori del tuo schermo per ottenere un aspetto più caldo.</string>
+    <string name="title_passthrough_camera">FOTOCAMERA PASS-THROUGH</string>
+    <string name="instr_passthrough_camera">Mostra/nascondi la visualizzazione della fotocamera esterna.</string>
+    <string name="title_back_btn">Torna indietro.</string>
+    <string name="instr_back_btn">Premi il pulsante Indietro.</string>
+    <string name="exit_to_home">Vuoi uscire e tornare a Oculus Home?</string>
+    <string name="yes">Sì</string>
+    <string name="no">No</string>
+    <string name="instr1_cool_down_l1">Il tuo visore Gear VR deve raffreddarsi per garantire delle prestazioni ottimali.</string>
+    <string name="instr2_cool_down_l1">Tocca per ignorare questa notifica.</string>
+    <string name="instr_cool_down_l2">Rimuovi il tuo dispositivo mobile e lascialo raffreddare prima di usarlo di nuovo.</string>
+    <string name="health_safty_warning_title">Avviso relativo a salute e sicurezza!</string>
+    <string name="health_safty_warning_description1">Leggi e rispetta tutti gli avvisi e le istruzioni inclusi nel visore Gear VR prima dell\'uso. Gear VR deve essere calibrato per ogni utente. Non deve essere usato da bambini di età inferiore a 13 anni. È importante rimanere seduti o in piedi durante l\'uso del visore Gear VR. È necessario interrompere immediatamente l\'utilizzo qualora si dovesse verificare una reazione di malessere o fastidio fisico.</string>
+    <string name="health_safty_warning_description2">Maggiori informazioni su oculus.com/warnings</string>
+    <string name="health_safty_warning_description3">Tocca il touchpad per confermare di aver letto.</string>
+    <string name="swipe_to_browse">Passa il dito per navigare</string>
+</resources>

@@ -1,0 +1,49 @@
+{
+	"keys" : [
+		{ "x": -90, "y": -30, "label": "1", "code": "+1" },
+		{ "x": -70, "y": -30, "label": "2", "code": "+2" },
+		{ "x": -50, "y": -30, "label": "3", "code": "+3" },
+		{ "x": -30, "y": -30, "label": "4", "code": "+4" },
+		{ "x": -10, "y": -30, "label": "5", "code": "+5" },
+		{ "x":  10, "y": -30, "label": "6", "code": "+6" },
+		{ "x":  30, "y": -30, "label": "7", "code": "+7" },
+		{ "x":  50, "y": -30, "label": "8", "code": "+8" },
+		{ "x":  70, "y": -30, "label": "9", "code": "+9" },
+		{ "x":  90, "y": -30, "label": "0", "code": "+0" },
+
+		{ "x": -90, "y":   0, "label": "q", "code": "+q" },
+		{ "x": -70, "y":   0, "label": "w", "code": "+w" },
+		{ "x": -50, "y":   0, "label": "e", "code": "+e" },
+		{ "x": -30, "y":   0, "label": "r", "code": "+r" },
+		{ "x": -10, "y":   0, "label": "t", "code": "+t" },
+		{ "x":  10, "y":   0, "label": "y", "code": "+y" },
+		{ "x":  30, "y":   0, "label": "u", "code": "+u" },
+		{ "x":  50, "y":   0, "label": "i", "code": "+i" },
+		{ "x":  70, "y":   0, "label": "o", "code": "+o" },
+		{ "x":  90, "y":   0, "label": "p", "code": "+p" },
+
+		{ "x": -80, "y":  30, "label": "a", "code": "+a" },
+		{ "x": -60, "y":  30, "label": "s", "code": "+s" },
+		{ "x": -40, "y":  30, "label": "d", "code": "+d" },
+		{ "x": -20, "y":  30, "label": "f", "code": "+f" },
+		{ "x":   0, "y":  30, "label": "g", "code": "+g" },
+		{ "x":  20, "y":  30, "label": "h", "code": "+h" },
+		{ "x":  40, "y":  30, "label": "j", "code": "+j" },
+		{ "x":  60, "y":  30, "label": "k", "code": "+k" },
+		{ "x":  80, "y":  30, "label": "l", "code": "+l" },
+
+		{ "x": -70, "y":  60, "label": "z", "code": "+z" },
+		{ "x": -50, "y":  60, "label": "x", "code": "+x" },
+		{ "x": -30, "y":  60, "label": "c", "code": "+c" },
+		{ "x": -10, "y":  60, "label": "v", "code": "+v" },
+		{ "x":  10, "y":  60, "label": "b", "code": "+b" },
+		{ "x":  30, "y":  60, "label": "n", "code": "+n" },
+		{ "x":  50, "y":  60, "label": "m", "code": "+m" },
+
+		{ "x":   0,  "y":  90, "label": "space", "code": "+space" },
+
+		{ "x": 140,  "y":  0, "label": "bkspc", "code": "+bkspc" },
+		{ "x": 140,  "y": 30, "label": "enter", "code": "+return" }
+		{ "x": 140,  "y": 60, "label": "hmse", "code": "headmouse toggle" }
+	]
+}

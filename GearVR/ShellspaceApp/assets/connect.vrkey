@@ -1,0 +1,8 @@
+{
+	"keys" : [
+		{ "x": 0,  "y": -30, "code": "disconnect;connect 10.90.240.248:0 asdf" },
+		{ "x": 0,  "y":   0, "code": "disconnect;connect 10.90.240.39:0 asdf" },
+		{ "x": 0,  "y":  30, "code": "disconnect;connect 10.0.1.3:0 asdf" },
+		{ "x": 0,  "y":  60, "code": "disconnect" }
+	]
+}
