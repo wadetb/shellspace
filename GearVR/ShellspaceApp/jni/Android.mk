@@ -8,18 +8,14 @@ include $(OVR_MOBILE_SDK)/VRLib/import_vrlib.mk		# import VRLib for this module.
 ### XXX tls_openssl or tls_gnutls
 
 LIBVNCCLIENT_SRC_FILES := \
-	3rdParty/libvncserver/common/minilzo.c \
-	3rdParty/libvncserver/libvncclient/cursor.c \
-	3rdParty/libvncserver/libvncclient/listen.c \
-	3rdParty/libvncserver/libvncclient/rfbproto.c \
-	3rdParty/libvncserver/libvncclient/sockets.c \
-	3rdParty/libvncserver/libvncclient/tls_none.c \
-	3rdParty/libvncserver/libvncclient/vncviewer.c \
-	3rdParty/gason/gason.cpp
-
-LIBVNCCLIENT_INCLUDE_DIRS := \
-	-Ijni/3rdParty/libvncserver \
-	-Ijni/3rdParty/libvncserver/common \
+	libvncserver/common/minilzo.c \
+	libvncserver/libvncclient/cursor.c \
+	libvncserver/libvncclient/listen.c \
+	libvncserver/libvncclient/rfbproto.c \
+	libvncserver/libvncclient/sockets.c \
+	libvncserver/libvncclient/tls_none.c \
+	libvncserver/libvncclient/vncviewer.c \
+	gason/gason.cpp
 
 COMMON_SRC_FILES := \
 	OvrApp.cpp \
@@ -30,12 +26,12 @@ COMMON_SRC_FILES := \
 WIDGET_SRC_FILES := \
 	vncwidget.cpp
 
-LOCAL_ARM_MODE := arm
+LOCAL_ARM_MODE   := arm
 
-LOCAL_MODULE    := ovrapp
-LOCAL_SRC_FILES := $(COMMON_SRC_FILES) $(WIDGET_SRC_FILES) $(LIBVNCCLIENT_SRC_FILES)
-LOCAL_LDLIBS	+=
-LOCAL_CFLAGS	+= -std=c++11 -Ijni/3rdParty $(LIBVNCCLIENT_INCLUDE_DIRS)
+LOCAL_MODULE     := ovrapp
+LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(WIDGET_SRC_FILES) $(LIBVNCCLIENT_SRC_FILES)
+LOCAL_LDLIBS	 +=
+LOCAL_CFLAGS	 += -std=c++11 -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common
 LOCAL_C_INCLUDES += 
 
 include $(BUILD_SHARED_LIBRARY)

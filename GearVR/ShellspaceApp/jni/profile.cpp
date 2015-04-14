@@ -7,6 +7,7 @@ struct SProfileGlobals
 {
 	uint 	frameCount;
 	double 	start[PROF_COUNT];
+	double 	max[PROF_COUNT];
 	double 	total[PROF_COUNT];
 	uint 	hits[PROF_COUNT];
 };
@@ -17,20 +18,20 @@ SProfileGlobals s_profGlob;
 
 const char *s_profNames[PROF_COUNT] =
 {
-	"Frame            ", 		// PROF_FRAME
-	" Cmd             ",      	// PROF_CMD
-	" Keyboard        ", 		// PROF_KEYBOARD
-	" VNCWidget       ", 		// PROF_VNC_WIDGET
-	" Scene           ",      	// PROF_SCENE
-	" Draw            ",      	// PROF_DRAW
-	"  Draw Eye       ",      	// PROF_DRAW_EYE
+	"Frame", 					// PROF_FRAME
+	" Cmd",      				// PROF_CMD
+	" Keyboard", 				// PROF_KEYBOARD
+	" VNCWidget", 				// PROF_VNC_WIDGET
+	" Scene",      				// PROF_SCENE
+	" Draw",      				// PROF_DRAW
+	"  Draw Eye",      			// PROF_DRAW_EYE
 	"   Draw Keyboard ",   		// PROF_DRAW_KEYBOARD
 	"   Draw VNCWidget",  		// PROF_DRAW_VNC_WIDGET
-	"VNCThread        ", 		// PROF_VNC_THREAD
-	" Input           ", 		// PROF_VNC_THREAD_INPUT
-	"  Wait           ", 		// PROF_VNC_THREAD_WAIT
-	"  Handle         ", 		// PROF_VNC_THREAD_HANDLE
-	" Output          ", 		// PROF_VNC_THREAD_OUTPUT
+	"VNCThread", 				// PROF_VNC_THREAD
+	" Input", 					// PROF_VNC_THREAD_INPUT
+	"  Wait", 					// PROF_VNC_THREAD_WAIT
+	"  Handle", 				// PROF_VNC_THREAD_HANDLE
+	" Output", 					// PROF_VNC_THREAD_OUTPUT
 };
 
 
@@ -51,7 +52,10 @@ void Prof_Start( EProfType prof )
 
 void Prof_Stop( EProfType prof )
 {
-	s_profGlob.total[prof] += Prof_MS() - s_profGlob.start[prof];
+	double ms = Prof_MS() - s_profGlob.start[prof];
+	s_profGlob.total[prof] += ms;
+	if ( ms > s_profGlob.max[prof] )
+		s_profGlob.max[prof] = ms;
 }
 
 
@@ -67,16 +71,30 @@ static void Prof_Normalize()
 }
 
 
+static const char *s_dashes = "-----------------------------------------------------------";
+
+
 static void Prof_Print()
 {
 	uint profIter;
 
+	LOG( "%-30s   %4s %8s %8s", "name", "hits", "avg", "max" );
+	LOG( "%.30s   %.4s %.8s %.8s", s_dashes, s_dashes, s_dashes, s_dashes );
+
 	for ( profIter = 0; profIter < PROF_COUNT; profIter++ )
 	{
-		LOG( "%s : [%d] %f", s_profNames[profIter], s_profGlob.hits[profIter], s_profGlob.total[profIter] );
+		LOG( "%-30s : %4d %8.2f %8.2f", 
+			s_profNames[profIter], 
+			s_profGlob.hits[profIter], 
+			s_profGlob.total[profIter],
+			s_profGlob.max[profIter] );
+
 		s_profGlob.total[profIter] = 0.0;
 		s_profGlob.hits[profIter] = 0;
+		s_profGlob.max[profIter] = 0;
 	}
+
+	LOG( "" );
 }
 
 
