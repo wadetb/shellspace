@@ -222,6 +222,7 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 
 	app->GetVrParms().colorFormat = COLOR_8888;
 
+	// $$$ This sometimes spikes to 60ms, I have no idea why yet- need to instrument Oculus code.
 	Prof_Start( PROF_DRAW );
 	app->DrawEyeViewsPostDistorted( Scene.CenterViewMatrix() );
 	Prof_Stop( PROF_DRAW );
