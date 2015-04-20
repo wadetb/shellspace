@@ -38,7 +38,6 @@ const char *s_profNames[PROF_COUNT] =
 	"  InQueue",                // PROF_VNC_WIDGET_INQUEUE
 	"   Advance",               // PROF_VNC_WIDGET_ADVANCE
 	"   Update",                // PROF_VNC_WIDGET_UPDATE
-	"  UpdateTextureRect",      // PROF_VNC_WIDGET_UPDATE_TEXTURE_RECT
 	" Scene",      				// PROF_SCENE
 	" Draw",      				// PROF_DRAW
 	"  Draw Eye",      			// PROF_DRAW_EYE
@@ -53,6 +52,7 @@ const char *s_profNames[PROF_COUNT] =
 	"   Cursor Shape", 			// PROF_VNC_THREAD_HANDLE_CURSOR_SHAPE
 	"   Cursor Pos", 			// PROF_VNC_THREAD_HANDLE_CURSOR_POS
 	"  Lock InQueue", 			// PROF_VNC_THREAD_LOCK_IN_QUEUE
+	"  UpdateTextureRect",      // PROF_VNC_THREAD_UPDATE_TEXTURE_RECT
 	" Output", 					// PROF_VNC_THREAD_OUTPUT
 };
 
@@ -67,14 +67,18 @@ double Prof_MS()
 
 void Prof_Start( EProfType prof )
 {
+	// assert( s_profGlob.start[prof] == 0.0 ); // if this fails, timer was not stopped
 	s_profGlob.start[prof] = Prof_MS();
 	s_profGlob.hits[prof]++;
 }
-
+ 
 
 void Prof_Stop( EProfType prof )
 {
 	double ms = Prof_MS() - s_profGlob.start[prof];
+
+	// assert( s_profGlob.start[prof] != 0.0 ); // if this fails, timer was not started
+	s_profGlob.start[prof] = 0.0;
 
 	s_profGlob.total[prof] += ms;
 	if ( ms > s_profGlob.max[prof] )

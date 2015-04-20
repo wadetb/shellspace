@@ -15,7 +15,7 @@ fi
 
 if [ "$1" == "" ]; then
     echo "========================== Build "${BUILD_MODULE}" ==========================="
-    $ANDROID_NDK/ndk-build -j16 NDK_DEBUG=1 OVR_DEBUG=1 
+    $ANDROID_NDK/ndk-build -j16 NDK_LOG=1 NDK_DEBUG=1 OVR_DEBUG=1 
 fi
 
 if [ "$1" == "debug" ]; then

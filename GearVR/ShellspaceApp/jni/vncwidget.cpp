@@ -35,8 +35,6 @@ enum EVNCInQueueKind
 	VNC_INQUEUE_STATE,
 	VNC_INQUEUE_RESIZE,
 	VNC_INQUEUE_UPDATE,
-	VNC_INQUEUE_CURSOR_POS,
-	VNC_INQUEUE_CURSOR_SHAPE,
 	VNC_INQUEUE_CLIPBOARD
 };
 
@@ -64,19 +62,6 @@ struct SVNCInQueueItem
 			ushort		width;
 			ushort		height;
 		} update;
-		struct
-		{
-			ushort 		x;
-			ushort 		y;
-		} cursorPos;
-		struct
-		{
-			byte 		*buffer;
-			ushort 		width;
-			ushort 		height;
-			ushort 		xHot;
-			ushort 		yHot;
-		} cursorShape;
 		struct
 		{
 			char 		*text;
@@ -112,27 +97,6 @@ struct SVNCOutQueueItem
 };
 
 
-struct SVNCThread
-{
-	volatile sbool 		started;
-	volatile sbool 		referenced;
-
-	pthread_t 			thread;
-
-	pthread_mutex_t 	inMutex;
-	SVNCInQueueItem 	inQueue[VNC_INQUEUE_SIZE];
-	uint 				inCount;
-
-	pthread_mutex_t 	outMutex;
-	SVNCOutQueueItem 	outQueue[VNC_OUTQUEUE_SIZE];
-	uint 				outCount;
-
-	rfbClient    		*client;
-	char 				*server;
-	char 				*password;
-};
-
-
 #define COPY_TO_BACKUP 		0
 #define COPY_FROM_BACKUP 	1
 #define COPY_FROM_CURSOR 	2
@@ -154,17 +118,37 @@ struct SVNCCursor
 };
 
 
+struct SVNCThread
+{
+	volatile sbool 		started;
+	volatile sbool 		referenced;
+
+	pthread_t 			thread;
+
+	pthread_mutex_t 	inMutex;
+	SVNCInQueueItem 	inQueue[VNC_INQUEUE_SIZE];
+	uint 				inCount;
+
+	pthread_mutex_t 	outMutex;
+	SVNCOutQueueItem 	outQueue[VNC_OUTQUEUE_SIZE];
+	uint 				outCount;
+
+	SVNCCursor			cursor;
+
+	rfbClient    		*client;
+	char 				*server;
+	char 				*password;
+};
+
+
 struct SVNCWidget
 {
 	SVNCThread 			*thread;
 
 	EVNCState			state;
 
-	byte 				*frameBuffer;
 	int 				width;
 	int 				height;
-
-	SVNCCursor			cursor;
 
 	uint 				updateTexIndex;
 	uint 				drawTexIndex;
@@ -299,8 +283,11 @@ static SVNCInQueueItem *VNCThread_BeginAppendToInQueue( SVNCThread *vncThread )
 	SVNCInQueueItem *in;
 	struct timespec tim;
 	struct timespec tim2;
+	sbool 			logged;
 
 	Prof_Start( PROF_VNC_THREAD_LOCK_IN_QUEUE );
+
+	logged = sfalse;
 
 	for ( ;; )
 	{
@@ -309,12 +296,20 @@ static SVNCInQueueItem *VNCThread_BeginAppendToInQueue( SVNCThread *vncThread )
 		if ( vncThread->inCount < VNC_INQUEUE_SIZE )
 		{
 			Prof_Stop( PROF_VNC_THREAD_LOCK_IN_QUEUE );
+
 			in = &vncThread->inQueue[vncThread->inCount];
 			memset( in, 0, sizeof( *in ) );
+
 			return in;
 		}
 
 		pthread_mutex_unlock( &vncThread->inMutex );
+
+		if ( !logged )
+		{
+			LOG( "VNC input queue is full, stalling." );
+			logged = strue;
+		}
 
 		tim.tv_sec  = 0;
 		tim.tv_nsec = 1000000;
@@ -420,8 +415,6 @@ static rfbBool vnc_thread_resize( rfbClient *client )
 		return FALSE;
 	}
 
-	LOG( "Appending RESIZE: %d %d", width, height );
-
 	in->kind = VNC_INQUEUE_RESIZE;
 	in->resize.width = width;
 	in->resize.height = height;
@@ -436,7 +429,7 @@ static rfbBool vnc_thread_resize( rfbClient *client )
 
 #if USE_OVERLAY
 
-static void VNCThread_SetAlpha( SVNCThread *vncThread, int x, int y, int w, int h )
+void VNCThread_SetAlpha( SVNCThread *vncThread, int x, int y, int w, int h )
 {
 	rfbClient 	*client;
 	uint 		xi;
@@ -513,7 +506,74 @@ static void VNCThread_SetAlpha( SVNCThread *vncThread, int x, int y, int w, int 
 
 #endif // #if USE_OVERLAY
 
-static void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
+
+void VNCThread_UpdateTextureRect( SVNCThread *vncThread, int x, int y, int width, int height )
+{
+	rfbClient 		*client;
+	byte 	 		*buffer;
+	int 			yc;
+	SVNCInQueueItem *in;
+	byte 			*frameBuffer;
+	uint 			frameBufferWidth;
+
+	Prof_Start( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
+
+	client = vncThread->client;
+	assert( client );
+
+	if ( x < 0 )
+	{
+		width += x;
+		x = 0;
+	}
+	if ( y < 0 )
+	{
+		height += y;
+		y = 0;
+	}
+
+	if ( x + width > client->width )
+		width = client->width - x;
+	if ( y + height > client->height )
+		height = client->height - y;
+
+	if ( width == 0 || height == 0 )
+	{
+		Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
+		return;
+	}
+
+	frameBuffer = client->frameBuffer;
+	frameBufferWidth = client->width;
+
+	buffer = (byte *)malloc( width * height * 4 );
+	assert( buffer );
+
+	for ( yc = 0; yc < height; yc++ )
+		memcpy( &buffer[(yc * width) * 4], &frameBuffer[((y + yc) * frameBufferWidth + x) * 4], width * 4 );
+
+	in = VNCThread_BeginAppendToInQueue( vncThread );
+	if ( !in )
+	{
+		free( buffer );
+		Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
+		return;
+	}
+
+	in->kind = VNC_INQUEUE_UPDATE;
+	in->update.buffer = buffer;
+	in->update.x = x;
+	in->update.y = y;
+	in->update.width = width;
+	in->update.height = height;
+
+	VNCThread_EndAppendToInQueue( vncThread );
+
+	Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
+}
+
+
+void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 {
 	SVNCThread 		*vncThread;
 	SVNCInQueueItem *in;
@@ -523,6 +583,7 @@ static void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 	byte 			*buffer;
 	int 			xc;
 	int 			yc;
+	// sbool 			saveCursor;
 
 	Prof_Start( PROF_VNC_THREAD_HANDLE_UPDATE );
 
@@ -534,45 +595,161 @@ static void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 #if USE_OVERLAY
 	VNCThread_SetAlpha( vncThread, x, y, w, h );
 #endif // #if USE_OVERLAY
-	
-	in = VNCThread_BeginAppendToInQueue( vncThread );
-	if ( !in )
-	{
-		Prof_Stop( PROF_VNC_THREAD_HANDLE_UPDATE );
-		return;
-	}
 
-	frameBuffer = client->frameBuffer;
-	frameBufferWidth = client->width;
+	// $$$ This needs to go into a new vnc_thread_pre_update callback; the restore is currently too late.
+	// saveCursor = VNC_RectOverlapsCursor( vnc, x, y, width, height );
+	// if ( saveCursor )
+	// {
+	//      VNC_CopyCursor( vnc, COPY_FROM_BACKUP );
+	// }
 
-	buffer = (byte *)malloc( w * h * 4 );
-	assert( buffer );
+	VNCThread_UpdateTextureRect( vncThread, x, y, w, h );
 
-	for ( yc = 0; yc < h; yc++ )
-	{
-		for ( xc = 0; xc < w; xc++ )
-		{
-			memcpy( color, &frameBuffer[((y + yc) * frameBufferWidth + (x + xc)) * 4], 4 );
-			memcpy( &buffer[(yc * w + xc) * 4], color, 4 );
-		}
-	}
-
-	in->kind = VNC_INQUEUE_UPDATE;
-	in->update.buffer = buffer;
-	in->update.x = x;
-	in->update.y = y;
-	in->update.width = w;
-	in->update.height = h;
-
-	VNCThread_EndAppendToInQueue( vncThread );
+	// if ( saveCursor )
+	// {
+	//      VNC_CopyCursor( vnc, COPY_TO_BACKUP );
+	//      VNC_CopyCursor( vnc, COPY_FROM_CURSOR );
+	//      VNC_UpdateCursorTextureRect( vnc );
+	// }
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_UPDATE );
 }
 
 
+sbool VNCThread_RectOverlapsCursor( SVNCThread *vncThread, int x, int y, int width, int height )
+{
+	int 	cursorX;
+	int 	xMin;
+	int 	xMax;
+	int 	cursorY;
+	int 	yMin;
+	int 	yMax;
+
+	assert( vncThread );
+
+	if ( !vncThread->cursor.buffer )
+		return sfalse;
+
+	cursorX = vncThread->cursor.xPos - vncThread->cursor.xHot;
+	xMin = S_Min( x + width, cursorX + vncThread->cursor.width );
+	xMax = S_Max( x, cursorX );
+
+	if ( xMax > xMin )
+		return sfalse;
+
+	cursorY = vncThread->cursor.yPos - vncThread->cursor.yHot;
+	yMin = S_Min( y + height, cursorY + vncThread->cursor.width );
+	yMax = S_Max( y, cursorY );
+
+	if ( yMax > yMin )
+		return sfalse;
+
+	return strue;
+}
+
+
+void VNCThread_CopyCursor( SVNCThread *vncThread, uint direction )
+{
+	uint 	width;
+	uint 	height;
+	byte 	*frameBuffer;
+	uint 	cursorWidth;
+	uint 	cursorHeight;
+	byte 	*cursorData;
+	uint 	xStart;
+	uint 	xEnd;
+	uint 	yStart;
+	uint 	yEnd;
+	uint 	xOfs;
+	uint 	yOfs;
+	uint 	x;
+	uint 	y;
+	uint 	cx;
+	uint 	cy;
+	byte 	color[4];
+
+	width = vncThread->client->width;
+	height = vncThread->client->height;
+	frameBuffer = vncThread->client->frameBuffer;
+	assert( frameBuffer );
+
+	cursorWidth = vncThread->cursor.width;
+	cursorData = (direction == COPY_FROM_CURSOR) ? vncThread->cursor.buffer : vncThread->cursor.backup;
+	if ( !cursorData )
+		return;
+
+	xStart = vncThread->cursor.xPos - vncThread->cursor.xHot;
+	yStart = vncThread->cursor.yPos - vncThread->cursor.yHot;
+
+	xEnd = xStart + vncThread->cursor.width;
+	yEnd = yStart + vncThread->cursor.height;
+
+	xOfs = 0;
+	yOfs = 0;
+
+	if ( xStart < 0 ) 
+	{
+		xOfs = -xStart;
+		xStart = 0;
+	}
+
+	if ( yStart < 0 ) 
+	{
+		yOfs = -yStart;
+		yStart = 0;
+	}
+
+	if ( xEnd > width ) 
+		xEnd = width;
+	if ( yEnd > height ) 
+		yEnd = height;
+
+	if ( xStart == xEnd || yStart == yEnd )
+		return;
+
+	if ( direction == COPY_FROM_CURSOR )
+	{
+		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
+		{
+			for ( x = xStart, cx = xOfs; x < xEnd; x++, cx++ )
+			{
+				memcpy( color, &cursorData[(cy * cursorWidth + cx) * 4], 4 );
+				if ( color[3] )
+					memcpy( &frameBuffer[(y * width + x) * 4], color, 4 ); 
+			}
+		}
+	}
+	else if ( direction == COPY_FROM_BACKUP )
+	{
+		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
+			memcpy( &frameBuffer[(y * width + xStart) * 4], &cursorData[(cy * cursorWidth + xOfs) * 4], (xEnd - xStart) * 4 );
+	}
+	else if ( direction == COPY_TO_BACKUP )
+	{
+		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
+			memcpy( &cursorData[(cy * cursorWidth + xOfs) * 4], &frameBuffer[(y * width + xStart) * 4], (xEnd - xStart) * 4 ); 
+	}
+}
+
+
+void VNCThread_UpdateCursorTextureRect( SVNCThread *vncThread )
+{
+	int x;
+	int y;
+	int width;
+	int height;
+
+	x = vncThread->cursor.xPos - vncThread->cursor.xHot;
+	y = vncThread->cursor.yPos - vncThread->cursor.yHot;
+	width = vncThread->cursor.width;
+	height = vncThread->cursor.height;
+
+	VNCThread_UpdateTextureRect( vncThread, x, y, width, height );
+}
+
+
 void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int width, int height, int bytesPerPixel )
 {
-/*
 	SVNCThread 		*vncThread;
 	SVNCInQueueItem *in;
 	byte 			*cursor;
@@ -587,47 +764,45 @@ void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int wid
 	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
 	assert( vncThread );
 
-	in = VNCThread_BeginAppendToInQueue( vncThread );
-	if ( !in )
+	if ( !vncThread->client->frameBuffer )
 	{
+		LOG( "CursorShape message without preceding resize message." );
 		Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_SHAPE );
 		return;
 	}
 
-	in->kind = VNC_INQUEUE_CURSOR_SHAPE;
-	
-	in->cursorShape.width = width;
-	in->cursorShape.height = height;
-	
-	in->cursorShape.xHot = xhot;
-	in->cursorShape.yHot = yhot;
-	
-	cursor = (byte *)malloc( width * height * 4 );
-	assert( cursor );
-
-	memcpy( cursor, client->rcSource, width * height * 4 );
-
-	for ( y = 0; y < height; y++ )
+	if ( vncThread->cursor.buffer )
 	{
-		for ( x = 0; x < width; x++ )
-		{
-			maskPixel = client->rcMask[y * width + x];
-			cursor[(y * width + x) * 4 + 3] = maskPixel ? 0xff : 0x00;
-		}
+		assert( vncThread->cursor.backup );
+
+		VNCThread_CopyCursor( vncThread, COPY_FROM_BACKUP );
+		VNCThread_UpdateCursorTextureRect( vncThread );
+
+		free( vncThread->cursor.buffer );
+		free( vncThread->cursor.backup );
 	}
 
-	in->cursorShape.buffer = cursor;
+	vncThread->cursor.width = width;
+	vncThread->cursor.height = height;
+	vncThread->cursor.xHot = xhot;
+	vncThread->cursor.yHot = yhot;
 
-	VNCThread_EndAppendToInQueue( vncThread );
+	vncThread->cursor.buffer = (byte *)malloc( vncThread->cursor.width * vncThread->cursor.height * 4 );
+	assert( vncThread->cursor.buffer );
+
+	vncThread->cursor.backup = (byte *)malloc( vncThread->cursor.width * vncThread->cursor.height * 4 );
+	assert( vncThread->cursor.backup );
+
+	VNCThread_CopyCursor( vncThread, COPY_TO_BACKUP );
+	VNCThread_CopyCursor( vncThread, COPY_FROM_CURSOR );
+	VNCThread_UpdateCursorTextureRect( vncThread );
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_SHAPE );
-*/
 }
 
 
 static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 {
-/*
 	SVNCThread 		*vncThread;
 	SVNCInQueueItem *in;
 
@@ -638,21 +813,32 @@ static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
 	assert( vncThread );
 
-	in = VNCThread_BeginAppendToInQueue( vncThread );
-	if ( !in )
+	if ( !vncThread->client->frameBuffer )
 	{
+		LOG( "CursorPos event without preceding resize event." );
 		Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 		return FALSE;
 	}
 
-	in->kind = VNC_INQUEUE_CURSOR_POS;
-	in->cursorPos.x = x;
-	in->cursorPos.y = y;
+	if ( !vncThread->cursor.buffer )
+	{
+		LOG( "CursorPos event without preceding shape event." );
+		Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
+		return FALSE;
+	}
 
-	VNCThread_EndAppendToInQueue( vncThread );
+	VNCThread_CopyCursor( vncThread, COPY_FROM_BACKUP );
+	VNCThread_UpdateCursorTextureRect( vncThread );
+
+	vncThread->cursor.xPos = x;
+	vncThread->cursor.yPos = y;
+
+	VNCThread_CopyCursor( vncThread, COPY_TO_BACKUP );
+	VNCThread_CopyCursor( vncThread, COPY_FROM_CURSOR );
+	VNCThread_UpdateCursorTextureRect( vncThread );
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
-*/
+
 	return TRUE;
 }
 
@@ -903,10 +1089,18 @@ static void VNC_CleanupThread( SVNCThread *vncThread )
 		case VNC_INQUEUE_UPDATE:
 			free( inItem->update.buffer );
 			break;
-		case VNC_INQUEUE_CURSOR_SHAPE:
-			free( inItem->cursorShape.buffer );
-			break;
 		}
+	}
+
+	if ( vncThread->cursor.buffer )
+	{
+		assert( vncThread->cursor.backup );
+
+		free( vncThread->cursor.buffer );
+		vncThread->cursor.buffer = NULL;
+
+		free( vncThread->cursor.backup );
+		vncThread->cursor.backup = NULL;
 	}
 
 	memset( vncThread, 0, sizeof( SVNCThread ) );
@@ -920,8 +1114,6 @@ static uint VNC_AllocateThread()
 
 	pthread_mutex_lock( &s_vncGlob.threadPoolMutex );
 
-	threadIter = INVALID_VNC_THREAD;
-
 	for ( threadIter = 0; threadIter < MAX_VNC_THREADS; threadIter++ )
 	{
 		vncThread = &s_vncGlob.threadPool[threadIter];
@@ -934,6 +1126,9 @@ static uint VNC_AllocateThread()
 	}
 
 	pthread_mutex_unlock( &s_vncGlob.threadPoolMutex );
+
+	if ( threadIter == MAX_VNC_THREADS )
+		return INVALID_VNC_THREAD;
 
 	return threadIter;
 }
@@ -1012,26 +1207,9 @@ void VNC_DestroyWidget( SVNCWidget *vnc )
 		vnc->thread = NULL;
 	}
 
-	if ( vnc->frameBuffer )
-	{
-		free( vnc->frameBuffer );
-		vnc->frameBuffer = NULL;
-	}
-
 	for ( texIter = 0; texIter < VNC_TEXTURE_COUNT; texIter++ )
 		if ( vnc->texId[texIter] )
 			glDeleteTextures( 1, &vnc->texId[texIter] );
-
-	if ( vnc->cursor.buffer )
-	{
-		assert( vnc->cursor.backup );
-
-		free( vnc->cursor.buffer );
-		vnc->cursor.buffer = NULL;
-
-		free( vnc->cursor.backup );
-		vnc->cursor.backup = NULL;
-	}
 
 	// $$$ geometry destructor?
 }
@@ -1339,244 +1517,22 @@ static void VNC_HandleState( SVNCWidget *vnc, const SVNCInQueueItem *in )
 }
 
 
-static void VNC_UpdateTextureRect( SVNCWidget *vnc, uint x, uint y, uint width, uint height )
-{
-	const void 	*data;
-
-	Prof_Start( PROF_VNC_WIDGET_UPDATE_TEXTURE_RECT );
-
-	assert( vnc->texId[vnc->updateTexIndex] );
-
-	if ( x < 0 )
-	{
-		width += x;
-		x = 0;
-	}
-	if ( y < 0 )
-	{
-		height += y;
-		y = 0;
-	}
-
-	if ( x + width > vnc->width )
-		width = vnc->width - x;
-	if ( y + height > vnc->height )
-		height = vnc->height - y;
-
-	if ( width == 0 || height == 0 )
-		return;
-
-	data = vnc->frameBuffer + (y * vnc->width + x) * 4;
-
-	GL_CheckErrors( "VNC_UpdateTextureRect before" );
-
-	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
-	glPixelStorei( GL_UNPACK_ROW_LENGTH, vnc->width );
-
-	glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data );
-
-	glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
-	glBindTexture( GL_TEXTURE_2D, 0 );
-
-	GL_CheckErrors( "VNC_UpdateTextureRect after" );
-
-	Prof_Stop( PROF_VNC_WIDGET_UPDATE_TEXTURE_RECT );
-}
-
-
-static sbool VNC_RectOverlapsCursor( SVNCWidget *vnc, int x, int y, int width, int height )
-{
-	int 	cursorX;
-	int 	xMin;
-	int 	xMax;
-	int 	cursorY;
-	int 	yMin;
-	int 	yMax;
-
-	assert( vnc );
-
-	if ( !vnc->cursor.buffer )
-		return sfalse;
-
-	cursorX = vnc->cursor.xPos - vnc->cursor.xHot;
-	xMin = S_Min( x + width, cursorX + vnc->cursor.width );
-	xMax = S_Max( x, cursorX );
-
-	if ( xMax > xMin )
-		return sfalse;
-
-	cursorY = vnc->cursor.yPos - vnc->cursor.yHot;
-	yMin = S_Min( y + height, cursorY + vnc->cursor.width );
-	yMax = S_Max( y, cursorY );
-
-	if ( yMax > yMin )
-		return sfalse;
-
-	return strue;
-}
-
-
-static void VNC_CopyCursor( SVNCWidget *vnc, uint direction )
-{
-	uint 	width;
-	uint 	height;
-	byte 	*frameBuffer;
-	uint 	cursorWidth;
-	uint 	cursorHeight;
-	byte 	*cursorData;
-	uint 	xStart;
-	uint 	xEnd;
-	uint 	yStart;
-	uint 	yEnd;
-	uint 	xOfs;
-	uint 	yOfs;
-	uint 	x;
-	uint 	y;
-	uint 	cx;
-	uint 	cy;
-	byte 	color[4];
-
-	width = vnc->width;
-	height = vnc->height;
-	frameBuffer = vnc->frameBuffer;
-	assert( frameBuffer );
-
-	cursorWidth = vnc->cursor.width;
-	cursorData = (direction == COPY_FROM_CURSOR) ? vnc->cursor.buffer : vnc->cursor.backup;
-	if ( !cursorData )
-		return;
-
-	xStart = vnc->cursor.xPos - vnc->cursor.xHot;
-	yStart = vnc->cursor.yPos - vnc->cursor.yHot;
-
-	xEnd = xStart + vnc->cursor.width;
-	yEnd = yStart + vnc->cursor.height;
-
-	xOfs = 0;
-	yOfs = 0;
-
-	if ( xStart < 0 ) 
-	{
-		xOfs = -xStart;
-		xStart = 0;
-	}
-
-	if ( yStart < 0 ) 
-	{
-		yOfs = -yStart;
-		yStart = 0;
-	}
-
-	if ( xEnd > width ) 
-		xEnd = width;
-	if ( yEnd > height ) 
-		yEnd = height;
-
-	if ( xStart == xEnd || yStart == yEnd )
-		return;
-
-	if ( direction == COPY_FROM_CURSOR )
-	{
-		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
-		{
-			for ( x = xStart, cx = xOfs; x < xEnd; x++, cx++ )
-			{
-				memcpy( color, &cursorData[(cy * cursorWidth + cx) * 4], 4 );
-				if ( color[3] )
-					memcpy( &frameBuffer[(y * width + x) * 4], color, 4 ); 
-			}
-		}
-	}
-	else if ( direction == COPY_FROM_BACKUP )
-	{
-		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
-		{
-			for ( x = xStart, cx = xOfs; x < xEnd; x++, cx++ )
-			{
-				memcpy( color, &cursorData[(cy * cursorWidth + cx) * 4], 4 );
-				memcpy( &frameBuffer[(y * width + x) * 4], color, 4 ); 
-			}
-		}
-	}
-	else if ( direction == COPY_TO_BACKUP )
-	{
-		for ( y = yStart, cy = yOfs; y < yEnd; y++, cy++ )
-		{
-			for ( x = xStart, cx = xOfs; x < xEnd; x++, cx++ )
-			{
-				memcpy( color, &frameBuffer[(y * width + x) * 4], 4 ); 
-				memcpy( &cursorData[(cy * cursorWidth + cx) * 4], color, 4 );
-			}
-		}		
-	}
-}
-
-
-static void VNC_UpdateCursorTextureRect( SVNCWidget *vnc )
-{
-	int x;
-	int y;
-	int width;
-	int height;
-
-	x = vnc->cursor.xPos - vnc->cursor.xHot;
-	y = vnc->cursor.yPos - vnc->cursor.yHot;
-	width = vnc->cursor.width;
-	height = vnc->cursor.height;
-
-	VNC_UpdateTextureRect( vnc, x, y, width, height );
-}
-
-
 static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 {
-	byte 	*buffer;
-	byte 	*frameBuffer;
-	int 	frameBufferWidth;
-	byte 	color[4];
-	int 	xc;
-	int 	yc;
-	int 	x;
-	int 	y;
-	int 	width;
-	int 	height;
-	sbool 	saveCursor;
-
 	Prof_Start( PROF_VNC_WIDGET_UPDATE );
 
 	assert( vnc );
 	assert( in );
 	assert( in->kind == VNC_INQUEUE_UPDATE );
 
-	if ( !vnc->frameBuffer )
-	{
-		LOG( "Update event without preceding resize event." );
-		return;
-	}
-
-	frameBuffer = vnc->frameBuffer;
-	frameBufferWidth = vnc->width;
-
-	buffer = in->update.buffer;
-	x = in->update.x;
-	y = in->update.y;
-	width = in->update.width;
-	height = in->update.height;
-
-	// saveCursor = VNC_RectOverlapsCursor( vnc, x, y, width, height );
-	// if ( saveCursor )
-	// {
-	// 	VNC_CopyCursor( vnc, COPY_FROM_BACKUP );
-	// }
-
 	GL_CheckErrors( "VNC_UpdateTextureRect before" );
 
 	assert( vnc->texId[vnc->updateTexIndex] );
 
 	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
-	glPixelStorei( GL_UNPACK_ROW_LENGTH, width );
+	glPixelStorei( GL_UNPACK_ROW_LENGTH, in->update.width );
 
-	glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+	glTexSubImage2D( GL_TEXTURE_2D, 0, in->update.x, in->update.y, in->update.width, in->update.height, GL_RGBA, GL_UNSIGNED_BYTE, in->update.buffer );
 
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
@@ -1584,82 +1540,9 @@ static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 	GL_CheckErrors( "VNC_UpdateTextureRect after" );
 
 	if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-		free( buffer );
-
-	// if ( saveCursor )
-	// {
-	// 	VNC_CopyCursor( vnc, COPY_TO_BACKUP );
-	// 	VNC_CopyCursor( vnc, COPY_FROM_CURSOR );
-	// 	VNC_UpdateCursorTextureRect( vnc );
-	// }
+		free( in->update.buffer );
 
 	Prof_Stop( PROF_VNC_WIDGET_UPDATE );
-}
-
-
-static void VNC_HandleCursorPos( SVNCWidget *vnc, const SVNCInQueueItem *in )
-{
-	assert( vnc );
-	assert( in );
-	assert( in->kind == VNC_INQUEUE_CURSOR_POS );
-
-	if ( !vnc->frameBuffer )
-	{
-		LOG( "CursorPos event without preceding resize event." );
-		return;
-	}
-
-	if ( !vnc->cursor.buffer )
-	{
-		LOG( "CursorPos event without preceding shape event." );
-		return;
-	}
-
-	VNC_CopyCursor( vnc, COPY_FROM_BACKUP );
-	// VNC_UpdateCursorTextureRect( vnc );
-
-	vnc->cursor.xPos = in->cursorPos.x;
-	vnc->cursor.yPos = in->cursorPos.y;
-
-	VNC_CopyCursor( vnc, COPY_TO_BACKUP );
-	VNC_CopyCursor( vnc, COPY_FROM_CURSOR );
-	// VNC_UpdateCursorTextureRect( vnc );
-}
-
-
-static void VNC_HandleCursorShape( SVNCWidget *vnc, const SVNCInQueueItem *in )
-{
-	assert( vnc );
-	assert( in );
-	assert( in->kind == VNC_INQUEUE_CURSOR_SHAPE );
-
-	if ( !vnc->frameBuffer )
-	{
-		LOG( "CursorPos event without preceding resize event." );
-		return;
-	}
-
-	if ( vnc->cursor.buffer )
-	{
-		assert( vnc->cursor.backup );
-		VNC_CopyCursor( vnc, COPY_FROM_BACKUP );
-		// VNC_UpdateCursorTextureRect( vnc );
-
-		free( vnc->cursor.buffer );
-		free( vnc->cursor.backup );
-	}
-
-	vnc->cursor.width = in->cursorShape.width;
-	vnc->cursor.height = in->cursorShape.height;
-	vnc->cursor.xHot = in->cursorShape.xHot;
-	vnc->cursor.yHot = in->cursorShape.yHot;
-
-	vnc->cursor.buffer = in->cursorShape.buffer;
-	vnc->cursor.backup = (byte *)malloc( vnc->cursor.width * vnc->cursor.height * 4 );
-
-	VNC_CopyCursor( vnc, COPY_TO_BACKUP );
-	VNC_CopyCursor( vnc, COPY_FROM_CURSOR );
-	// VNC_UpdateCursorTextureRect( vnc );
 }
 
 
@@ -1795,7 +1678,7 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 		in = &vncThread->inQueue[inIndex];
 		kind = in->kind;
 
-		if ( in->updateMask & (1 << updateTexIndex) )
+		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
 			continue;
 
 		if ( clearPriorToResize )
@@ -1826,11 +1709,6 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 				vnc->width = in->resize.width;
 				vnc->height = in->resize.height;
 
-				if ( vnc->frameBuffer )
-					free( vnc->frameBuffer );
-
-				vnc->frameBuffer = (byte *)malloc( vnc->width * vnc->height * 4 );
-
 				VNC_RebuildTexture( vnc, vnc->width, vnc->height );
 				VNC_RebuildGlobe( vnc );
 
@@ -1852,7 +1730,6 @@ static void VNC_InQueue( SVNCWidget *vnc )
 	SVNCThread 		*vncThread;
 	int 			inIndex;
 	SVNCInQueueItem *in;
-	sbool 			needTexture;
 	uint 			updateMask;
 	double 			startMs;
 	uint 			newInCount;
@@ -1899,14 +1776,6 @@ static void VNC_InQueue( SVNCWidget *vnc )
 			VNC_HandleState( vnc, in );
 			in->kind = VNC_INQUEUE_NOP;
 			break;
-		case VNC_INQUEUE_CURSOR_POS:
-			VNC_HandleCursorPos( vnc, in );
-			in->kind = VNC_INQUEUE_NOP;
-			break;
-		case VNC_INQUEUE_CURSOR_SHAPE:
-			VNC_HandleCursorShape( vnc, in );
-			in->kind = VNC_INQUEUE_NOP;
-			break;
 		case VNC_INQUEUE_CLIPBOARD:
 			VNC_HandleClipboard( vnc, in );
 			in->kind = VNC_INQUEUE_NOP;
@@ -1920,8 +1789,18 @@ static void VNC_InQueue( SVNCWidget *vnc )
 			break;
 	}
 
-	if ( inIndex == vncThread->inCount )
+	if ( inIndex == vncThread->inCount && vnc->drawTexIndex != vnc->updateTexIndex )
+	{
 		vnc->drawTexIndex = vnc->updateTexIndex;
+
+		glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
+		// $$$ Could do some mipping of just rectangles affected by updates.
+		glGenerateMipmap( GL_TEXTURE_2D );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		glBindTexture( GL_TEXTURE_2D, 0 );
+	}
 
 	newInCount = 0;
 	for ( inIndex = 0; inIndex < vncThread->inCount; inIndex++ )
@@ -1936,19 +1815,6 @@ static void VNC_InQueue( SVNCWidget *vnc )
 	vncThread->inCount = newInCount;
 
 	pthread_mutex_unlock( &vncThread->inMutex );
-
-	// $$$ check perf impact
-/*
-	if ( needTexture )
-	{
-		glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->texIndex] );
-		glGenerateMipmap( GL_TEXTURE_2D );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		glBindTexture( GL_TEXTURE_2D, 0 );
-	}
-*/
 
 	Prof_Stop( PROF_VNC_WIDGET_INQUEUE );
 }

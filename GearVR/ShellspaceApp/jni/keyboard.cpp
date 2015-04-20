@@ -238,8 +238,6 @@ void Keyboard_Frame( uint buttonState, const Vector3f &eyePos, const Vector3f &e
 	if ( buttonState & BUTTON_SWIPE_BACK )
 		Keyboard_Previous();
 
-	keyboard = Keyboard_GetActive();
-
 	Keyboard_PickKey( eyePos, eyeDir );
 
 	if ( Keyboard_IsPicked() )
@@ -334,7 +332,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 		if ( keysJson->value.getTag() != JSON_ARRAY || strcmp( keysJson->key, "keys" ) )
 		{
 			LOG( "Expected keys array." );
-			return sfalse;
+			continue;
 		}
 
 		for ( auto keyJson : keysJson->value )
@@ -344,14 +342,14 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 			if ( keyJson->value.getTag() != JSON_OBJECT )
 			{
 				LOG( "Expected key object." );
-				return sfalse;
+				continue;
 			}
 
 			xJson = getFirstChildByKey( keyJson->value, "x" );
 			if ( !xJson || xJson->value.getTag() != JSON_NUMBER )
 			{
 				LOG( "Missing x field" );
-				return sfalse;
+				continue;
 			}
 			key->x = xJson->value.toNumber();
 
@@ -359,7 +357,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 			if ( !yJson || yJson->value.getTag() != JSON_NUMBER )
 			{
 				LOG( "Missing y field" );
-				return sfalse;
+				continue;
 			}
 			key->y = yJson->value.toNumber();
 
@@ -378,12 +376,17 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 			if ( !key->code && !key->label )
 			{
 				LOG( "Key is has neither a code nor a label field." );
-				// $$$ leaking other key strings
-				return sfalse;
+				continue;
 			}
 
 			keyCount++;
 		}
+	}
+
+	if ( !keyCount )
+	{
+		LOG( "Keyboard contains no keys." );
+		return sfalse;
 	}
 
 	keyboard->fileName = strdup( fileName );

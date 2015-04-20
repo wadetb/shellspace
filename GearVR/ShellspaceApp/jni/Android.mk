@@ -32,6 +32,7 @@ LOCAL_MODULE     := ovrapp
 LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(WIDGET_SRC_FILES) $(LIBVNCCLIENT_SRC_FILES)
 LOCAL_LDLIBS	 +=
 LOCAL_CFLAGS	 += -std=c++11 -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common
+#LOCAL_CFLAGS    += -fno-omit-frame-pointer
 LOCAL_C_INCLUDES += 
 
 include $(BUILD_SHARED_LIBRARY)

@@ -92,7 +92,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	vnc = VNC_CreateWidget();
 
-	VNC_Connect( vnc, "10.0.1.3:0", "asdf" ); // home; phone is 10.0.1.4
+	VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
 	// VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot
 	// VNC_Connect( vnc, "192.168.0.103:0", "asdf" ); // rangeley
 	// VNC_Connect( vnc, "10.90.240.248:0", "asdf" );
