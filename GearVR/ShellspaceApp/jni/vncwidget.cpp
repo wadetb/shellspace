@@ -7,6 +7,7 @@
 #include <android/keycodes.h>
 #include "libvncserver/rfb/rfbclient.h"
 
+#define STRESS_RESIZE 				1
 
 #define MAX_VNC_THREADS				64
 #define INVALID_VNC_THREAD 			UINT_MAX
@@ -549,6 +550,7 @@ void VNCThread_UpdateTextureRect( SVNCThread *vncThread, int x, int y, int width
 	frameBufferWidth = client->width;
 
 	// $$$ This should be throttled such that no single block can cost more than ~1ns on the update thread.
+	// (Once throttling is working on the update thread, that is)
 	buffer = (byte *)malloc( width * height * 4 );
 	assert( buffer );
 
@@ -599,6 +601,15 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 #endif // #if USE_OVERLAY
 
 	VNCThread_UpdateTextureRect( vncThread, x, y, w, h );
+
+#if STRESS_RESIZE
+	static int delay = 0;
+	if ( ++delay == 1000 )
+	{
+		vnc_thread_resize( client );
+		delay = 0;
+	}
+#endif // #if STRESS_RESIZE
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_UPDATE );
 }
@@ -1195,7 +1206,9 @@ static uint VNC_AllocateThread()
 		vncThread = &s_vncGlob.threadPool[threadIter];
 		if ( !vncThread->started && !vncThread->referenced )
 		{
+			// Cleanup any leftover data from the prior user.
 			VNC_CleanupThread( vncThread );
+
 			vncThread->referenced = strue;
 			break;
 		}
@@ -1469,7 +1482,7 @@ static void VNC_RebuildTexture( SVNCWidget *vnc, int width, int height )
 	// 	LOG( "Clamped client dimensions  : %dx%d", width, height );
 	// }
 
-	texIndex = vnc->updateTexIndex;
+	texIndex = vnc->updateTexIndex % VNC_TEXTURE_COUNT;
 
 	texWidth = S_NextPow2( width );
 	texHeight = S_NextPow2( height );
@@ -1500,8 +1513,8 @@ static void VNC_RebuildGlobe( SVNCWidget *vnc )
 	// $$$ Move aspect, uScale and vScale into the shader so we can avoid rebuilding geometry
 	//  when the server resizes the image?
 	float aspect = (float)vnc->width / vnc->height;
-	float uScale = (float)vnc->width / vnc->texWidth[vnc->updateTexIndex];
-	float vScale = (float)vnc->height / vnc->texHeight[vnc->updateTexIndex];
+	float uScale = (float)vnc->width / vnc->texWidth[vnc->updateTexIndex % VNC_TEXTURE_COUNT];
+	float vScale = (float)vnc->height / vnc->texHeight[vnc->updateTexIndex % VNC_TEXTURE_COUNT];
 
 	LOG( "Creating Globe Geometry" );
 
@@ -1589,7 +1602,10 @@ static void VNC_HandleState( SVNCWidget *vnc, const SVNCInQueueItem *in )
 	vnc->state = in->state.state;
 
 	if ( vnc->state == VNCSTATE_DISCONNECTED )
-		vnc->thread = NULL; // $$$ Does this leak the thread?  Investigate.
+	{
+		vnc->thread->referenced = sfalse;
+		vnc->thread = NULL;
+	}
 }
 
 
@@ -1613,6 +1629,8 @@ static void VNC_HandleResize( SVNCWidget *vnc, const SVNCInQueueItem *in )
 
 static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 {
+	int 	texIndex;
+
 	Prof_Start( PROF_VNC_WIDGET_UPDATE );
 
 	assert( vnc );
@@ -1621,9 +1639,11 @@ static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 
 	GL_CheckErrors( "VNC_UpdateTextureRect before" );
 
-	assert( vnc->texId[vnc->updateTexIndex] );
+	texIndex = vnc->updateTexIndex % VNC_TEXTURE_COUNT;
 
-	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
+	assert( vnc->texId[texIndex] );
+
+	glBindTexture( GL_TEXTURE_2D, vnc->texId[texIndex] );
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, in->update.width );
 
 	glTexSubImage2D( GL_TEXTURE_2D, 0, in->update.x, in->update.y, in->update.width, in->update.height, GL_RGBA, GL_UNSIGNED_BYTE, in->update.buffer );
@@ -1639,6 +1659,8 @@ static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 
 static void VNC_HandleFinishedUpdates( SVNCWidget *vnc, const SVNCInQueueItem *in )
 {
+	int 	texIndex;
+
 	Prof_Start( PROF_VNC_WIDGET_FINISHED_UPDATES );
 
 	assert( vnc );
@@ -1647,7 +1669,11 @@ static void VNC_HandleFinishedUpdates( SVNCWidget *vnc, const SVNCInQueueItem *i
 
 	vnc->drawTexIndex = vnc->updateTexIndex;
 
-	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
+	texIndex = vnc->updateTexIndex % VNC_TEXTURE_COUNT;
+
+	assert( vnc->texId[texIndex] );
+
+	glBindTexture( GL_TEXTURE_2D, vnc->texId[texIndex] );
 	// $$$ Could do some mipping of just rectangles affected by updates.
 	glGenerateMipmap( GL_TEXTURE_2D );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
@@ -1755,13 +1781,13 @@ static void VNC_HandleClipboard( SVNCWidget *vnc, SVNCInQueueItem *in )
 }
 
 
-static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
+static void VNC_CheckAdvanceTexture( SVNCWidget *vnc, int inCount )
 {
 	SVNCThread 		*vncThread;
 	uint 			updateTexIndex;
 	uint 			drawTexIndex;
-	sbool 			clearPriorToResize;
 	int 			inIndex;
+	uint 			updateMask;
 	SVNCInQueueItem *in;
 	EVNCInQueueKind kind;
 
@@ -1770,71 +1796,77 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 	vncThread = vnc->thread;
 	assert( vncThread );
 
-	// $$$ assert mutex locked
-
 	updateTexIndex = vnc->updateTexIndex;
 	drawTexIndex = vnc->drawTexIndex;
 
-	clearPriorToResize = sfalse;
+	if ( updateTexIndex != drawTexIndex )
+		return;
+
+	updateMask = 1 << (updateTexIndex % VNC_TEXTURE_COUNT);
 
 /*
-	LOG( "inCount=%d updateTexIndex=%d drawTexIndex=%d\n", inIndex, vncThread->inCount, vnc->updateTexIndex, vnc->drawTexIndex );
-	for ( inIndex = 0; inIndex < vncThread->inCount; inIndex++ )
+	LOG( "inCount=%d updateTexIndex=%d drawTexIndex=%d\n", inIndex, inCount, vnc->updateTexIndex, vnc->drawTexIndex );
+	for ( inIndex = 0; inIndex < inCount; inIndex++ )
 	{
 		in = &vncThread->inQueue[inIndex];
 		LOG( "%d : kind=%d mask=%x\n", inIndex, in->kind, in->updateMask );
 	}
 */
 
-	for ( inIndex = vncThread->inCount - 1; inIndex >= 0; inIndex-- )
+	for ( inIndex = inCount - 1; inIndex >= 0; inIndex-- )
 	{
 		in = &vncThread->inQueue[inIndex];
 		kind = in->kind;
 
 		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
 			continue;
-		// if ( in->updateMask & (1 << updateTexIndex) )
+		// if ( in->updateMask & updateMask )
 		// 	continue;
 
-		if ( clearPriorToResize )
+		if ( kind == VNC_INQUEUE_RESIZE )
 		{
-			if ( kind == VNC_INQUEUE_RESIZE || kind == VNC_INQUEUE_UPDATE )
+			updateTexIndex++;
+			vnc->updateTexIndex = updateTexIndex;
+			
+			// Clear any prior resize and update events for the same texture; the resize invalidates them.
+			updateMask = 1 << (updateTexIndex % VNC_TEXTURE_COUNT);
+			inIndex--;
+			for ( ; inIndex >= 0; inIndex-- )
 			{
-				in->updateMask |= 1 << updateTexIndex;				
-				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+				in = &vncThread->inQueue[inIndex];
+				kind = in->kind;
+
+				if ( kind == VNC_INQUEUE_RESIZE || kind == VNC_INQUEUE_UPDATE )
 				{
-					if ( kind == VNC_INQUEUE_UPDATE )
-						free( in->update.buffer );
-					in->kind = VNC_INQUEUE_NOP;
+					in->updateMask |= updateMask;				
+					if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+					{
+						if ( kind == VNC_INQUEUE_UPDATE )
+							free( in->update.buffer );
+						in->kind = VNC_INQUEUE_NOP;
+					}
 				}
 			}
+
+			return;
 		}
-		else
+	}
+
+	for ( inIndex = 0; inIndex < inCount; inIndex++ )
+	{
+		in = &vncThread->inQueue[inIndex];
+		kind = in->kind;
+
+		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+			continue;
+		// if ( in->updateMask & updateMask )
+		// 	continue;
+
+		if ( kind == VNC_INQUEUE_UPDATE )
 		{
-			if ( kind == VNC_INQUEUE_UPDATE )
-			{
-				if ( updateTexIndex == drawTexIndex )
-				{
-					updateTexIndex = (updateTexIndex + 1) % VNC_TEXTURE_COUNT;
-					vnc->updateTexIndex = updateTexIndex;
-				}
-			}
-			else if ( kind == VNC_INQUEUE_RESIZE )
-			{
-				if ( updateTexIndex == drawTexIndex )
-				{
-					updateTexIndex = (updateTexIndex + 1) % VNC_TEXTURE_COUNT;
-					vnc->updateTexIndex = updateTexIndex;
-				}
-
-				VNC_HandleResize( vnc, in );
-
-				in->updateMask |= 1 << updateTexIndex;				
-				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-					in->kind = VNC_INQUEUE_NOP;
-
-				clearPriorToResize = strue;
-			}
+			updateTexIndex++;
+			vnc->updateTexIndex = updateTexIndex;
+			return;
 		}
 	}
 
@@ -1845,6 +1877,7 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 static void VNC_InQueue( SVNCWidget *vnc )
 {
 	SVNCThread 		*vncThread;
+	int 			inCount;
 	int 			inIndex;
 	SVNCInQueueItem *in;
 	uint 			updateMask;
@@ -1856,30 +1889,42 @@ static void VNC_InQueue( SVNCWidget *vnc )
 	vncThread = vnc->thread;
 	assert( vncThread );
 
-	// $$$ Profile this lock.  Make the thread do anything that might be slow outside its own lock.
 	pthread_mutex_lock( &vncThread->inMutex );
 
-	if ( !vncThread->inCount )
-	{
-		pthread_mutex_unlock( &vncThread->inMutex );
+	// This is safe because the other thread can only append to the queue.
+	inCount = vncThread->inCount;
+
+	pthread_mutex_unlock( &vncThread->inMutex );
+
+	if ( !inCount )
 		return;
-	}
 
-	VNC_CheckAdvanceTexture( vnc );
+	VNC_CheckAdvanceTexture( vnc, inCount );
 
-	updateMask = 1 << vnc->updateTexIndex;
+	updateMask = 1 << (vnc->updateTexIndex % VNC_TEXTURE_COUNT);
 
 	startMs = Prof_MS();
 
-	for ( inIndex = 0; inIndex < vncThread->inCount; inIndex++ )
+	for ( inIndex = 0; inIndex < inCount; inIndex++ )
 	{
 		in = &vncThread->inQueue[inIndex];
 
 		switch ( in->kind )
 		{
 		case VNC_INQUEUE_NOP:
-		case VNC_INQUEUE_RESIZE: // Handled by VNC_CheckAdvanceTexture
 			break;
+
+		case VNC_INQUEUE_RESIZE:
+			if ( !(in->updateMask & updateMask) )
+			{
+				VNC_HandleResize( vnc, in );
+
+				in->updateMask |= updateMask;				
+				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+					in->kind = VNC_INQUEUE_NOP;
+			}
+			break;
+
 		case VNC_INQUEUE_UPDATE:
 			if ( !(in->updateMask & updateMask) )
 			{
@@ -1893,6 +1938,7 @@ static void VNC_InQueue( SVNCWidget *vnc )
 				}
 			}
 			break;
+
 		case VNC_INQUEUE_FINISHED_UPDATES:
 			if ( !(in->updateMask & updateMask) )
 			{
@@ -1903,14 +1949,24 @@ static void VNC_InQueue( SVNCWidget *vnc )
 					in->kind = VNC_INQUEUE_NOP;
 			}
 			break;
+
 		case VNC_INQUEUE_STATE:
 			VNC_HandleState( vnc, in );
 			in->kind = VNC_INQUEUE_NOP;
+
+			// Disconnection check
+			if ( !vnc->thread ) 
+			{
+				Prof_Stop( PROF_VNC_WIDGET_INQUEUE );
+				return;
+			}
 			break;
+
 		case VNC_INQUEUE_CLIPBOARD:
 			VNC_HandleClipboard( vnc, in );
 			in->kind = VNC_INQUEUE_NOP;
 			break;
+
 		default:
 			assert( false );
 			break;
@@ -1919,6 +1975,8 @@ static void VNC_InQueue( SVNCWidget *vnc )
 		// if ( Prof_MS() - startMs > 10.0f )
 		// 	break;
 	}
+
+	pthread_mutex_lock( &vncThread->inMutex );
 
 	newInCount = 0;
 	for ( inIndex = 0; inIndex < vncThread->inCount; inIndex++ )
@@ -1974,7 +2032,7 @@ void VNC_DrawWidget( SVNCWidget *vnc, const Matrix4f &view )
 	glUniform2f( s_vncGlob.noiseParams, 0.05f, t );
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->drawTexIndex] );
+	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->drawTexIndex % VNC_TEXTURE_COUNT] );
 
 #if USE_SPLIT_DRAW
 	glBindVertexArrayOES_( vnc->geometry.vertexArrayObject );
@@ -2004,7 +2062,7 @@ void VNC_DrawWidget( SVNCWidget *vnc, const Matrix4f &view )
 
 GLint VNC_GetTexID( SVNCWidget *vnc )
 {
-	return vnc->texId[vnc->drawTexIndex];
+	return vnc->texId[vnc->drawTexIndex % VNC_TEXTURE_COUNT];
 }
 
 
@@ -2022,13 +2080,13 @@ int VNC_GetHeight( SVNCWidget *vnc )
 
 int VNC_GetTexWidth( SVNCWidget *vnc )
 {
-	return vnc->texWidth[vnc->drawTexIndex];
+	return vnc->texWidth[vnc->drawTexIndex % VNC_TEXTURE_COUNT];
 }
 
 
 int VNC_GetTexHeight( SVNCWidget *vnc )
 {
-	return vnc->texHeight[vnc->drawTexIndex];
+	return vnc->texHeight[vnc->drawTexIndex % VNC_TEXTURE_COUNT];
 }
 
 
