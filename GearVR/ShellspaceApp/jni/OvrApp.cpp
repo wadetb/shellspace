@@ -76,7 +76,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	// ovrHmdInfo &hmdInfo = app->GetHmdInfo();
 
-	app->SetShowFPS( true );
+	// app->SetShowFPS( true );
 
 	// Stay exactly at the origin, so the panorama globe is equidistant
 	// Don't clear the head model neck length, or swipe view panels feel wrong.
@@ -92,10 +92,10 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	vnc = VNC_CreateWidget();
 
-	VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
-	// VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot
+	// VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
+	VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot; phone is 192.168.43.1
 	// VNC_Connect( vnc, "192.168.0.103:0", "asdf" ); // rangeley
-	// VNC_Connect( vnc, "10.90.240.248:0", "asdf" );
+	// VNC_Connect( vnc, "10.90.240.66:0", "asdf" );
 	// VNC_Connect( vnc, "10.90.240.93:0", "asdf" );
 }
 

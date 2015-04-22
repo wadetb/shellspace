@@ -110,39 +110,39 @@ rfbClientProtocolExtension* rfbClientExtensions = NULL;
 
 void rfbClientRegisterExtension(rfbClientProtocolExtension* e)
 {
-	e->next = rfbClientExtensions;
-	rfbClientExtensions = e;
+        e->next = rfbClientExtensions;
+        rfbClientExtensions = e;
 }
 
 /* client data */
 
 void rfbClientSetClientData(rfbClient* client, void* tag, void* data)
 {
-	rfbClientData* clientData = client->clientData;
+        rfbClientData* clientData = client->clientData;
 
-	while(clientData && clientData->tag != tag)
-		clientData = clientData->next;
-	if(clientData == NULL) {
-		clientData = calloc(sizeof(rfbClientData), 1);
-		clientData->next = client->clientData;
-		client->clientData = clientData;
-		clientData->tag = tag;
-	}
+        while(clientData && clientData->tag != tag)
+                clientData = clientData->next;
+        if(clientData == NULL) {
+                clientData = calloc(sizeof(rfbClientData), 1);
+                clientData->next = client->clientData;
+                client->clientData = clientData;
+                clientData->tag = tag;
+        }
 
-	clientData->data = data;
+        clientData->data = data;
 }
 
 void* rfbClientGetClientData(rfbClient* client, void* tag)
 {
-	rfbClientData* clientData = client->clientData;
+        rfbClientData* clientData = client->clientData;
 
-	while(clientData) {
-		if(clientData->tag == tag)
-			return clientData->data;
-		clientData = clientData->next;
-	}
+        while(clientData) {
+                if(clientData->tag == tag)
+                        return clientData->data;
+                clientData = clientData->next;
+        }
 
-	return NULL;
+        return NULL;
 }
 
 /* messages */
@@ -153,7 +153,7 @@ static void FillRectangle(rfbClient* client, int x, int y, int w, int h, uint32_
 #define FILL_RECT(BPP) \
     for(j=y*client->width;j<(y+h)*client->width;j+=client->width) \
       for(i=x;i<x+w;i++) \
-	((uint##BPP##_t*)client->frameBuffer)[j+i]=colour;
+        ((uint##BPP##_t*)client->frameBuffer)[j+i]=colour;
 
   switch(client->format.bitsPerPixel) {
   case  8: FILL_RECT(8);  break;
@@ -1122,7 +1122,7 @@ InitialiseRFBConnection(rfbClient* client)
   }
 
   rfbClientLog("VNC server supports protocol version %d.%d (viewer %d.%d)\n",
-	  major, minor, rfbProtocolMajorVersion, rfbProtocolMinorVersion);
+          major, minor, rfbProtocolMajorVersion, rfbProtocolMinorVersion);
 
   sprintf(pv,rfbProtocolVersionFormat,client->major,client->minor);
 
@@ -1239,7 +1239,7 @@ InitialiseRFBConnection(rfbClient* client)
 
   default:
     rfbClientLog("Unknown authentication scheme from VNC server: %d\n",
-	    (int)authScheme);
+            (int)authScheme);
     return FALSE;
   }
 
@@ -1271,7 +1271,7 @@ InitialiseRFBConnection(rfbClient* client)
   rfbClientLog("Desktop name \"%s\"\n",client->desktopName);
 
   rfbClientLog("Connected to VNC server, using protocol version %d.%d\n",
-	  client->major, client->minor);
+          client->major, client->minor);
 
   rfbClientLog("VNC server default format:\n");
   PrintPixelFormat(&client->si.format);
@@ -1323,58 +1323,58 @@ SetFormatAndEncodings(rfbClient* client)
     do {
       const char *nextEncStr = strchr(encStr, ' ');
       if (nextEncStr) {
-	encStrLen = nextEncStr - encStr;
-	nextEncStr++;
+        encStrLen = nextEncStr - encStr;
+        nextEncStr++;
       } else {
-	encStrLen = strlen(encStr);
+        encStrLen = strlen(encStr);
       }
 
       if (strncasecmp(encStr,"raw",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingRaw);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingRaw);
       } else if (strncasecmp(encStr,"copyrect",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingCopyRect);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingCopyRect);
 #ifdef LIBVNCSERVER_HAVE_LIBZ
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
       } else if (strncasecmp(encStr,"tight",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingTight);
-	requestLastRectEncoding = TRUE;
-	if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
-	  requestCompressLevel = TRUE;
-	if (client->appData.enableJPEG)
-	  requestQualityLevel = TRUE;
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingTight);
+        requestLastRectEncoding = TRUE;
+        if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
+          requestCompressLevel = TRUE;
+        if (client->appData.enableJPEG)
+          requestQualityLevel = TRUE;
 #endif
 #endif
       } else if (strncasecmp(encStr,"hextile",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingHextile);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingHextile);
 #ifdef LIBVNCSERVER_HAVE_LIBZ
       } else if (strncasecmp(encStr,"zlib",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZlib);
-	if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
-	  requestCompressLevel = TRUE;
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZlib);
+        if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
+          requestCompressLevel = TRUE;
       } else if (strncasecmp(encStr,"zlibhex",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZlibHex);
-	if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
-	  requestCompressLevel = TRUE;
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZlibHex);
+        if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9)
+          requestCompressLevel = TRUE;
       } else if (strncasecmp(encStr,"zrle",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZRLE);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZRLE);
       } else if (strncasecmp(encStr,"zywrle",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZYWRLE);
-	requestQualityLevel = TRUE;
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingZYWRLE);
+        requestQualityLevel = TRUE;
 #endif
       } else if ((strncasecmp(encStr,"ultra",encStrLen) == 0) || (strncasecmp(encStr,"ultrazip",encStrLen) == 0)) {
         /* There are 2 encodings used in 'ultra' */
         encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingUltra);
         encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingUltraZip);
       } else if (strncasecmp(encStr,"corre",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingCoRRE);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingCoRRE);
       } else if (strncasecmp(encStr,"rre",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingRRE);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingRRE);
 #ifdef LIBVNCSERVER_CONFIG_LIBVA
       } else if (strncasecmp(encStr,"h264",encStrLen) == 0) {
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingH264);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingH264);
 #endif
       } else {
-	rfbClientLog("Unknown encoding '%.*s'\n",encStrLen,encStr);
+        rfbClientLog("Unknown encoding '%.*s'\n",encStrLen,encStr);
       }
 
       encStr = nextEncStr;
@@ -1382,14 +1382,14 @@ SetFormatAndEncodings(rfbClient* client)
 
     if (se->nEncodings < MAX_ENCODINGS && requestCompressLevel) {
       encs[se->nEncodings++] = rfbClientSwap32IfLE(client->appData.compressLevel +
-					  rfbEncodingCompressLevel0);
+                                          rfbEncodingCompressLevel0);
     }
 
     if (se->nEncodings < MAX_ENCODINGS && requestQualityLevel) {
       if (client->appData.qualityLevel < 0 || client->appData.qualityLevel > 9)
         client->appData.qualityLevel = 5;
       encs[se->nEncodings++] = rfbClientSwap32IfLE(client->appData.qualityLevel +
-					  rfbEncodingQualityLevel0);
+                                          rfbEncodingQualityLevel0);
     }
   }
   else {
@@ -1401,7 +1401,7 @@ SetFormatAndEncodings(rfbClient* client)
       encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingRaw);
       /*
       } else {
-	rfbClientLog("Tunneling active: preferring tight encoding\n");
+        rfbClientLog("Tunneling active: preferring tight encoding\n");
       }
       */
     }
@@ -1426,20 +1426,20 @@ SetFormatAndEncodings(rfbClient* client)
 
     if (client->appData.compressLevel >= 0 && client->appData.compressLevel <= 9) {
       encs[se->nEncodings++] = rfbClientSwap32IfLE(client->appData.compressLevel +
-					  rfbEncodingCompressLevel0);
+                                          rfbEncodingCompressLevel0);
     } else /* if (!tunnelSpecified) */ {
       /* If -tunnel option was provided, we assume that server machine is
-	 not in the local network so we use default compression level for
-	 tight encoding instead of fast compression. Thus we are
-	 requesting level 1 compression only if tunneling is not used. */
+         not in the local network so we use default compression level for
+         tight encoding instead of fast compression. Thus we are
+         requesting level 1 compression only if tunneling is not used. */
       encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingCompressLevel1);
     }
 
     if (client->appData.enableJPEG) {
       if (client->appData.qualityLevel < 0 || client->appData.qualityLevel > 9)
-	client->appData.qualityLevel = 5;
+        client->appData.qualityLevel = 5;
       encs[se->nEncodings++] = rfbClientSwap32IfLE(client->appData.qualityLevel +
-					  rfbEncodingQualityLevel0);
+                                          rfbEncodingQualityLevel0);
     }
 #ifdef LIBVNCSERVER_CONFIG_LIBVA
     encs[se->nEncodings++] = rfbClientSwap32IfLE(rfbEncodingH264);
@@ -1488,7 +1488,7 @@ SetFormatAndEncodings(rfbClient* client)
     if(e->encodings) {
       int* enc;
       for(enc = e->encodings; *enc; enc++)
-	encs[se->nEncodings++] = rfbClientSwap32IfLE(*enc);
+        encs[se->nEncodings++] = rfbClientSwap32IfLE(*enc);
     }
 
   len = sz_rfbSetEncodingsMsg + se->nEncodings * 4;
@@ -1508,9 +1508,9 @@ SetFormatAndEncodings(rfbClient* client)
 rfbBool
 SendIncrementalFramebufferUpdateRequest(rfbClient* client)
 {
-	return SendFramebufferUpdateRequest(client,
-			client->updateRect.x, client->updateRect.y,
-			client->updateRect.w, client->updateRect.h, TRUE);
+        return SendFramebufferUpdateRequest(client,
+                        client->updateRect.x, client->updateRect.y,
+                        client->updateRect.w, client->updateRect.h, TRUE);
 }
 
 
@@ -1731,7 +1731,7 @@ SendClientCutText(rfbClient* client, char *str, int len)
   cct.type = rfbClientCutText;
   cct.length = rfbClientSwap32IfLE(len);
   return  (WriteToRFBServer(client, (char *)&cct, sz_rfbClientCutTextMsg) &&
-	   WriteToRFBServer(client, str, len));
+           WriteToRFBServer(client, str, len));
 }
 
 
@@ -1760,7 +1760,7 @@ HandleRFBServerMessage(rfbClient* client)
     XColor xc;
 
     if (!ReadFromRFBServer(client, ((char *)&msg) + 1,
-			   sz_rfbSetColourMapEntriesMsg - 1))
+                           sz_rfbSetColourMapEntriesMsg - 1))
       return FALSE;
 
     msg.scme.firstColour = rfbClientSwap16IfLE(msg.scme.firstColour);
@@ -1768,7 +1768,7 @@ HandleRFBServerMessage(rfbClient* client)
 
     for (i = 0; i < msg.scme.nColours; i++) {
       if (!ReadFromRFBServer(client, (char *)rgb, 6))
-	return FALSE;
+        return FALSE;
       xc.pixel = msg.scme.firstColour + i;
       xc.red = rfbClientSwap16IfLE(rgb[0]);
       xc.green = rfbClientSwap16IfLE(rgb[1]);
@@ -1789,18 +1789,18 @@ HandleRFBServerMessage(rfbClient* client)
     int i;
 
     if (!ReadFromRFBServer(client, ((char *)&msg.fu) + 1,
-			   sz_rfbFramebufferUpdateMsg - 1))
+                           sz_rfbFramebufferUpdateMsg - 1))
       return FALSE;
 
     msg.fu.nRects = rfbClientSwap16IfLE(msg.fu.nRects);
 
     for (i = 0; i < msg.fu.nRects; i++) {
       if (!ReadFromRFBServer(client, (char *)&rect, sz_rfbFramebufferUpdateRectHeader))
-	return FALSE;
+        return FALSE;
 
       rect.encoding = rfbClientSwap32IfLE(rect.encoding);
       if (rect.encoding == rfbEncodingLastRect)
-	break;
+        break;
 
       rect.r.x = rfbClientSwap16IfLE(rect.r.x);
       rect.r.y = rfbClientSwap16IfLE(rect.r.y);
@@ -1809,21 +1809,21 @@ HandleRFBServerMessage(rfbClient* client)
 
 
       if (rect.encoding == rfbEncodingXCursor ||
-	  rect.encoding == rfbEncodingRichCursor) {
+          rect.encoding == rfbEncodingRichCursor) {
 
-	if (!HandleCursorShape(client,
-			       rect.r.x, rect.r.y, rect.r.w, rect.r.h,
-			       rect.encoding)) {
-	  return FALSE;
-	}
-	continue;
+        if (!HandleCursorShape(client,
+                               rect.r.x, rect.r.y, rect.r.w, rect.r.h,
+                               rect.encoding)) {
+          return FALSE;
+        }
+        continue;
       }
 
       if (rect.encoding == rfbEncodingPointerPos) {
-	if (!client->HandleCursorPos(client,rect.r.x, rect.r.y)) {
-	  return FALSE;
-	}
-	continue;
+        if (!client->HandleCursorPos(client,rect.r.x, rect.r.y)) {
+          return FALSE;
+        }
+        continue;
       }
       
       if (rect.encoding == rfbEncodingKeyboardLedState) {
@@ -1837,16 +1837,16 @@ HandleRFBServerMessage(rfbClient* client)
       }
 
       if (rect.encoding == rfbEncodingNewFBSize) {
-	client->width = rect.r.w;
-	client->height = rect.r.h;
-	client->updateRect.x = client->updateRect.y = 0;
-	client->updateRect.w = client->width;
-	client->updateRect.h = client->height;
-	if (!client->MallocFrameBuffer(client))
-	  return FALSE;
-	SendFramebufferUpdateRequest(client, 0, 0, rect.r.w, rect.r.h, FALSE);
-	rfbClientLog("Got new framebuffer size: %dx%d\n", rect.r.w, rect.r.h);
-	continue;
+        client->width = rect.r.w;
+        client->height = rect.r.h;
+        client->updateRect.x = client->updateRect.y = 0;
+        client->updateRect.w = client->width;
+        client->updateRect.h = client->height;
+        if (!client->MallocFrameBuffer(client))
+          return FALSE;
+        SendFramebufferUpdateRequest(client, 0, 0, rect.r.w, rect.r.h, FALSE);
+        rfbClientLog("Got new framebuffer size: %dx%d\n", rect.r.w, rect.r.h);
+        continue;
       }
 
       /* rect.r.w=byte count */
@@ -1911,11 +1911,11 @@ HandleRFBServerMessage(rfbClient* client)
       if (rect.encoding != rfbEncodingUltraZip)
       {
         if ((rect.r.x + rect.r.w > client->width) ||
-	    (rect.r.y + rect.r.h > client->height))
-	    {
-	      rfbClientLog("Rect too large: %dx%d at (%d, %d)\n",
-	  	  rect.r.w, rect.r.h, rect.r.x, rect.r.y);
-	      return FALSE;
+            (rect.r.y + rect.r.h > client->height))
+            {
+              rfbClientLog("Rect too large: %dx%d at (%d, %d)\n",
+                  rect.r.w, rect.r.h, rect.r.x, rect.r.y);
+              return FALSE;
             }
 
         /* UltraVNC with scaling, will send rectangles with a zero W or H
@@ -1923,122 +1923,122 @@ HandleRFBServerMessage(rfbClient* client)
         if ((rect.encoding != rfbEncodingTight) && 
             (rect.r.h * rect.r.w == 0))
         {
-	  rfbClientLog("Zero size rect - ignoring (encoding=%d (0x%08x) %dx, %dy, %dw, %dh)\n", rect.encoding, rect.encoding, rect.r.x, rect.r.y, rect.r.w, rect.r.h);
-	  continue;
+          rfbClientLog("Zero size rect - ignoring (encoding=%d (0x%08x) %dx, %dy, %dw, %dh)\n", rect.encoding, rect.encoding, rect.r.x, rect.r.y, rect.r.w, rect.r.h);
+          continue;
         }
         */
         
         /* If RichCursor encoding is used, we should prevent collisions
-	   between framebuffer updates and cursor drawing operations. */
+           between framebuffer updates and cursor drawing operations. */
         client->SoftCursorLockArea(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h);
       }
 
       switch (rect.encoding) {
 
       case rfbEncodingRaw: {
-	int y=rect.r.y, h=rect.r.h;
+        int y=rect.r.y, h=rect.r.h;
 
-	bytesPerLine = rect.r.w * client->format.bitsPerPixel / 8;
-	linesToRead = RFB_BUFFER_SIZE / bytesPerLine;
+        bytesPerLine = rect.r.w * client->format.bitsPerPixel / 8;
+        linesToRead = RFB_BUFFER_SIZE / bytesPerLine;
 
-	while (h > 0) {
-	  if (linesToRead > h)
-	    linesToRead = h;
+        while (h > 0) {
+          if (linesToRead > h)
+            linesToRead = h;
 
-	  if (!ReadFromRFBServer(client, client->buffer,bytesPerLine * linesToRead))
-	    return FALSE;
+          if (!ReadFromRFBServer(client, client->buffer,bytesPerLine * linesToRead))
+            return FALSE;
 
-	  CopyRectangle(client, (uint8_t *)client->buffer,
-			   rect.r.x, y, rect.r.w,linesToRead);
+          CopyRectangle(client, (uint8_t *)client->buffer,
+                           rect.r.x, y, rect.r.w,linesToRead);
 
-	  h -= linesToRead;
-	  y += linesToRead;
+          h -= linesToRead;
+          y += linesToRead;
 
-	}
+        }
       } break;
 
       case rfbEncodingCopyRect:
       {
-	rfbCopyRect cr;
+        rfbCopyRect cr;
 
-	if (!ReadFromRFBServer(client, (char *)&cr, sz_rfbCopyRect))
-	  return FALSE;
+        if (!ReadFromRFBServer(client, (char *)&cr, sz_rfbCopyRect))
+          return FALSE;
 
-	cr.srcX = rfbClientSwap16IfLE(cr.srcX);
-	cr.srcY = rfbClientSwap16IfLE(cr.srcY);
+        cr.srcX = rfbClientSwap16IfLE(cr.srcX);
+        cr.srcY = rfbClientSwap16IfLE(cr.srcY);
 
-	/* If RichCursor encoding is used, we should extend our
-	   "cursor lock area" (previously set to destination
-	   rectangle) to the source rectangle as well. */
-	client->SoftCursorLockArea(client,
-				   cr.srcX, cr.srcY, rect.r.w, rect.r.h);
+        /* If RichCursor encoding is used, we should extend our
+           "cursor lock area" (previously set to destination
+           rectangle) to the source rectangle as well. */
+        client->SoftCursorLockArea(client,
+                                   cr.srcX, cr.srcY, rect.r.w, rect.r.h);
 
         if (client->GotCopyRect != NULL) {
           client->GotCopyRect(client, cr.srcX, cr.srcY, rect.r.w, rect.r.h,
               rect.r.x, rect.r.y);
         } else
-		CopyRectangleFromRectangle(client,
-				   cr.srcX, cr.srcY, rect.r.w, rect.r.h,
-				   rect.r.x, rect.r.y);
+                CopyRectangleFromRectangle(client,
+                                   cr.srcX, cr.srcY, rect.r.w, rect.r.h,
+                                   rect.r.x, rect.r.y);
 
-	break;
+        break;
       }
 
       case rfbEncodingRRE:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (!HandleRRE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 32:
-	  if (!HandleRRE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (!HandleRRE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 32:
+          if (!HandleRRE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        break;
       }
 
       case rfbEncodingCoRRE:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleCoRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (!HandleCoRRE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 32:
-	  if (!HandleCoRRE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleCoRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (!HandleCoRRE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 32:
+          if (!HandleCoRRE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        break;
       }
 
       case rfbEncodingHextile:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleHextile8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (!HandleHextile16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 32:
-	  if (!HandleHextile32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleHextile8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (!HandleHextile16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 32:
+          if (!HandleHextile32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        break;
       }
 
       case rfbEncodingUltra:
@@ -2081,111 +2081,111 @@ HandleRFBServerMessage(rfbClient* client)
 #ifdef LIBVNCSERVER_HAVE_LIBZ
       case rfbEncodingZlib:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleZlib8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (!HandleZlib16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 32:
-	  if (!HandleZlib32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleZlib8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (!HandleZlib16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 32:
+          if (!HandleZlib32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        break;
      }
 
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
       case rfbEncodingTight:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleTight8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (!HandleTight16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 32:
-	  if (!HandleTight32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleTight8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (!HandleTight16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 32:
+          if (!HandleTight32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        break;
       }
 #endif
       case rfbEncodingZRLE:
-	/* Fail safe for ZYWRLE unsupport VNC server. */
-	client->appData.qualityLevel = 9;
-	/* fall through */
+        /* Fail safe for ZYWRLE unsupport VNC server. */
+        client->appData.qualityLevel = 9;
+        /* fall through */
       case rfbEncodingZYWRLE:
       {
-	switch (client->format.bitsPerPixel) {
-	case 8:
-	  if (!HandleZRLE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	case 16:
-	  if (client->si.format.greenMax > 0x1F) {
-	    if (!HandleZRLE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	      return FALSE;
-	  } else {
-	    if (!HandleZRLE15(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	      return FALSE;
-	  }
-	  break;
-	case 32:
-	{
-	  uint32_t maxColor=(client->format.redMax<<client->format.redShift)|
-		(client->format.greenMax<<client->format.greenShift)|
-		(client->format.blueMax<<client->format.blueShift);
-	  if ((client->format.bigEndian && (maxColor&0xff)==0) ||
-	      (!client->format.bigEndian && (maxColor&0xff000000)==0)) {
-	    if (!HandleZRLE24(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	      return FALSE;
-	  } else if (!client->format.bigEndian && (maxColor&0xff)==0) {
-	    if (!HandleZRLE24Up(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	      return FALSE;
-	  } else if (client->format.bigEndian && (maxColor&0xff000000)==0) {
-	    if (!HandleZRLE24Down(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	      return FALSE;
-	  } else if (!HandleZRLE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
-	    return FALSE;
-	  break;
-	}
-	}
-	break;
+        switch (client->format.bitsPerPixel) {
+        case 8:
+          if (!HandleZRLE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        case 16:
+          if (client->si.format.greenMax > 0x1F) {
+            if (!HandleZRLE16(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+              return FALSE;
+          } else {
+            if (!HandleZRLE15(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+              return FALSE;
+          }
+          break;
+        case 32:
+        {
+          uint32_t maxColor=(client->format.redMax<<client->format.redShift)|
+                (client->format.greenMax<<client->format.greenShift)|
+                (client->format.blueMax<<client->format.blueShift);
+          if ((client->format.bigEndian && (maxColor&0xff)==0) ||
+              (!client->format.bigEndian && (maxColor&0xff000000)==0)) {
+            if (!HandleZRLE24(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+              return FALSE;
+          } else if (!client->format.bigEndian && (maxColor&0xff)==0) {
+            if (!HandleZRLE24Up(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+              return FALSE;
+          } else if (client->format.bigEndian && (maxColor&0xff000000)==0) {
+            if (!HandleZRLE24Down(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+              return FALSE;
+          } else if (!HandleZRLE32(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
+            return FALSE;
+          break;
+        }
+        }
+        break;
      }
 
 #endif
 #ifdef LIBVNCSERVER_CONFIG_LIBVA
       case rfbEncodingH264:
       {
-	if (!HandleH264(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h))
-	  return FALSE;
-	break;
+        if (!HandleH264(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h))
+          return FALSE;
+        break;
       }
 #endif
 
       default:
-	 {
-	   rfbBool handled = FALSE;
-	   rfbClientProtocolExtension* e;
+         {
+           rfbBool handled = FALSE;
+           rfbClientProtocolExtension* e;
 
-	   for(e = rfbClientExtensions; !handled && e; e = e->next)
-	     if(e->handleEncoding && e->handleEncoding(client, &rect))
-	       handled = TRUE;
+           for(e = rfbClientExtensions; !handled && e; e = e->next)
+             if(e->handleEncoding && e->handleEncoding(client, &rect))
+               handled = TRUE;
 
-	   if(!handled) {
-	     rfbClientLog("Unknown rect encoding %d\n",
-		 (int)rect.encoding);
-	     return FALSE;
-	   }
-	 }
+           if(!handled) {
+             rfbClientLog("Unknown rect encoding %d\n",
+                 (int)rect.encoding);
+             return FALSE;
+           }
+         }
       }
 
       /* Now we may discard "soft cursor locks". */
@@ -2215,7 +2215,7 @@ HandleRFBServerMessage(rfbClient* client)
     char *buffer;
 
     if (!ReadFromRFBServer(client, ((char *)&msg) + 1,
-			   sz_rfbServerCutTextMsg - 1))
+                           sz_rfbServerCutTextMsg - 1))
       return FALSE;
 
     msg.sct.length = rfbClientSwap32IfLE(msg.sct.length);
@@ -2335,14 +2335,14 @@ HandleRFBServerMessage(rfbClient* client)
       rfbClientProtocolExtension* e;
 
       for(e = rfbClientExtensions; !handled && e; e = e->next)
-	if(e->handleMessage && e->handleMessage(client, &msg))
-	  handled = TRUE;
+        if(e->handleMessage && e->handleMessage(client, &msg))
+          handled = TRUE;
 
       if(!handled) {
-	char buffer[256];
-	rfbClientLog("Unknown message type %d from VNC server\n",msg.type);
-	ReadFromRFBServer(client, buffer, 256);
-	return FALSE;
+        char buffer[256];
+        rfbClientLog("Unknown message type %d from VNC server\n",msg.type);
+        ReadFromRFBServer(client, buffer, 256);
+        return FALSE;
       }
     }
   }
@@ -2354,12 +2354,12 @@ HandleRFBServerMessage(rfbClient* client)
 #define GET_PIXEL8(pix, ptr) ((pix) = *(ptr)++)
 
 #define GET_PIXEL16(pix, ptr) (((uint8_t*)&(pix))[0] = *(ptr)++, \
-			       ((uint8_t*)&(pix))[1] = *(ptr)++)
+                               ((uint8_t*)&(pix))[1] = *(ptr)++)
 
 #define GET_PIXEL32(pix, ptr) (((uint8_t*)&(pix))[0] = *(ptr)++, \
-			       ((uint8_t*)&(pix))[1] = *(ptr)++, \
-			       ((uint8_t*)&(pix))[2] = *(ptr)++, \
-			       ((uint8_t*)&(pix))[3] = *(ptr)++)
+                               ((uint8_t*)&(pix))[1] = *(ptr)++, \
+                               ((uint8_t*)&(pix))[2] = *(ptr)++, \
+                               ((uint8_t*)&(pix))[3] = *(ptr)++)
 
 /* CONCAT2 concatenates its two arguments.  CONCAT2E does the same but also
    expands its arguments if they are macros */
@@ -2419,19 +2419,19 @@ PrintPixelFormat(rfbPixelFormat *format)
   if (format->bitsPerPixel == 1) {
     rfbClientLog("  Single bit per pixel.\n");
     rfbClientLog(
-	    "  %s significant bit in each byte is leftmost on the screen.\n",
-	    (format->bigEndian ? "Most" : "Least"));
+            "  %s significant bit in each byte is leftmost on the screen.\n",
+            (format->bigEndian ? "Most" : "Least"));
   } else {
     rfbClientLog("  %d bits per pixel.\n",format->bitsPerPixel);
     if (format->bitsPerPixel != 8) {
       rfbClientLog("  %s significant byte first in each pixel.\n",
-	      (format->bigEndian ? "Most" : "Least"));
+              (format->bigEndian ? "Most" : "Least"));
     }
     if (format->trueColour) {
       rfbClientLog("  TRUE colour: max red %d green %d blue %d"
-		   ", shift red %d green %d blue %d\n",
-		   format->redMax, format->greenMax, format->blueMax,
-		   format->redShift, format->greenShift, format->blueShift);
+                   ", shift red %d green %d blue %d\n",
+                   format->redMax, format->greenMax, format->blueMax,
+                   format->redShift, format->greenShift, format->blueShift);
     } else {
       rfbClientLog("  Colour map (not true colour).\n");
     }

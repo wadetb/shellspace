@@ -115,6 +115,7 @@ struct SVNCCursor
 	uint 				yHot;
 	uint 				width;
 	uint 				height;
+	sbool 				needRestore;
 };
 
 
@@ -546,6 +547,7 @@ void VNCThread_UpdateTextureRect( SVNCThread *vncThread, int x, int y, int width
 	frameBuffer = client->frameBuffer;
 	frameBufferWidth = client->width;
 
+	// $$$ This should be throttled such that no single block can cost more than ~1ns on the update thread.
 	buffer = (byte *)malloc( width * height * 4 );
 	assert( buffer );
 
@@ -596,21 +598,7 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 	VNCThread_SetAlpha( vncThread, x, y, w, h );
 #endif // #if USE_OVERLAY
 
-	// $$$ This needs to go into a new vnc_thread_pre_update callback; the restore is currently too late.
-	// saveCursor = VNC_RectOverlapsCursor( vnc, x, y, width, height );
-	// if ( saveCursor )
-	// {
-	//      VNC_CopyCursor( vnc, COPY_FROM_BACKUP );
-	// }
-
 	VNCThread_UpdateTextureRect( vncThread, x, y, w, h );
-
-	// if ( saveCursor )
-	// {
-	//      VNC_CopyCursor( vnc, COPY_TO_BACKUP );
-	//      VNC_CopyCursor( vnc, COPY_FROM_CURSOR );
-	//      VNC_UpdateCursorTextureRect( vnc );
-	// }
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_UPDATE );
 }
@@ -790,6 +778,17 @@ void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int wid
 	vncThread->cursor.buffer = (byte *)malloc( vncThread->cursor.width * vncThread->cursor.height * 4 );
 	assert( vncThread->cursor.buffer );
 
+    memcpy( vncThread->cursor.buffer, client->rcSource, width * height * 4 );
+
+    for ( y = 0; y < height; y++ )
+    {
+        for ( x = 0; x < width; x++ )
+        {
+            maskPixel = client->rcMask[y * width + x];
+            vncThread->cursor.buffer[(y * width + x) * 4 + 3] = maskPixel ? 0xff : 0x00;
+		}
+	}
+
 	vncThread->cursor.backup = (byte *)malloc( vncThread->cursor.width * vncThread->cursor.height * 4 );
 	assert( vncThread->cursor.backup );
 
@@ -840,6 +839,41 @@ static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 
 	return TRUE;
+}
+
+
+void vnc_thread_cursor_lock( rfbClient *client, int x, int y, int w, int h )
+{
+	SVNCThread 		*vncThread;
+
+	assert( client );
+
+	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
+	assert( vncThread );
+
+	if ( VNCThread_RectOverlapsCursor( vncThread, x, y, w, h ) )
+	{
+		vncThread->cursor.needRestore = strue;
+	    VNCThread_CopyCursor( vncThread, COPY_FROM_BACKUP );
+	}
+}
+
+
+void vnc_thread_cursor_unlock( rfbClient *client )
+{
+	SVNCThread 		*vncThread;
+
+	assert( client );
+
+	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
+	assert( vncThread );
+
+	if ( vncThread->cursor.needRestore )
+	{	
+		vncThread->cursor.needRestore = sfalse;
+		VNCThread_CopyCursor( vncThread, COPY_TO_BACKUP );
+		VNCThread_CopyCursor( vncThread, COPY_FROM_CURSOR );
+	}
 }
 
 
@@ -902,12 +936,20 @@ static sbool VNCThread_Connect( SVNCThread *vncThread )
 	client->MallocFrameBuffer = vnc_thread_resize;
 
 	client->GotFrameBufferUpdate = vnc_thread_update;
+	// $$$ Use this to drive drawTexIndex increments?
+	// client->FinishedFrameBufferUpdate = vnc_thread_finished_updates
+	// $$$ Can we implement this to use accelerated blits?
+	// client->GotCopyRect = vnc_thread_copy_rect
 
 	client->appData.useRemoteCursor = TRUE;
 	client->GotCursorShape = vnc_thread_got_cursor_shape;
 	client->HandleCursorPos = vnc_thread_handle_cursor_pos;
-
+	client->SoftCursorLockArea = vnc_thread_cursor_lock;
+	client->SoftCursorUnlockScreen = vnc_thread_cursor_unlock;
 	client->GotXCutText = vnc_thread_got_x_cut_text;
+
+	// $$$ Test Expedited Forwarding (EF) PHB
+	// client->QoS_DSCP = 46;
 
 	rfbClientSetClientData( client, &s_vncThreadClientKey, vncThread );
 
@@ -1190,7 +1232,7 @@ SVNCWidget *VNC_CreateWidget()
 
 	vnc->globeFov = 30.0f;
 	vnc->globeRadius = 100.0f;
-	vnc->globeZ = 100.0f;
+	vnc->globeZ = 120.0f;
 	vnc->globeSize = 60.0f;
 
 	return vnc;
@@ -1678,7 +1720,9 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 		in = &vncThread->inQueue[inIndex];
 		kind = in->kind;
 
-		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+		// if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+		// 	continue;
+		if ( in->updateMask == 1 << updateTexIndex )
 			continue;
 
 		if ( clearPriorToResize )
@@ -1785,8 +1829,10 @@ static void VNC_InQueue( SVNCWidget *vnc )
 			break;
 		}
 
-		if ( vnc->texId[vnc->drawTexIndex] && Prof_MS() - startMs > 10.0f )
-			break;
+		// $$$ This was the culprit behind the black flashing rectangles.
+		//     Need to re-validate assumptions about partial updates.
+		// if ( vnc->texId[vnc->drawTexIndex] && Prof_MS() - startMs > 10.0f )
+		// 	break;
 	}
 
 	if ( inIndex == vncThread->inCount && vnc->drawTexIndex != vnc->updateTexIndex )

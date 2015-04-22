@@ -61,31 +61,31 @@ static char* NoPassword(rfbClient* client) {
 
 static char* ReadPassword(rfbClient* client) {
 #ifdef WIN32
-	/* FIXME */
-	rfbClientErr("ReadPassword on Windows NOT IMPLEMENTED\n");
-	return NoPassword(client);
+        /* FIXME */
+        rfbClientErr("ReadPassword on Windows NOT IMPLEMENTED\n");
+        return NoPassword(client);
 #else
-	int i;
-	char* p=malloc(9);
-	struct termios save,noecho;
-	p[0]=0;
-	if(tcgetattr(fileno(stdin),&save)!=0) return p;
-	noecho=save; noecho.c_lflag &= ~ECHO;
-	if(tcsetattr(fileno(stdin),TCSAFLUSH,&noecho)!=0) return p;
-	fprintf(stderr,"Password: ");
-	i=0;
-	while(1) {
-		int c=fgetc(stdin);
-		if(c=='\n')
-			break;
-		if(i<8) {
-			p[i]=c;
-			i++;
-			p[i]=0;
-		}
-	}
-	tcsetattr(fileno(stdin),TCSAFLUSH,&save);
-	return p;
+        int i;
+        char* p=malloc(9);
+        struct termios save,noecho;
+        p[0]=0;
+        if(tcgetattr(fileno(stdin),&save)!=0) return p;
+        noecho=save; noecho.c_lflag &= ~ECHO;
+        if(tcsetattr(fileno(stdin),TCSAFLUSH,&noecho)!=0) return p;
+        fprintf(stderr,"Password: ");
+        i=0;
+        while(1) {
+                int c=fgetc(stdin);
+                if(c=='\n')
+                        break;
+                if(i<8) {
+                        p[i]=c;
+                        i++;
+                        p[i]=0;
+                }
+        }
+        tcsetattr(fileno(stdin),TCSAFLUSH,&save);
+        return p;
 #endif
 }
 static rfbBool MallocFrameBuffer(rfbClient* client) {
@@ -114,30 +114,30 @@ static rfbBool MallocFrameBuffer(rfbClient* client) {
 }
 
 static void initAppData(AppData* data) {
-	data->shareDesktop=TRUE;
-	data->viewOnly=FALSE;
+        data->shareDesktop=TRUE;
+        data->viewOnly=FALSE;
 #ifdef LIBVNCSERVER_CONFIG_LIBVA
-	data->encodingsString="h264 tight zrle ultra copyrect hextile zlib corre rre raw";
+        data->encodingsString="h264 tight zrle ultra copyrect hextile zlib corre rre raw";
 #else
-	data->encodingsString="tight zrle ultra copyrect hextile zlib corre rre raw";
+        data->encodingsString="tight zrle ultra copyrect hextile zlib corre rre raw";
 #endif
-	data->useBGR233=FALSE;
-	data->nColours=0;
-	data->forceOwnCmap=FALSE;
-	data->forceTrueColour=FALSE;
-	data->requestedDepth=0;
-	data->compressLevel=3;
-	data->qualityLevel=5;
+        data->useBGR233=FALSE;
+        data->nColours=0;
+        data->forceOwnCmap=FALSE;
+        data->forceTrueColour=FALSE;
+        data->requestedDepth=0;
+        data->compressLevel=3;
+        data->qualityLevel=5;
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
-	data->enableJPEG=TRUE;
+        data->enableJPEG=TRUE;
 #else
-	data->enableJPEG=FALSE;
+        data->enableJPEG=FALSE;
 #endif
-	data->useRemoteCursor=FALSE;
+        data->useRemoteCursor=FALSE;
 }
 
 rfbClient* rfbGetClient(int bitsPerSample,int samplesPerPixel,
-			int bytesPerPixel) {
+                        int bytesPerPixel) {
   rfbClient* client=(rfbClient*)calloc(sizeof(rfbClient),1);
   if(!client) {
     rfbClientErr("Couldn't allocate client structure!\n");
@@ -184,13 +184,13 @@ rfbClient* rfbGetClient(int bitsPerSample,int samplesPerPixel,
       client->format.blueShift = bitsPerSample * 2;
     } else {
       if(client->format.bitsPerPixel==8*3) {
-	client->format.redShift = bitsPerSample*2;
-	client->format.greenShift = bitsPerSample*1;
-	client->format.blueShift = 0;
+        client->format.redShift = bitsPerSample*2;
+        client->format.greenShift = bitsPerSample*1;
+        client->format.blueShift = 0;
       } else {
-	client->format.redShift = bitsPerSample*3;
-	client->format.greenShift = bitsPerSample*2;
-	client->format.blueShift = bitsPerSample;
+        client->format.redShift = bitsPerSample*3;
+        client->format.greenShift = bitsPerSample*2;
+        client->format.blueShift = bitsPerSample;
       }
     }
   }
@@ -274,19 +274,19 @@ static rfbBool rfbInitConnection(rfbClient* client)
       if (!SendScaleSetting(client, client->appData.scaleSetting))
           return FALSE;
       if (!SendFramebufferUpdateRequest(client,
-			      client->updateRect.x / client->appData.scaleSetting,
-			      client->updateRect.y / client->appData.scaleSetting,
-			      client->updateRect.w / client->appData.scaleSetting,
-			      client->updateRect.h / client->appData.scaleSetting,
-			      FALSE))
-	      return FALSE;
+                              client->updateRect.x / client->appData.scaleSetting,
+                              client->updateRect.y / client->appData.scaleSetting,
+                              client->updateRect.w / client->appData.scaleSetting,
+                              client->updateRect.h / client->appData.scaleSetting,
+                              FALSE))
+              return FALSE;
   }
   else
   {
       if (!SendFramebufferUpdateRequest(client,
-			      client->updateRect.x, client->updateRect.y,
-			      client->updateRect.w, client->updateRect.h,
-			      FALSE))
+                              client->updateRect.x, client->updateRect.y,
+                              client->updateRect.w, client->updateRect.h,
+                              FALSE))
       return FALSE;
   }
 
@@ -303,23 +303,23 @@ rfbBool rfbInitClient(rfbClient* client,int* argc,char** argv) {
     for (i = 1; i < *argc; i++) {
       j = i;  
       if (strcmp(argv[i], "-listen") == 0) {
-	listenForIncomingConnections(client);
-	break;
+        listenForIncomingConnections(client);
+        break;
       } else if (strcmp(argv[i], "-listennofork") == 0) {
-	listenForIncomingConnectionsNoFork(client, -1);
-	break;
+        listenForIncomingConnectionsNoFork(client, -1);
+        break;
       } else if (strcmp(argv[i], "-play") == 0) {
-	client->serverPort = -1;
-	j++;
+        client->serverPort = -1;
+        j++;
       } else if (i+1<*argc && strcmp(argv[i], "-encodings") == 0) {
-	client->appData.encodingsString = argv[i+1];
-	j+=2;
+        client->appData.encodingsString = argv[i+1];
+        j+=2;
       } else if (i+1<*argc && strcmp(argv[i], "-compress") == 0) {
-	client->appData.compressLevel = atoi(argv[i+1]);
-	j+=2;
+        client->appData.compressLevel = atoi(argv[i+1]);
+        j+=2;
       } else if (i+1<*argc && strcmp(argv[i], "-quality") == 0) {
-	client->appData.qualityLevel = atoi(argv[i+1]);
-	j+=2;
+        client->appData.qualityLevel = atoi(argv[i+1]);
+        j+=2;
       } else if (i+1<*argc && strcmp(argv[i], "-scale") == 0) {
         client->appData.scaleSetting = atoi(argv[i+1]);
         j+=2;
@@ -327,39 +327,39 @@ rfbBool rfbInitClient(rfbClient* client,int* argc,char** argv) {
         client->QoS_DSCP = atoi(argv[i+1]);
         j+=2;
       } else if (i+1<*argc && strcmp(argv[i], "-repeaterdest") == 0) {
-	char* colon=strchr(argv[i+1],':');
+        char* colon=strchr(argv[i+1],':');
 
-	if(client->destHost)
-	  free(client->destHost);
+        if(client->destHost)
+          free(client->destHost);
         client->destPort = 5900;
 
-	client->destHost = strdup(argv[i+1]);
-	if(colon) {
-	  client->destHost[(int)(colon-argv[i+1])] = '\0';
-	  client->destPort = atoi(colon+1);
-	}
+        client->destHost = strdup(argv[i+1]);
+        if(colon) {
+          client->destHost[(int)(colon-argv[i+1])] = '\0';
+          client->destPort = atoi(colon+1);
+        }
         j+=2;
       } else {
-	char* colon=strchr(argv[i],':');
+        char* colon=strchr(argv[i],':');
 
-	if(client->serverHost)
-	  free(client->serverHost);
+        if(client->serverHost)
+          free(client->serverHost);
 
-	if(colon) {
-	  client->serverHost = strdup(argv[i]);
-	  client->serverHost[(int)(colon-argv[i])] = '\0';
-	  client->serverPort = atoi(colon+1);
-	} else {
-	  client->serverHost = strdup(argv[i]);
-	}
-	if(client->serverPort >= 0 && client->serverPort < 5900)
-	  client->serverPort += 5900;
+        if(colon) {
+          client->serverHost = strdup(argv[i]);
+          client->serverHost[(int)(colon-argv[i])] = '\0';
+          client->serverPort = atoi(colon+1);
+        } else {
+          client->serverHost = strdup(argv[i]);
+        }
+        if(client->serverPort >= 0 && client->serverPort < 5900)
+          client->serverPort += 5900;
       }
       /* purge arguments */
       if (j>i) {
-	*argc-=j-i;
-	memmove(argv+i,argv+j,(*argc-i)*sizeof(char*));
-	i--;
+        *argc-=j-i;
+        memmove(argv+i,argv+j,(*argc-i)*sizeof(char*));
+        i--;
       }
     }
   }
@@ -380,14 +380,14 @@ void rfbClientCleanup(rfbClient* client) {
   for ( i = 0; i < 4; i++ ) {
     if (client->zlibStreamActive[i] == TRUE ) {
       if (inflateEnd (&client->zlibStream[i]) != Z_OK &&
-	  client->zlibStream[i].msg != NULL)
-	rfbClientLog("inflateEnd: %s\n", client->zlibStream[i].msg);
+          client->zlibStream[i].msg != NULL)
+        rfbClientLog("inflateEnd: %s\n", client->zlibStream[i].msg);
     }
   }
 
   if ( client->decompStreamInited == TRUE ) {
     if (inflateEnd (&client->decompStream) != Z_OK &&
-	client->decompStream.msg != NULL)
+        client->decompStream.msg != NULL)
       rfbClientLog("inflateEnd: %s\n", client->decompStream.msg );
   }
 

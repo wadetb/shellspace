@@ -8,7 +8,7 @@ using namespace OVR;
 
 #define USE_OVERLAY   			0
 #define USE_TEMPORAL 			0
-#define USE_SUPERSAMPLE_2X 		0
+#define USE_SUPERSAMPLE_2X 		1
 #define USE_SUPERSAMPLE_1_5X 	0
 #define USE_SRGB 				1
 #define USE_SPLIT_DRAW 			1

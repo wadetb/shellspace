@@ -1,5 +1,8 @@
 # TODO
 
++ Allow binding swipe axes to different features, with keyboard control.
+  For example swipe in could be "get closer to the image, in the direction I'm looking"
+
 + Wondering what the FPS dip is whenever there's a packet received.  Perhaps I'm introducing a sync point and should be double or triple buffering the input texture?  Drops to 40fps every time there is a window update.  It might also be the mipmap generation.
 
 + Print connection status on VR window - use Toast API?
