@@ -35,6 +35,7 @@ enum EVNCInQueueKind
 	VNC_INQUEUE_STATE,
 	VNC_INQUEUE_RESIZE,
 	VNC_INQUEUE_UPDATE,
+	VNC_INQUEUE_FINISHED_UPDATES,
 	VNC_INQUEUE_CLIPBOARD
 };
 
@@ -585,7 +586,6 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 	byte 			*buffer;
 	int 			xc;
 	int 			yc;
-	// sbool 			saveCursor;
 
 	Prof_Start( PROF_VNC_THREAD_HANDLE_UPDATE );
 
@@ -603,6 +603,32 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_UPDATE );
 }
 
+
+void vnc_thread_finished_updates( rfbClient *client )
+{
+	SVNCThread 		*vncThread;
+	SVNCInQueueItem *in;
+
+	Prof_Start( PROF_VNC_THREAD_HANDLE_FINISHED_UPDATES );
+
+	assert( client );
+
+	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
+	assert( vncThread );
+
+	in = VNCThread_BeginAppendToInQueue( vncThread );
+	if ( !in )
+	{
+		Prof_Stop( PROF_VNC_THREAD_HANDLE_FINISHED_UPDATES );
+		return;
+	}
+
+	in->kind = VNC_INQUEUE_FINISHED_UPDATES;
+
+	VNCThread_EndAppendToInQueue( vncThread );
+
+	Prof_Stop( PROF_VNC_THREAD_HANDLE_FINISHED_UPDATES );
+}
 
 sbool VNCThread_RectOverlapsCursor( SVNCThread *vncThread, int x, int y, int width, int height )
 {
@@ -846,6 +872,8 @@ void vnc_thread_cursor_lock( rfbClient *client, int x, int y, int w, int h )
 {
 	SVNCThread 		*vncThread;
 
+	Prof_Start( PROF_VNC_THREAD_HANDLE_CURSOR_SAVE );
+
 	assert( client );
 
 	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
@@ -856,12 +884,16 @@ void vnc_thread_cursor_lock( rfbClient *client, int x, int y, int w, int h )
 		vncThread->cursor.needRestore = strue;
 	    VNCThread_CopyCursor( vncThread, COPY_FROM_BACKUP );
 	}
+
+	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_SAVE );
 }
 
 
 void vnc_thread_cursor_unlock( rfbClient *client )
 {
 	SVNCThread 		*vncThread;
+
+	Prof_Start( PROF_VNC_THREAD_HANDLE_CURSOR_RESTORE );
 
 	assert( client );
 
@@ -874,6 +906,8 @@ void vnc_thread_cursor_unlock( rfbClient *client )
 		VNCThread_CopyCursor( vncThread, COPY_TO_BACKUP );
 		VNCThread_CopyCursor( vncThread, COPY_FROM_CURSOR );
 	}
+
+	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_RESTORE );
 }
 
 
@@ -936,8 +970,7 @@ static sbool VNCThread_Connect( SVNCThread *vncThread )
 	client->MallocFrameBuffer = vnc_thread_resize;
 
 	client->GotFrameBufferUpdate = vnc_thread_update;
-	// $$$ Use this to drive drawTexIndex increments?
-	// client->FinishedFrameBufferUpdate = vnc_thread_finished_updates
+	client->FinishedFrameBufferUpdate = vnc_thread_finished_updates;
 	// $$$ Can we implement this to use accelerated blits?
 	// client->GotCopyRect = vnc_thread_copy_rect
 
@@ -948,8 +981,9 @@ static sbool VNCThread_Connect( SVNCThread *vncThread )
 	client->SoftCursorUnlockScreen = vnc_thread_cursor_unlock;
 	client->GotXCutText = vnc_thread_got_x_cut_text;
 
-	// $$$ Test Expedited Forwarding (EF) PHB
-	// client->QoS_DSCP = 46;
+	// Expedited Forwarding (EF) PHB
+	// Note that Wikipedia gives the value as 46, but the libvncserver release notes give 184, which is 46 << 2.
+	client->QoS_DSCP = 184;
 
 	rfbClientSetClientData( client, &s_vncThreadClientKey, vncThread );
 
@@ -1559,6 +1593,24 @@ static void VNC_HandleState( SVNCWidget *vnc, const SVNCInQueueItem *in )
 }
 
 
+static void VNC_HandleResize( SVNCWidget *vnc, const SVNCInQueueItem *in )
+{
+	Prof_Start( PROF_VNC_WIDGET_RESIZE );
+
+	assert( vnc );
+	assert( in );
+	assert( in->kind == VNC_INQUEUE_RESIZE );
+
+	vnc->width = in->resize.width;
+	vnc->height = in->resize.height;
+
+	VNC_RebuildTexture( vnc, vnc->width, vnc->height );
+	VNC_RebuildGlobe( vnc );
+
+	Prof_Stop( PROF_VNC_WIDGET_RESIZE );
+}
+
+
 static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 {
 	Prof_Start( PROF_VNC_WIDGET_UPDATE );
@@ -1581,10 +1633,29 @@ static void VNC_HandleUpdate( SVNCWidget *vnc, const SVNCInQueueItem *in )
 
 	GL_CheckErrors( "VNC_UpdateTextureRect after" );
 
-	if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-		free( in->update.buffer );
-
 	Prof_Stop( PROF_VNC_WIDGET_UPDATE );
+}
+
+
+static void VNC_HandleFinishedUpdates( SVNCWidget *vnc, const SVNCInQueueItem *in )
+{
+	Prof_Start( PROF_VNC_WIDGET_FINISHED_UPDATES );
+
+	assert( vnc );
+	assert( in );
+	assert( in->kind == VNC_INQUEUE_FINISHED_UPDATES );
+
+	vnc->drawTexIndex = vnc->updateTexIndex;
+
+	glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
+	// $$$ Could do some mipping of just rectangles affected by updates.
+	glGenerateMipmap( GL_TEXTURE_2D );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	Prof_Stop( PROF_VNC_WIDGET_FINISHED_UPDATES );
 }
 
 
@@ -1720,16 +1791,22 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 		in = &vncThread->inQueue[inIndex];
 		kind = in->kind;
 
-		// if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-		// 	continue;
-		if ( in->updateMask == 1 << updateTexIndex )
+		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
 			continue;
+		// if ( in->updateMask & (1 << updateTexIndex) )
+		// 	continue;
 
 		if ( clearPriorToResize )
 		{
 			if ( kind == VNC_INQUEUE_RESIZE || kind == VNC_INQUEUE_UPDATE )
 			{
 				in->updateMask |= 1 << updateTexIndex;				
+				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+				{
+					if ( kind == VNC_INQUEUE_UPDATE )
+						free( in->update.buffer );
+					in->kind = VNC_INQUEUE_NOP;
+				}
 			}
 		}
 		else
@@ -1750,11 +1827,7 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc )
 					vnc->updateTexIndex = updateTexIndex;
 				}
 
-				vnc->width = in->resize.width;
-				vnc->height = in->resize.height;
-
-				VNC_RebuildTexture( vnc, vnc->width, vnc->height );
-				VNC_RebuildGlobe( vnc );
+				VNC_HandleResize( vnc, in );
 
 				in->updateMask |= 1 << updateTexIndex;				
 				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
@@ -1810,8 +1883,22 @@ static void VNC_InQueue( SVNCWidget *vnc )
 		case VNC_INQUEUE_UPDATE:
 			if ( !(in->updateMask & updateMask) )
 			{
-				in->updateMask |= updateMask;
 				VNC_HandleUpdate( vnc, in );
+
+				in->updateMask |= updateMask;
+				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
+				{
+					free( in->update.buffer );
+					in->kind = VNC_INQUEUE_NOP;
+				}
+			}
+			break;
+		case VNC_INQUEUE_FINISHED_UPDATES:
+			if ( !(in->updateMask & updateMask) )
+			{
+				VNC_HandleFinishedUpdates( vnc, in );
+
+				in->updateMask |= updateMask;
 				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
 					in->kind = VNC_INQUEUE_NOP;
 			}
@@ -1829,23 +1916,8 @@ static void VNC_InQueue( SVNCWidget *vnc )
 			break;
 		}
 
-		// $$$ This was the culprit behind the black flashing rectangles.
-		//     Need to re-validate assumptions about partial updates.
-		// if ( vnc->texId[vnc->drawTexIndex] && Prof_MS() - startMs > 10.0f )
+		// if ( Prof_MS() - startMs > 10.0f )
 		// 	break;
-	}
-
-	if ( inIndex == vncThread->inCount && vnc->drawTexIndex != vnc->updateTexIndex )
-	{
-		vnc->drawTexIndex = vnc->updateTexIndex;
-
-		glBindTexture( GL_TEXTURE_2D, vnc->texId[vnc->updateTexIndex] );
-		// $$$ Could do some mipping of just rectangles affected by updates.
-		glGenerateMipmap( GL_TEXTURE_2D );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		glBindTexture( GL_TEXTURE_2D, 0 );
 	}
 
 	newInCount = 0;

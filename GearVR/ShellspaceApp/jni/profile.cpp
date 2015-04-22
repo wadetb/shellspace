@@ -37,7 +37,9 @@ const char *s_profNames[PROF_COUNT] =
 	" VNCWidget", 				// PROF_VNC_WIDGET
 	"  InQueue",                // PROF_VNC_WIDGET_INQUEUE
 	"   Advance",               // PROF_VNC_WIDGET_ADVANCE
+	"   Resize",                // PROF_VNC_WIDGET_RESIZE
 	"   Update",                // PROF_VNC_WIDGET_UPDATE
+	"   Finished Updates",  	// PROF_VNC_WIDGET_FINISHED_UPDATES
 	" Scene",      				// PROF_SCENE
 	" Draw",      				// PROF_DRAW
 	"  Draw Eye",      			// PROF_DRAW_EYE
@@ -49,8 +51,11 @@ const char *s_profNames[PROF_COUNT] =
 	"  Handle", 				// PROF_VNC_THREAD_HANDLE
 	"   Resize", 				// PROF_VNC_THREAD_HANDLE_RESIZE
 	"   Update", 				// PROF_VNC_THREAD_HANDLE_UPDATE
+	"   Finished Updates", 		// PROF_VNC_THREAD_HANDLE_FINISHED_UDPATES
 	"   Cursor Shape", 			// PROF_VNC_THREAD_HANDLE_CURSOR_SHAPE
 	"   Cursor Pos", 			// PROF_VNC_THREAD_HANDLE_CURSOR_POS
+	"   Cursor Save", 			// PROF_VNC_THREAD_HANDLE_CURSOR_SAVE
+	"   Cursor Restore", 		// PROF_VNC_THREAD_HANDLE_CURSOR_RESTORE
 	"  Lock InQueue", 			// PROF_VNC_THREAD_LOCK_IN_QUEUE
 	"  UpdateTextureRect",      // PROF_VNC_THREAD_UPDATE_TEXTURE_RECT
 	" Output", 					// PROF_VNC_THREAD_OUTPUT
