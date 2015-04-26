@@ -321,7 +321,7 @@ typedef SxResult (*SxRenderTextureJpeg)( SxTextureHandle tx, unsigned int x, uns
 // Register/unregister an entity handle.  
 // When initially registered, the entity has no geometry and will not draw.
 // 
-typedef SxResult (*SxRegisterEntity)( SxEntityHandle ent, SxGeometryHandle geo, SxTextureHandle tx );
+typedef SxResult (*SxRegisterEntity)( SxEntityHandle ent );
 typedef SxResult (*SxUnregisterEntity)( SxEntityHandle ent );
 
 //
@@ -394,6 +394,8 @@ struct SxPluginInterface
     SxOrientEntity                      orientEntity;
     SxSetEntityVisibility               setEntityVisibility;
 };
+
+extern SxPluginInterface g_pluginInterface;
 
 #if 0
 extern SxRegisterPlugin                    sxRegisterPlugin;

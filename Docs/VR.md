@@ -23,28 +23,6 @@
 
 # Q&A questions
 
-# How do I beta test my APK?
-
-My app is developed using Android JNI tools, not a game engine.
-
-I'd like to utilize beta testers who are not local to me.  How can I package and distribute builds in a way that is as convenient as possible for testers to install?
-
-Specifically, I'd like to avoid requiring that they install a complete development environment, though a partial one would be acceptable.
-
-# Why doesn't "both" mode work?
-
-My app is developed using Android JNI tools, not a game engine.
-
-When my AndroidManifest.xml contains the following key, it launches correctly when installed into the headset.
-
-        <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
-
-When I replace it with this key, everything seems fine from the development PC side, but the VR Home app stays open and my never launches.
-
-        <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_both"/>
-
-This means I have to rebuild my APK in order to run it in the GearVR.  Am I missing some step?  Thanks!
-
 # TODO for next milestone
 
 + Print connection status on VR window - use Toast API?
@@ -59,10 +37,9 @@ This means I have to rebuild my APK in order to run it in the GearVR.  Am I miss
 
 # TODO
 
-# Registry
+# API
 
-Widgets, Plugins, et al stored in an array.  
-Hash table points to array indices.
++ Attach entities to widgets before they are rendered, without a widget the entity should not draw.
 
 # Texture queue
 

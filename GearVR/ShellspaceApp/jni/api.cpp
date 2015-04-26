@@ -442,7 +442,7 @@ SxResult sxRenderTextureJpeg( SxTextureHandle tex, unsigned int x, unsigned int 
 }
 
 
-SxResult sxRegisterEntity( SxEntityHandle ent, SxGeometryHandle geo, SxTextureHandle tex )
+SxResult sxRegisterEntity( SxEntityHandle ent )
 {
 	SRef 		ref;
 	char		*id;
@@ -586,7 +586,7 @@ SxResult sxSetEntityVisibility( SxEntityHandle ent, float visibility, const SxTr
 }
 
 
-SxPluginInterface s_pluginInterface =
+SxPluginInterface g_pluginInterface =
 {
     SX_PLUGIN_INTERFACE_VERSION,			// version
     sxRegisterPlugin,                       // registerPlugin

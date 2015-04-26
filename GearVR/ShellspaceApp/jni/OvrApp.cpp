@@ -57,10 +57,57 @@ bool OvrApp::GetWantSrgbFramebuffer() const
 #endif
 }
 
+
+void APITest()
+{
+	ushort indices[] = 
+	{ 
+		0, 1, 2, 
+		2, 1, 3 
+	};
+
+	float positions[] = 
+	{ 
+		-1.0f, -1.0f, 0.0f, 
+		 1.0f, -1.0f, 0.0f,
+		-1.0f,  1.0f, 0.0f, 
+		 1.0f,  1.0f, 0.0f, 
+	};
+
+	float texCoords[] = 
+	{ 
+		-1.0f, -1.0f, 
+		 1.0f, -1.0f, 
+		-1.0f,  1.0f, 
+		 1.0f,  1.0f, 
+	};
+
+	byte colors[] = 
+	{ 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+	};
+
+	g_pluginInterface.registerPlugin( "apitest", SxPluginKind_Widget );
+	g_pluginInterface.registerWidget( "apitest" );
+	g_pluginInterface.registerGeometry( "apitest" );
+	g_pluginInterface.sizeGeometry( "apitest", 4, 6 );
+	g_pluginInterface.updateGeometryIndexRange( "apitest", 0, 6, indices );
+	g_pluginInterface.updateGeometryPositionRange( "apitest", 0, 4, (SxVector3 *)positions );
+	g_pluginInterface.updateGeometryTexCoordRange( "apitest", 0, 4, (SxVector2 *)texCoords );
+	g_pluginInterface.updateGeometryColorRange( "apitest", 0, 4, (SxColor *)colors );
+	g_pluginInterface.registerEntity( "apitest" );
+	g_pluginInterface.setEntityGeometry( "apitest", "apitest" );
+}
+
+
 void OvrApp::OneTimeInit( const char * launchIntent )
 {
 	Thread_Init();
 	Registry_Init();
+	Entity_Init();
 
 	EyeParms &vrParms = app->GetVrParms();
 #if USE_SUPERSAMPLE_2X
