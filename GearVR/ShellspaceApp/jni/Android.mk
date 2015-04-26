@@ -21,6 +21,7 @@ PLUGIN_SRC_FILES := \
 COMMON_SRC_FILES := \
 	api.cpp \
 	command.cpp \
+	entity.cpp \
 	gason/gason.cpp \
 	geometry.cpp \
 	inqueue.cpp \

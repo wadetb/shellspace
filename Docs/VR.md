@@ -3,15 +3,16 @@
 4/21 - Today's date
 
 4/27 - First screenshot / video milestone
-        Release to beta testers.
-        Start livestreaming?
+        Release to beta testers when possible.
         Add code license.  GPL
         Upload to GitHub.
         VNC client is solid - no crashes or major experience issues.
-        Declare network + texture update protocol "final".
         Bluetooth keyboard & mouse support.
+        Prettify the menu for the screenshot.
+        Get a video of me using it to code?
 
 5/4 - First video of app running
+        This is all about the shell.
         Multiple widgets; the "shell" part.
         Shellspace geometry + texture API.
         Toy apps.

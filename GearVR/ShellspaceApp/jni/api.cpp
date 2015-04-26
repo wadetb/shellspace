@@ -101,33 +101,43 @@ SxResult sxUnregisterWidget( SxWidgetHandle wd )
 }
 
 
-void sxBroadcastMessage( const char *message )
+SxResult sxBroadcastMessage( const char *message )
 {
 	Thread_ScopeLock lock( MUTEX_API );
+
+	return SX_NOT_IMPLEMENTED;
 }
 
 
-void sxSendMessage( SxWidgetHandle wd, const char *message )
+SxResult sxSendMessage( SxWidgetHandle wd, const char *message )
 {
 	Thread_ScopeLock lock( MUTEX_API );
+
+	return SX_NOT_IMPLEMENTED;
 }
 
 
-void sxReceiveMessages( SxWidgetHandle wd, const char *result, unsigned int resultLen )
+SxResult sxReceiveMessages( SxWidgetHandle wd, const char *result, unsigned int resultLen )
 {
 	Thread_ScopeLock lock( MUTEX_API );
+
+	return SX_NOT_IMPLEMENTED;
 }
 
 
-void sxRegisterMessageListeners( SxWidgetHandle wd, const char *messages )
+SxResult sxRegisterMessageListeners( SxWidgetHandle wd, const char *messages )
 {
 	Thread_ScopeLock lock( MUTEX_API );
+
+	return SX_NOT_IMPLEMENTED;
 }
 
 
-void sxUnregisterMessageListeners( SxWidgetHandle wd, const char *messages )
+SxResult sxUnregisterMessageListeners( SxWidgetHandle wd, const char *messages )
 {
 	Thread_ScopeLock lock( MUTEX_API );
+
+	return SX_NOT_IMPLEMENTED;
 }
 
 
@@ -532,13 +542,47 @@ SxResult sxSetEntityTexture( SxEntityHandle ent, SxTextureHandle tex )
 
 SxResult sxOrientEntity( SxEntityHandle ent, const SxOrientation *o, const SxTrajectory *tr )
 {
+	SRef 	ref;
+	SEntity *entity;
+
 	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetEntityRef( ent );
+	if ( ref == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
+	entity = Registry_GetEntity( ref );
+	assert( entity );
+
+	if ( tr->kind != SxTrajectoryKind_Instant )
+		return SX_NOT_IMPLEMENTED;
+
+	entity->orientation = *o;
+
+	return SX_OK;
 }
 
 
 SxResult sxSetEntityVisibility( SxEntityHandle ent, float visibility, const SxTrajectory *tr )
 {
+	SRef 	ref;
+	SEntity *entity;
+
 	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetEntityRef( ent );
+	if ( ref == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
+	entity = Registry_GetEntity( ref );
+	assert( entity );
+
+	if ( tr->kind != SxTrajectoryKind_Instant )
+		return SX_NOT_IMPLEMENTED;
+
+	entity->visibility = visibility;
+
+	return SX_OK;
 }
 
 

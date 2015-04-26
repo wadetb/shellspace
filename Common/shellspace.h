@@ -24,18 +24,14 @@ enum SxResult
 //  calls.  Plugins can use any string so long as it is unique.
 //
 // NB: The method for ensuring uniqueness is that for now, each plugin will
-//  just use a plugin-specific value in the MSB.
+//  just use a plugin-specific prefix.
 //
 // Handle values are data-type specific, meaning that is valid to use "me" as
 //  a plugin, widget, texture, geometry and entity handle!
 //
-// "null" is reserved as the invalid or NULL handle.
-//
 // Note that handles are global. Until security measures are added (if they 
 //  ever are), plugins are free to interact with each others' objects.
 // 
-
-#define SX_NULL_HANDLE       "null"
 
 typedef const char *SxPluginHandle;
 typedef const char *SxWidgetHandle;
@@ -99,12 +95,12 @@ typedef SxResult (*SxUnregisterWidget)( SxWidgetHandle wd );
 //  consume itself to the active widget.
 //
 
-typedef void (*SxBroadcastMessage)( const char *message );
-typedef void (*SxSendMessage)( SxWidgetHandle wd, const char *message );
-typedef void (*SxReceiveMessages)( SxWidgetHandle wd, const char *result, unsigned int resultLen );
+typedef SxResult (*SxBroadcastMessage)( const char *message );
+typedef SxResult (*SxSendMessage)( SxWidgetHandle wd, const char *message );
+typedef SxResult (*SxReceiveMessages)( SxWidgetHandle wd, const char *result, unsigned int resultLen );
 
-typedef void (*SxRegisterMessageListeners)( SxWidgetHandle wd, const char *messages );
-typedef void (*SxUnregisterMessageListeners)( SxWidgetHandle wd, const char *messages );
+typedef SxResult (*SxRegisterMessageListeners)( SxWidgetHandle wd, const char *messages );
+typedef SxResult (*SxUnregisterMessageListeners)( SxWidgetHandle wd, const char *messages );
 
 //
 // Entities

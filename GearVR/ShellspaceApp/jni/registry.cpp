@@ -392,3 +392,7 @@ SEntity *Registry_GetEntity( SRef ref )
 }
 
 
+uint Registry_GetCount( ERegistry reg )
+{
+	return s_pool[reg].count;
+}

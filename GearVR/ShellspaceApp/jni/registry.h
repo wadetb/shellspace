@@ -21,7 +21,6 @@ struct SPlugin
 	char			*id;
 
 	SxPluginKind	kind;
-	// pthread_t	thread;
 
 	SRefLink		widgetList;
 };
@@ -81,6 +80,7 @@ struct STexture
 struct SEntity
 {
 	SRefLink		poolLink;
+	SRefLink		activeLink;
 	
 	char			*id;
 	
@@ -89,6 +89,11 @@ struct SEntity
 	SRef 			geometryRef;
 	SRef 			textureRef;
 	
+	SxOrientation	orientation;
+	float 			visibility;
+
+	sbool 			active : 1;
+
 	SRef 			parentRef;
 	SRefLink		parentLink;
 };
@@ -98,6 +103,9 @@ void Registry_Shutdown();
 
 SRef Registry_Register( ERegistry reg, const char *id );
 void Registry_Unregister( ERegistry reg, SRef ref );
+uint Registry_GetCount( ERegistry reg );
+
+#define Registry_RefForIndex( index ) (SRef)( 1 + (index) )
 
 SRef Registry_GetPluginRef( const char *id );
 SRef Registry_GetWidgetRef( const char *id );

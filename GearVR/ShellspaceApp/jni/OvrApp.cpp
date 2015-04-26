@@ -12,6 +12,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "OvrApp.h"
 
 #include "command.h"
+#include "entity.h"
 #include "inqueue.h"
 #include "keyboard.h"
 #include "registry.h"
@@ -192,6 +193,8 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 
 	VNC_DrawWidget( vnc, view );
 #endif
+
+	Entity_Draw( view );
 
 	Keyboard_Draw();
 

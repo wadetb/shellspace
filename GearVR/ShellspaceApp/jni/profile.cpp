@@ -59,14 +59,15 @@ const char *s_profNames[PROF_COUNT] =
 	"  Lock InQueue", 			// PROF_VNC_THREAD_LOCK_IN_QUEUE
 	"  UpdateTextureRect",      // PROF_VNC_THREAD_UPDATE_TEXTURE_RECT
 	" Output", 					// PROF_VNC_THREAD_OUTPUT
-	" GpuUpdate", 				// PROF_GPU_UPDATE
-	"  Append", 				// PROF_GPU_UPDATE_APPEND
-	"  Texture Resize",			// PROF_TEXTURE_RESIZE,
-	"  Texture Update",			// PROF_TEXTURE_UPDATE
-	"  Texture Present",		// PROF_TEXTURE_PRESENT
-	"  Geometry Resize",		// PROF_GEOMETRY_RESIZE
-	"  Geometry Update",		// PROF_GEOMETRY_UPDATE
-	"  Geometry Present",		// PROF_GEOMETRY_PRESENT
+	"GpuUpdate", 				// PROF_GPU_UPDATE
+	" Append", 					// PROF_GPU_UPDATE_APPEND
+	" Texture Resize",			// PROF_TEXTURE_RESIZE,
+	" Texture Update",			// PROF_TEXTURE_UPDATE
+	" Texture Present",			// PROF_TEXTURE_PRESENT
+	" Geometry Resize",			// PROF_GEOMETRY_RESIZE
+	" Geometry Update",			// PROF_GEOMETRY_UPDATE
+	" Geometry Present",		// PROF_GEOMETRY_PRESENT
+	"Draw Entity",				// PROF_DRAW_ENTITY
 };
 
 
