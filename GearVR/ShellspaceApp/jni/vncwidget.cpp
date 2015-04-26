@@ -7,7 +7,7 @@
 #include <android/keycodes.h>
 #include "libvncserver/rfb/rfbclient.h"
 
-#define STRESS_RESIZE 				1
+#define STRESS_RESIZE 				0
 
 #define MAX_VNC_THREADS				64
 #define INVALID_VNC_THREAD 			UINT_MAX
@@ -1784,25 +1784,16 @@ static void VNC_HandleClipboard( SVNCWidget *vnc, SVNCInQueueItem *in )
 static void VNC_CheckAdvanceTexture( SVNCWidget *vnc, int inCount )
 {
 	SVNCThread 		*vncThread;
-	uint 			updateTexIndex;
-	uint 			drawTexIndex;
 	int 			inIndex;
-	uint 			updateMask;
 	SVNCInQueueItem *in;
-	EVNCInQueueKind kind;
 
 	Prof_Start( PROF_VNC_WIDGET_ADVANCE );
 
 	vncThread = vnc->thread;
 	assert( vncThread );
 
-	updateTexIndex = vnc->updateTexIndex;
-	drawTexIndex = vnc->drawTexIndex;
-
-	if ( updateTexIndex != drawTexIndex )
+	if ( vnc->updateTexIndex != vnc->drawTexIndex )
 		return;
-
-	updateMask = 1 << (updateTexIndex % VNC_TEXTURE_COUNT);
 
 /*
 	LOG( "inCount=%d updateTexIndex=%d drawTexIndex=%d\n", inIndex, inCount, vnc->updateTexIndex, vnc->drawTexIndex );
@@ -1816,38 +1807,26 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc, int inCount )
 	for ( inIndex = inCount - 1; inIndex >= 0; inIndex-- )
 	{
 		in = &vncThread->inQueue[inIndex];
-		kind = in->kind;
 
-		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-			continue;
-		// if ( in->updateMask & updateMask )
-		// 	continue;
-
-		if ( kind == VNC_INQUEUE_RESIZE )
+		if ( in->kind == VNC_INQUEUE_RESIZE )
 		{
-			updateTexIndex++;
-			vnc->updateTexIndex = updateTexIndex;
+			vnc->updateTexIndex++;
 			
-			// Clear any prior resize and update events for the same texture; the resize invalidates them.
-			updateMask = 1 << (updateTexIndex % VNC_TEXTURE_COUNT);
+			// Clear any prior resize and update events; the resize invalidates them.
 			inIndex--;
 			for ( ; inIndex >= 0; inIndex-- )
 			{
 				in = &vncThread->inQueue[inIndex];
-				kind = in->kind;
 
-				if ( kind == VNC_INQUEUE_RESIZE || kind == VNC_INQUEUE_UPDATE )
+				if ( in->kind == VNC_INQUEUE_RESIZE || in->kind == VNC_INQUEUE_UPDATE )
 				{
-					in->updateMask |= updateMask;				
-					if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-					{
-						if ( kind == VNC_INQUEUE_UPDATE )
-							free( in->update.buffer );
-						in->kind = VNC_INQUEUE_NOP;
-					}
+					if ( in->kind == VNC_INQUEUE_UPDATE )
+						free( in->update.buffer );
+					in->kind = VNC_INQUEUE_NOP;
 				}
 			}
 
+			Prof_Stop( PROF_VNC_WIDGET_ADVANCE );
 			return;
 		}
 	}
@@ -1855,17 +1834,12 @@ static void VNC_CheckAdvanceTexture( SVNCWidget *vnc, int inCount )
 	for ( inIndex = 0; inIndex < inCount; inIndex++ )
 	{
 		in = &vncThread->inQueue[inIndex];
-		kind = in->kind;
 
-		if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
-			continue;
-		// if ( in->updateMask & updateMask )
-		// 	continue;
-
-		if ( kind == VNC_INQUEUE_UPDATE )
+		if ( in->kind == VNC_INQUEUE_UPDATE )
 		{
-			updateTexIndex++;
-			vnc->updateTexIndex = updateTexIndex;
+			vnc->updateTexIndex++;
+			
+			Prof_Stop( PROF_VNC_WIDGET_ADVANCE );
 			return;
 		}
 	}
@@ -1882,7 +1856,6 @@ static void VNC_InQueue( SVNCWidget *vnc )
 	SVNCInQueueItem *in;
 	uint 			updateMask;
 	double 			startMs;
-	uint 			newInCount;
 
 	Prof_Start( PROF_VNC_WIDGET_INQUEUE );
 
@@ -1947,6 +1920,8 @@ static void VNC_InQueue( SVNCWidget *vnc )
 				in->updateMask |= updateMask;
 				if ( in->updateMask == VNC_ALL_TEXTURES_MASK )
 					in->kind = VNC_INQUEUE_NOP;
+
+				goto finished_updates;
 			}
 			break;
 
@@ -1972,23 +1947,24 @@ static void VNC_InQueue( SVNCWidget *vnc )
 			break;
 		}
 
-		// if ( Prof_MS() - startMs > 10.0f )
-		// 	break;
+		if ( Prof_MS() - startMs > 10.0f )
+			break;
 	}
+finished_updates:
 
 	pthread_mutex_lock( &vncThread->inMutex );
 
-	newInCount = 0;
-	for ( inIndex = 0; inIndex < vncThread->inCount; inIndex++ )
+	inCount = vncThread->inCount;
+	for ( inIndex = 0; inIndex < inCount; inIndex++ )
 	{
 		in = &vncThread->inQueue[inIndex];
 		if ( in->kind != VNC_INQUEUE_NOP )
-		{
-			memmove( &vncThread->inQueue[newInCount], in, sizeof( SVNCInQueueItem ) );
-			newInCount++;
-		}
+			break;
 	}
-	vncThread->inCount = newInCount;
+
+	inCount -= inIndex;
+	memmove( &vncThread->inQueue[0], &vncThread->inQueue[inIndex], sizeof( SVNCInQueueItem ) * inCount );
+	vncThread->inCount = inCount;
 
 	pthread_mutex_unlock( &vncThread->inMutex );
 

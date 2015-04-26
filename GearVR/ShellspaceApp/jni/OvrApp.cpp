@@ -12,7 +12,10 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "OvrApp.h"
 
 #include "command.h"
+#include "inqueue.h"
 #include "keyboard.h"
+#include "registry.h"
+#include "thread.h"
 #include "vncwidget.h"
 
 #include <android/keycodes.h>
@@ -55,6 +58,9 @@ bool OvrApp::GetWantSrgbFramebuffer() const
 
 void OvrApp::OneTimeInit( const char * launchIntent )
 {
+	Thread_Init();
+	Registry_Init();
+
 	EyeParms &vrParms = app->GetVrParms();
 #if USE_SUPERSAMPLE_2X
 	vrParms.resolution = 2048;
@@ -102,6 +108,9 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 void OvrApp::OneTimeShutdown()
 {
 	VNC_DestroyWidget( vnc );
+
+	Registry_Shutdown();
+	Thread_Shutdown();
 }
 
 void OvrApp::Command( const char * msg )
@@ -200,6 +209,8 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 	Matrix4f centerViewMatrix = Scene.CenterViewMatrix();
 	Vector3f eyeDir = GetViewMatrixForward( centerViewMatrix );
 	Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
+
+	InQueue_Frame();
 
 	VNC_UpdateWidget( vnc );
 

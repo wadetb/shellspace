@@ -7,29 +7,34 @@ include $(OVR_MOBILE_SDK)/VRLib/import_vrlib.mk		# import VRLib for this module.
 
 ### XXX tls_openssl or tls_gnutls
 
-LIBVNCCLIENT_SRC_FILES := \
+PLUGIN_SRC_FILES := \
+	v8.cpp \
+	vncwidget.cpp \
 	libvncserver/common/minilzo.c \
 	libvncserver/libvncclient/cursor.c \
 	libvncserver/libvncclient/listen.c \
 	libvncserver/libvncclient/rfbproto.c \
 	libvncserver/libvncclient/sockets.c \
 	libvncserver/libvncclient/tls_none.c \
-	libvncserver/libvncclient/vncviewer.c \
-	gason/gason.cpp
+	libvncserver/libvncclient/vncviewer.c
 
 COMMON_SRC_FILES := \
-	OvrApp.cpp \
+	api.cpp \
 	command.cpp \
+	gason/gason.cpp \
+	geometry.cpp \
+	inqueue.cpp \
 	keyboard.cpp \
-	profile.cpp
-
-WIDGET_SRC_FILES := \
-	vncwidget.cpp
+	OvrApp.cpp \
+	profile.cpp \
+	registry.cpp \
+	texture.cpp \
+	thread.cpp 
 
 LOCAL_ARM_MODE   := arm
 
 LOCAL_MODULE     := ovrapp
-LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(WIDGET_SRC_FILES) $(LIBVNCCLIENT_SRC_FILES)
+LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(PLUGIN_SRC_FILES)
 LOCAL_LDLIBS	 +=
 LOCAL_CFLAGS	 += -std=c++11 -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common
 #LOCAL_CFLAGS    += -fno-omit-frame-pointer
