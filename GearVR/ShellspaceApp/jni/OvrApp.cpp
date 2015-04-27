@@ -255,7 +255,7 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 #else
 	swapParms.WarpProgram = WP_CHROMATIC;
 
-	// VNC_DrawWidget( vnc, view );
+	VNC_DrawWidget( vnc, view );
 #endif
 
 	Entity_Draw( view );

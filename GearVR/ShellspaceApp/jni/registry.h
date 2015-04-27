@@ -49,9 +49,12 @@ struct SGeometry
 	uint 			vertexCount;
 	uint 			indexCount;
 
-	GLuint 			vertexBuffers[BUFFER_COUNT];
 	GLuint 			vertexArrayObjects[BUFFER_COUNT];
+	GLuint 			vertexBuffers[BUFFER_COUNT];
 	GLuint 			indexBuffers[BUFFER_COUNT];
+
+	uint 			vertexCounts[BUFFER_COUNT];
+	uint 			indexCounts[BUFFER_COUNT];
 
 	byte 			updateIndex;
 	byte 			drawIndex;

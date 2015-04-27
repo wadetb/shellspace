@@ -195,12 +195,22 @@ SxResult sxUnregisterGeometry( SxGeometryHandle geo )
 SxResult sxSizeGeometry( SxGeometryHandle geo, unsigned int vertexCount, unsigned int indexCount )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	if ( !vertexCount || !indexCount )
+		return SX_OUT_OF_RANGE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	geometry->vertexCount = vertexCount;
+	geometry->indexCount = indexCount;
 
 	InQueue_ResizeGeometry( ref, vertexCount, indexCount );
 
@@ -211,12 +221,19 @@ SxResult sxSizeGeometry( SxGeometryHandle geo, unsigned int vertexCount, unsigne
 SxResult sxUpdateGeometryIndexRange( SxGeometryHandle geo, unsigned int firstIndex, unsigned int indexCount, const ushort *indices )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	if ( !geometry->indexCount )
+		return SX_OUT_OF_RANGE;
 
 	InQueue_UpdateGeometryIndices( ref, firstIndex, indexCount, indices );
 
@@ -227,12 +244,19 @@ SxResult sxUpdateGeometryIndexRange( SxGeometryHandle geo, unsigned int firstInd
 SxResult sxUpdateGeometryPositionRange( SxGeometryHandle geo, unsigned int firstVertex, unsigned int vertexCount, const SxVector3 *positions )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	if ( !geometry->vertexCount )
+		return SX_OUT_OF_RANGE;
 
 	InQueue_UpdateGeometryPositions( ref, firstVertex, vertexCount, positions );
 
@@ -243,12 +267,19 @@ SxResult sxUpdateGeometryPositionRange( SxGeometryHandle geo, unsigned int first
 SxResult sxUpdateGeometryTexCoordRange( SxGeometryHandle geo, unsigned int firstVertex, unsigned int vertexCount, const SxVector2 *texCoords )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	if ( !geometry->vertexCount )
+		return SX_OUT_OF_RANGE;
 
 	InQueue_UpdateGeometryTexCoords( ref, firstVertex, vertexCount, texCoords );
 
@@ -259,12 +290,19 @@ SxResult sxUpdateGeometryTexCoordRange( SxGeometryHandle geo, unsigned int first
 SxResult sxUpdateGeometryColorRange( SxGeometryHandle geo, unsigned int firstVertex, unsigned int vertexCount, const SxColor *colors )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	if ( !geometry->vertexCount )
+		return SX_OUT_OF_RANGE;
 
 	InQueue_UpdateGeometryColors( ref, firstVertex, vertexCount, colors );
 
@@ -275,12 +313,19 @@ SxResult sxUpdateGeometryColorRange( SxGeometryHandle geo, unsigned int firstVer
 SxResult sxPresentGeometry( SxGeometryHandle geo )
 {
 	SRef 		ref;
+	SGeometry 	*geometry;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
+
+	geometry = Registry_GetGeometry( ref );
+	assert( geometry );
+
+	if ( !geometry->vertexCount || !geometry->indexCount )
+		return SX_OUT_OF_RANGE;
 
 	InQueue_PresentGeometry( ref );
 
@@ -371,6 +416,9 @@ SxResult sxSizeTexture( SxTextureHandle tex, unsigned int width, unsigned int he
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
 
+	if ( !width || !height )
+		return SX_OUT_OF_RANGE;
+
 	texture = Registry_GetTexture( ref );
 	assert( texture );
 
@@ -410,6 +458,9 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 
 	texture = Registry_GetTexture( ref );
 	assert( texture );
+
+	if ( !texture->width || !texture->height )
+		return SX_OUT_OF_RANGE;
 
 	// $$$ Support pitch in the update function by doing a strided memcpy.
 	if ( pitch != width * 4 )
@@ -461,6 +512,12 @@ SxResult sxPresentTexture( SxTextureHandle tex )
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
 
+	texture = Registry_GetTexture( ref );
+	assert( texture );
+
+	if ( !texture->width || !texture->height )
+		return SX_OUT_OF_RANGE;
+
 	InQueue_PresentTexture( ref );
 }
 
@@ -508,6 +565,8 @@ SxResult sxUnregisterEntity( SxEntityHandle ent )
 	entity = Registry_GetEntity( ref );
 	assert( entity );
 
+	Entity_SetParent( entity, S_NULL_REF );
+	
 	free( entity->id );
 
 	Registry_Unregister( ENTITY_REGISTRY, ref );

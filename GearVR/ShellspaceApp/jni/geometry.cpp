@@ -97,9 +97,7 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	geometry->vertexBuffers[index] = vertexBuffer; 
-
-	// $$$ We need to buffer this like texWidth.
-	geometry->vertexCount = vertexCount;
+	geometry->vertexCounts[index] = vertexCount;
 
 	GL_CheckErrors( "after Geometry_ResizeVertexBuffer" );
 }
@@ -124,9 +122,7 @@ void Geometry_ResizeIndexBuffer( SGeometry *geometry, uint indexCount )
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	geometry->indexBuffers[index] = indexBuffer;
-
-	// $$$ We need to buffer this like texWidth.
-	geometry->indexCount = indexCount;
+	geometry->indexCounts[index] = indexCount;
 
 	GL_CheckErrors( "after Geometry_ResizeIndexBuffer" );
 }
@@ -163,12 +159,12 @@ void Geometry_UpdateIndices( SGeometry *geometry, uint firstIndex, uint indexCou
 	index = geometry->updateIndex % BUFFER_COUNT;
 
 	vertexArrayObject = geometry->vertexArrayObjects[index];
-	assert( vertexArrayObject ); // $$$ Should gracefully fail if not sized?
+	assert( vertexArrayObject );
 
 	glBindVertexArrayOES_( vertexArrayObject );
 
 	indexBuffer = geometry->indexBuffers[index];
-	assert( indexBuffer ); // $$$ Should gracefully fail if not sized?
+	assert( indexBuffer );
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, indexBuffer );
 
@@ -200,12 +196,12 @@ void Geometry_UpdateVertexPositions( SGeometry *geometry, uint firstVertex, uint
 	index = geometry->updateIndex % BUFFER_COUNT;
 
 	vertexArrayObject = geometry->vertexArrayObjects[index];
-	assert( vertexArrayObject ); // $$$ Should gracefully fail if not sized?
+	assert( vertexArrayObject );
 
 	glBindVertexArrayOES_( vertexArrayObject );
 
 	vertexBuffer = geometry->vertexBuffers[index];
-	assert( vertexBuffer ); // $$$ Should gracefully fail if not sized?
+	assert( vertexBuffer );
 
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
 
@@ -236,12 +232,12 @@ void Geometry_UpdateVertexTexCoords( SGeometry *geometry, uint firstVertex, uint
 	index = geometry->updateIndex % BUFFER_COUNT;
 
 	vertexArrayObject = geometry->vertexArrayObjects[index];
-	assert( vertexArrayObject ); // $$$ Should gracefully fail if not sized?
+	assert( vertexArrayObject );
 
 	glBindVertexArrayOES_( vertexArrayObject );
 
 	vertexBuffer = geometry->vertexBuffers[index];
-	assert( vertexBuffer ); // $$$ Should gracefully fail if not sized?
+	assert( vertexBuffer );
 
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
 
@@ -274,12 +270,12 @@ void Geometry_UpdateVertexColors( SGeometry *geometry, uint firstVertex, uint ve
 	index = geometry->updateIndex % BUFFER_COUNT;
 
 	vertexArrayObject = geometry->vertexArrayObjects[index];
-	assert( vertexArrayObject ); // $$$ Should gracefully fail if not sized?
+	assert( vertexArrayObject );
 
 	glBindVertexArrayOES_( vertexArrayObject );
 
 	vertexBuffer = geometry->vertexBuffers[index];
-	assert( vertexBuffer ); // $$$ Should gracefully fail if not sized?
+	assert( vertexBuffer );
 
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
 

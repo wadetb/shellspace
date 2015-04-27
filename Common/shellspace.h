@@ -11,9 +11,10 @@
 enum SxResult
 {
     SX_OK                    = 0,
-    SX_NOT_IMPLEMENTED,                    // Requestion action is not yet implemented
-    SX_INVALID_HANDLE,                     // Handle was invalid or already unregistered
-    SX_ALREADY_REGISTERED,                 // Handle was already registered
+    SX_NOT_IMPLEMENTED,                     // Requestion action is not yet implemented
+    SX_INVALID_HANDLE,                      // Handle was invalid or already unregistered
+    SX_ALREADY_REGISTERED,                  // Handle was already registered
+    SX_OUT_OF_RANGE,                        // Argument was out of range
 };
 
 

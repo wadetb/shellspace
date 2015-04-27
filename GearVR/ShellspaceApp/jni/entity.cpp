@@ -51,6 +51,8 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 {
 	STexture 	*texture;
 	SGeometry	*geometry;
+	uint 		geometryIndex;
+	uint 		textureIndex;
 	GLuint 		texId;
 	GLuint 		vertexArrayObject;
 	int 		triCount;
@@ -67,8 +69,9 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 	geometry = Registry_GetGeometry( entity->geometryRef );
 	assert( geometry );
 
-	vertexArrayObject = geometry->vertexArrayObjects[geometry->drawIndex % BUFFER_COUNT];
+	geometryIndex = geometry->drawIndex % BUFFER_COUNT;
 
+	vertexArrayObject = geometry->vertexArrayObjects[geometryIndex];
 	if ( !vertexArrayObject )
 	{
 		Prof_Stop( PROF_DRAW_ENTITY );
@@ -87,7 +90,8 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 		texture = Registry_GetTexture( entity->textureRef );
 		assert( texture );
 
-		texId = texture->texId[texture->drawIndex % BUFFER_COUNT];
+		textureIndex = texture->drawIndex % BUFFER_COUNT;
+		texId = texture->texId[textureIndex];
 
 		glBindTexture( GL_TEXTURE_2D, texId );
 	}
@@ -99,7 +103,7 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 	glBindVertexArrayOES_( vertexArrayObject );
 
 	indexOffset = 0;
-	triCount = geometry->indexCount / 3;
+	triCount = geometry->indexCounts[geometryIndex] / 3;
 	triCountLeft = triCount;
 
 	while ( triCountLeft )
@@ -167,9 +171,12 @@ void Entity_SetParent( SEntity *entity, SRef parentRef )
 
 	entity->parentRef = parentRef;
 
-	parent = Registry_GetEntity( parentRef );
-	assert( parent );
+	if ( parentRef != S_NULL_REF )
+	{
+		parent = Registry_GetEntity( parentRef );
+		assert( parent );
 
-	RefList_Insert( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
+		RefList_Insert( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
+	}
 }
 
