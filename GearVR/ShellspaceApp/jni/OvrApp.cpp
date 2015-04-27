@@ -115,6 +115,15 @@ void APITest()
 	g_pluginInterface.registerEntity( "apitest" );
 	g_pluginInterface.setEntityGeometry( "apitest", "apitest" );
 	g_pluginInterface.setEntityTexture( "apitest", "apitest" );
+
+	SxOrientation o;
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 0.0f, 0.0f, -10.0f );
+
+	SxTrajectory tr;
+	tr.kind = SxTrajectoryKind_Instant;
+
+	g_pluginInterface.orientEntity( "apitest", &o, &tr );
 }
 
 

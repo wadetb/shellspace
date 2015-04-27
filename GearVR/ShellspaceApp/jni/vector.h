@@ -61,6 +61,13 @@ inline void Vec3Scale( const SxVector3 &a, float b, SxVector3 *out )
     out->z = a.z * b;
 }
 
+inline void Vec3Set( SxVector3 *out, float x, float y, float z )
+{
+    out->x = x;
+    out->y = y;
+    out->z = z;
+}
+
 inline void Vec3Sub( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
 {
     out->x = a.x - b.x;

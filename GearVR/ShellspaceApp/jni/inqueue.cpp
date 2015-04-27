@@ -144,9 +144,8 @@ void InQueue_CheckAdvance( uint count )
 				texture = Registry_GetTexture( in->texture.ref );
 				assert( texture );
 
-				if ( !( in->texture.updateMask & (1 << texture->updateIndex) ) )
-					if ( texture->updateIndex == texture->drawIndex )
-						texture->updateIndex++;
+				if ( texture->updateIndex == texture->drawIndex )
+					texture->updateIndex++;
 			}
 			break;
 
@@ -159,9 +158,8 @@ void InQueue_CheckAdvance( uint count )
 				geometry = Registry_GetGeometry( in->geometry.ref );
 				assert( geometry );
 
-				if ( !( in->geometry.updateMask & (1 << geometry->updateIndex) ) )
-					if ( geometry->updateIndex == geometry->drawIndex )
-						geometry->updateIndex++;
+				if ( geometry->updateIndex == geometry->drawIndex )
+					geometry->updateIndex++;
 			}
 			break;
 
