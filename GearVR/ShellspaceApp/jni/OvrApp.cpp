@@ -309,6 +309,21 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 	Vector3f eyeDir = GetViewMatrixForward( centerViewMatrix );
 	Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
 
+	SxTrajectory tr;
+	SxOrientation o;
+
+	tr.kind = SxTrajectoryKind_Instant;
+
+	static float frame = 0;
+	frame += 1.0f/60.0f;
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
+	Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
+	o.angles.yaw = frame*0.1f*360.0f;
+	o.angles.roll = frame*0.2f*360.0f;
+	o.angles.pitch = frame*0.3f*360.0f;
+	g_pluginInterface.orientEntity( "left", &o, &tr );
+
 	InQueue_Frame();
 
 	VNC_UpdateWidget( vnc );

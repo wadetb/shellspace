@@ -177,11 +177,9 @@ inline void AnglesToAxes( const SxAngles &a, SxAxes *out )
     S_SinCos( a.pitch * (S_PI / 180.0f), &sp, &cp );
     S_SinCos( a.roll * (S_PI / 180.0f), &sr, &cr );
 
-    Vec3Set( &out->x, cp*cy, cp*sy, -sp );
-    Vec3Set( &out->y, -sr*sp*cy + -cr*-sy, -sr*sp*sy + -cr*cy, -sr*cp );
-    Vec3Set( &out->z, cr*sp*cy + -sr*-sy, cr*sp*sy + -sr*cy, cr*cp );
-
-    IdentityAxes( out ); // $$$
+    Vec3Set( &out->x, cp*cr, cp*sr, -sp );
+    Vec3Set( &out->y, sy*sp*cr + -cy*sr, sy*sp*sr + cy*cr, sy*cp );
+    Vec3Set( &out->z, cy*sp*cr + -sy*-sr, cy*sp*sr + -sy*cr, cy*cp );
 }
 
 inline void IdentityOrientation( SxOrientation *out )
