@@ -1,6 +1,56 @@
+/*
+    Shellspace - One tiny step towards the VR Desktop Operating System
+    Copyright (C) 2015  Wade Brainerd
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 #include "common.h"
 #include "texture.h"
 #include "registry.h"
+
+
+GLuint Texture_GetGLFormat( SxTextureFormat format )
+{
+	switch ( format )
+	{
+	case SxTextureFormat_R8G8B8A8:
+		return GL_RGBA8;
+		
+	case SxTextureFormat_R8G8B8A8_SRGB:
+		return GL_SRGB8_ALPHA8;
+
+	default:
+		assert( false );
+		return 0;
+	}
+}
+
+
+uint Texture_GetDataSize( uint width, uint height, SxTextureFormat format )
+{
+	switch ( format )
+	{
+	case SxTextureFormat_R8G8B8A8:
+	case SxTextureFormat_R8G8B8A8_SRGB:
+		return width * height * 4;
+
+	default:
+		assert( false );
+		return 0;
+	}
+}
 
 
 void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat format )
@@ -9,6 +59,7 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 	uint 	texWidth;
 	uint 	texHeight;
 	GLuint 	texId;
+	GLuint 	glFormat;
 
 	Prof_Start( PROF_TEXTURE_RESIZE );
 
@@ -32,12 +83,9 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 	glBindTexture( GL_TEXTURE_2D, texId );
 
-	// $$$ Use format argument.
-#if USE_SRGB
-	glTexStorage2D( GL_TEXTURE_2D, 1, GL_SRGB8_ALPHA8, texWidth, texHeight );
-#else // #if USE_SRGB
-	glTexStorage2D( GL_TEXTURE_2D, 1, GL_RGBA8, texWidth, texHeight );
-#endif // #else // #if USE_SRGB
+	glFormat = Texture_GetGLFormat( format );
+	
+	glTexStorage2D( GL_TEXTURE_2D, 1, glFormat, texWidth, texHeight );
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 

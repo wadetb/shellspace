@@ -1,3 +1,21 @@
+/*
+    Shellspace - One tiny step towards the VR Desktop Operating System
+    Copyright (C) 2015  Wade Brainerd
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 #include "common.h"
 #include "inqueue.h"
 #include "geometry.h"
@@ -523,7 +541,7 @@ void InQueue_ResizeTexture( SRef ref, uint width, uint height, SxTextureFormat f
 	in = InQueue_BeginAppend( INQUEUE_TEXTURE_RESIZE );
 
 	LOG( "InQueue_ResizeTexture %d by %d", width, height );
-	
+
 	in->texture.ref = ref;
 	in->texture.resize.width = width;
 	in->texture.resize.height = height;
@@ -534,12 +552,15 @@ void InQueue_ResizeTexture( SRef ref, uint width, uint height, SxTextureFormat f
 
 void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint height, const void *data )
 {
-	SItem 	*in;
-	uint 	dataSize;
-	void 	*dataCopy;
+	STexture 	*texture;
+	SItem 		*in;
+	uint 		dataSize;
+	void 		*dataCopy;
 
-	// $$$ get bytes per pixel from texture
-	dataSize = width * height * sizeof( byte ) * 4; 
+	texture = Registry_GetTexture( ref );
+	assert( texture );
+
+	dataSize = Texture_GetDataSize( width, height, texture->format ); 
 
 	dataCopy = malloc( dataSize );
 	assert( dataCopy );
