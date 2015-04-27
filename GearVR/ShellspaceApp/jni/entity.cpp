@@ -26,6 +26,7 @@
 struct SEntityGlobals
 {
 	GlProgram 	shader;
+	SRef 		firstRoot;
 };
 
 
@@ -63,6 +64,8 @@ void Entity_Init()
 		"	fragColor = oColor * texture( Texture0, oTexCoord );\n"
 		"}\n"
 		);
+
+	s_ent.firstRoot = S_NULL_REF;
 }
 
 
@@ -149,30 +152,80 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 }
 
 
-void Entity_Draw( const Matrix4f &view )
+void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef first )
 {
-	uint 		entityCount;
-	uint 		entityIter;
-	SEntity 	*entity;
+	uint 			entityCount;
+	SRef  			ref;
+	SEntity 		*entity;
+	SxTransform		entityXform;
+	SxTransform		childXform;
+	Matrix4f 		m;
 
-	// $$$ The way this will work is that there will be single hardcoded "root" entity
-	//  and all other entities will be parented to it.  This code will then recursively 
-	//  traverse entity children, starting with the root entity, doing bounding box
-	//  culling to prune.  
-	// The resulting entities can be drawn immediately or stored in a list for sorting,
-	//  if that's beneficial to performance.
-	entityCount = Registry_GetCount( ENTITY_REGISTRY );
-
-	for ( entityIter = 0; entityIter < entityCount; entityIter++ )
+	for ( ref = first; ref != S_NULL_REF; ref = entity->parentLink.next )
 	{
-		entity = Registry_GetEntity( Registry_RefForIndex( entityIter ) );
+		entity = Registry_GetEntity( ref );
 		assert( entity );
+
+		LOG( "%s", entity->id );
 
 		if ( entity->visibility <= 0.0f )
 			continue;
 
-		Entity_DrawEntity( entity, view );
+		OrientationToTransform( entity->orientation, &entityXform );
+		ConcatenateTransforms( xform, entityXform, &childXform );
+
+		// LOG( "childXform:" );
+		// LOG( "%f %f %f", childXform.axes.x.x, childXform.axes.x.y, childXform.axes.x.z );
+		// LOG( "%f %f %f", childXform.axes.y.x, childXform.axes.y.y, childXform.axes.y.z );
+		// LOG( "%f %f %f", childXform.axes.z.x, childXform.axes.z.y, childXform.axes.z.z );
+		// LOG( "%f %f %f", childXform.origin.x, childXform.origin.y, childXform.origin.z );
+
+		m = Matrix4f( 
+			childXform.axes.x.x * childXform.scale.x, childXform.axes.x.y * childXform.scale.x, childXform.axes.x.z * childXform.scale.x, 0.0f,
+			childXform.axes.y.x * childXform.scale.y, childXform.axes.y.y * childXform.scale.y, childXform.axes.y.z * childXform.scale.y, 0.0f,
+			childXform.axes.z.x * childXform.scale.z, childXform.axes.z.y * childXform.scale.z, childXform.axes.z.z * childXform.scale.z, 0.0f,
+			childXform.origin.x, childXform.origin.y, childXform.origin.z, 1.0f );
+
+		Entity_DrawEntity( entity, view * m.Transposed() );
+
+		if ( entity->firstChild != S_NULL_REF )
+		{
+			LOG( "%s has children", entity->id );
+			Entity_DrawChildren( view, childXform, entity->firstChild );
+		}
 	}
+}
+
+
+void Entity_Draw( const Matrix4f &view )
+{
+	SxTransform		xform;
+
+	IdentityTransform( &xform );
+
+	Entity_DrawChildren( view, xform, s_ent.firstRoot );
+}
+
+
+void Entity_Register( SEntity *entity )
+{
+	entity->visibility = 1.0f;
+	IdentityOrientation( &entity->orientation );
+
+	entity->parentRef = S_NULL_REF;
+	entity->parentLink.prev = S_NULL_REF;
+	entity->parentLink.next = S_NULL_REF;
+	entity->firstChild = S_NULL_REF;
+
+	RefList_Insert( entity, offsetof( SEntity, parentLink ), &s_ent.firstRoot );
+}
+
+
+void Entity_Unregister( SEntity *entity )
+{
+	Entity_SetParent( entity, S_NULL_REF );
+
+	RefList_Remove( entity, offsetof( SEntity, parentLink ), &s_ent.firstRoot );
 }
 
 
@@ -187,6 +240,10 @@ void Entity_SetParent( SEntity *entity, SRef parentRef )
 
 		RefList_Remove( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
 	}
+	else
+	{
+		RefList_Remove( entity, offsetof( SEntity, parentLink ), &s_ent.firstRoot );
+	}
 
 	entity->parentRef = parentRef;
 
@@ -196,6 +253,10 @@ void Entity_SetParent( SEntity *entity, SRef parentRef )
 		assert( parent );
 
 		RefList_Insert( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
+	}
+	else
+	{
+		RefList_Insert( entity, offsetof( SEntity, parentLink ), &s_ent.firstRoot );
 	}
 }
 

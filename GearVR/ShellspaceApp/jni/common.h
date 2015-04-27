@@ -101,6 +101,14 @@ inline uint S_FNV32( const char *str, uint hval )
     return hval;
 }
 
+inline void S_SinCos( float angle, float *s, float *c )
+{
+    *s = sinf( angle );
+    *c = cosf( angle );
+}
+
+#define S_PI (float)M_PI
+
 #define S_NULL_REF  0xffff
 
 typedef ushort SRef;

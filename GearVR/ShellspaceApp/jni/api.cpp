@@ -560,10 +560,9 @@ SxResult sxRegisterEntity( SxEntityHandle ent )
 	entity = Registry_GetEntity( ref );
 	assert( entity );
 
-	entity->id = id;
+	Entity_Register( entity );
 
-	entity->visibility = 1.0f;
-	IdentityOrientation( &entity->orientation );
+	entity->id = id;
 
 	return SX_OK;
 }
@@ -583,7 +582,7 @@ SxResult sxUnregisterEntity( SxEntityHandle ent )
 	entity = Registry_GetEntity( ref );
 	assert( entity );
 
-	Entity_SetParent( entity, S_NULL_REF );
+	Entity_Unregister( entity );
 
 	free( entity->id );
 

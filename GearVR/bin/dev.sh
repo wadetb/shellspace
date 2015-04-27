@@ -1,4 +1,4 @@
-if [ `hostname` = "wade-air" ]; then 
+#if [ `hostname` = "wade-air" ]; then 
 	export ANDROID_ROOT=/Users/wadeb/Documents/VR/dev
 	export ANDROID_HOME=$ANDROID_ROOT/android-sdks
 	export ANDROID_NDK=$ANDROID_ROOT/android-ndk-r10d
@@ -11,4 +11,4 @@ if [ `hostname` = "wade-air" ]; then
 	export PATH=$ANDROID_ROOT/depot_tools:"$PATH"
 
 	export OVR_MOBILE_SDK=$(pwd)/../ovr_mobile_sdk_0.4.3.1
-fi
+#fi

@@ -425,7 +425,7 @@ SRef Registry_GetEntityRefByPointer( SEntity *entity )
 	assert( offset % sizeof( SEntity ) == 0 );
 
 	index = offset / sizeof( SEntity );
-	assertindex( index, s_pool[ENTITY_REGISTRY].count );
+	assertindex( index, s_pool[ENTITY_REGISTRY].count + 1 );
 
 	return (SRef)index;
 }

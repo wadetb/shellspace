@@ -91,25 +91,26 @@ void RefList_Remove( T* t, uint linkOffset, SRef *head )
 	ref = RefList_GetRef( t );
 	link = RefList_GetLink( t, linkOffset );
 
-	if ( link->next != S_NULL_REF )
-	{
-		next = RefList_Get<T>( link->next );
-		nextLink = RefList_GetLink( next, linkOffset );
-
-		nextLink->prev = link->prev;
-		link->next = S_NULL_REF;
-	}
-
 	if ( link->prev != S_NULL_REF )
 	{
 		prev = RefList_Get<T>( link->prev );
 		prevLink = RefList_GetLink( prev, linkOffset );
 		prevLink->next = link->next;
+		
 		link->prev = S_NULL_REF;
 	}
 	else
 	{
-		*head = ref;
+		*head = link->next;
+	}
+
+	if ( link->next != S_NULL_REF )
+	{
+		next = RefList_Get<T>( link->next );
+		nextLink = RefList_GetLink( next, linkOffset );
+		nextLink->prev = link->prev;
+
+		link->next = S_NULL_REF;
 	}
 }
 

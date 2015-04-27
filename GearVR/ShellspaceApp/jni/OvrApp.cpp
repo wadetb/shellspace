@@ -68,10 +68,10 @@ void APITest()
 
 	float positions[] = 
 	{ 
-		-4.0f, -4.0f, -10.0f, 
-		 4.0f, -4.0f, -10.0f,
-		-4.0f,  4.0f, -10.0f, 
-		 4.0f,  4.0f, -10.0f, 
+		-4.0f, -4.0f, 0.0f, 
+		 4.0f, -4.0f, 0.0f,
+		-4.0f,  4.0f, 0.0f, 
+		 4.0f,  4.0f, 0.0f, 
 	};
 
 	float texCoords[] = 
@@ -98,32 +98,55 @@ void APITest()
 	g_pluginInterface.registerPlugin( "apitest", SxPluginKind_Widget );
 	g_pluginInterface.registerWidget( "apitest" );
 
-	g_pluginInterface.registerGeometry( "apitest" );
-	g_pluginInterface.sizeGeometry( "apitest", 4, 6 );
-	g_pluginInterface.updateGeometryIndexRange( "apitest", 0, 6, indices );
-	g_pluginInterface.updateGeometryPositionRange( "apitest", 0, 4, (SxVector3 *)positions );
-	g_pluginInterface.updateGeometryTexCoordRange( "apitest", 0, 4, (SxVector2 *)texCoords );
-	g_pluginInterface.updateGeometryColorRange( "apitest", 0, 4, (SxColor *)colors );
-	g_pluginInterface.presentGeometry( "apitest" );
+	g_pluginInterface.registerGeometry( "quad0" );
+	g_pluginInterface.sizeGeometry( "quad0", 4, 6 );
+	g_pluginInterface.updateGeometryIndexRange( "quad0", 0, 6, indices );
+	g_pluginInterface.updateGeometryPositionRange( "quad0", 0, 4, (SxVector3 *)positions );
+	g_pluginInterface.updateGeometryTexCoordRange( "quad0", 0, 4, (SxVector2 *)texCoords );
+	g_pluginInterface.updateGeometryColorRange( "quad0", 0, 4, (SxColor *)colors );
+	g_pluginInterface.presentGeometry( "quad0" );
 
-	g_pluginInterface.registerTexture( "apitest" );
-	g_pluginInterface.sizeTexture( "apitest", 1, 1 );
-	g_pluginInterface.formatTexture( "apitest", SxTextureFormat_R8G8B8A8 );
-	g_pluginInterface.updateTextureRect( "apitest", 0, 0, 1, 1, 4, texels );
-	g_pluginInterface.presentTexture( "apitest" );
-
-	g_pluginInterface.registerEntity( "apitest" );
-	g_pluginInterface.setEntityGeometry( "apitest", "apitest" );
-	g_pluginInterface.setEntityTexture( "apitest", "apitest" );
-
-	SxOrientation o;
-	IdentityOrientation( &o );
-	Vec3Set( &o.origin, 0.0f, 0.0f, -10.0f );
+	g_pluginInterface.registerTexture( "purple0" );
+	g_pluginInterface.sizeTexture( "purple0", 1, 1 );
+	g_pluginInterface.formatTexture( "purple0", SxTextureFormat_R8G8B8A8 );
+	g_pluginInterface.updateTextureRect( "purple0", 0, 0, 1, 1, 4, texels );
+	g_pluginInterface.presentTexture( "purple0" );
 
 	SxTrajectory tr;
+	SxOrientation o;
+
 	tr.kind = SxTrajectoryKind_Instant;
 
-	g_pluginInterface.orientEntity( "apitest", &o, &tr );
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
+	Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
+	g_pluginInterface.registerEntity( "left" );
+	g_pluginInterface.setEntityGeometry( "left", "quad0" );
+	g_pluginInterface.setEntityTexture( "left", "purple0" );
+	g_pluginInterface.orientEntity( "left", &o, &tr );
+
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	g_pluginInterface.registerEntity( "left_child" );
+	g_pluginInterface.setEntityGeometry( "left_child", "quad0" );
+	g_pluginInterface.setEntityTexture( "left_child", "purple0" );
+	g_pluginInterface.orientEntity( "left_child", &o, &tr );
+	g_pluginInterface.parentEntity( "left_child", "left" );
+
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, -10.0f, 0.0f, -20.0f );
+	g_pluginInterface.registerEntity( "right" );
+	g_pluginInterface.setEntityGeometry( "right", "quad0" );
+	g_pluginInterface.setEntityTexture( "right", "purple0" );
+	g_pluginInterface.orientEntity( "right", &o, &tr );
+
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	g_pluginInterface.registerEntity( "right_child" );
+	g_pluginInterface.setEntityGeometry( "right_child", "quad0" );
+	g_pluginInterface.setEntityTexture( "right_child", "purple0" );
+	g_pluginInterface.orientEntity( "right_child", &o, &tr );
+	g_pluginInterface.parentEntity( "right_child", "right" );
 }
 
 

@@ -171,12 +171,21 @@ enum SxTextureFormat
 // An entity's placement in the world is controlled by an orientation
 //  object which includes the entity's parent (for base coordinate system),
 //  position, rotation and scale.
+// Angles are given in degrees.
 //
+
+struct SxAngles
+{
+    float           yaw;
+    float           pitch;
+    float           roll;
+};
+
 
 struct SxOrientation
 {
+    SxAngles        angles;
     SxVector3       origin;
-    SxVector3       angles;
     SxVector3       scale;
 };
 

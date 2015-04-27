@@ -19,6 +19,28 @@
 #ifndef __MATH_H__
 #define __MATH_H__
 
+struct SxVector4
+{
+    float   x;
+    float   y;
+    float   z;
+    float   w;
+};
+
+struct SxAxes
+{
+    SxVector3   x;
+    SxVector3   y;
+    SxVector3   z;
+};
+
+struct SxTransform
+{
+    SxAxes      axes;
+    SxVector3   origin;
+    SxVector3   scale;
+};
+
 inline void Vec3Add( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
 {
     out->x = a.x + b.x;
@@ -31,6 +53,13 @@ inline void Vec3Clear( SxVector3 *out )
     out->x = 0.0f;
     out->y = 0.0f;
     out->z = 0.0f;
+}
+
+inline void Vec3Copy( const SxVector3 &a, SxVector3 *out )
+{
+    out->x = a.x;
+    out->y = a.y;
+    out->z = a.z;
 }
 
 inline void Vec3Mad( const SxVector3 &a, float b, const SxVector3 &c, SxVector3 *out )
@@ -75,11 +104,98 @@ inline void Vec3Sub( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
     out->z = a.z - b.z;
 }
 
-inline void IdentityOrientation( SxOrientation *o )
+inline void Vec3TransformByAxes( const SxVector3 &a, const SxAxes &b, SxVector3 *out )
 {
-    Vec3Clear( &o->origin );
-    Vec3Clear( &o->angles );
-    Vec3Clear( &o->scale );
+    assert( out != &a );
+    out->x = a.x * b.x.x + a.y * b.y.x + a.z * b.z.x;
+    out->y = a.x * b.x.y + a.y * b.y.y + a.z * b.z.y;
+    out->z = a.x * b.x.z + a.y * b.y.z + a.z * b.z.z;
+}
+
+inline void Vec3Transform( const SxVector3 &a, const SxTransform &b, SxVector3 *out )
+{
+    SxVector3 result;
+
+    Vec3TransformByAxes( a, b.axes, &result );
+    Vec3Mul( result, b.scale, &result );
+
+    *out = result;
+}
+
+inline void Vec3TransformPoint( const SxVector3 &a, const SxTransform &b, SxVector3 *out )
+{
+    SxVector3 result;
+
+    Vec3TransformByAxes( a, b.axes, &result );
+    Vec3Mul( result, b.scale, &result );
+    Vec3Add( result, b.origin, &result );
+
+    *out = result;
+}
+
+inline void IdentityAxes( SxAxes *out )
+{
+    Vec3Set( &out->x, 1.0f, 0.0f, 0.0f );
+    Vec3Set( &out->y, 0.0f, 1.0f, 0.0f );
+    Vec3Set( &out->z, 0.0f, 0.0f, 1.0f );
+}
+
+inline void ConcatenateAxes( const SxAxes &a, const SxAxes &b, SxAxes *out )
+{
+    Vec3TransformByAxes( b.x, a, &out->x );
+    Vec3TransformByAxes( b.y, a, &out->y );
+    Vec3TransformByAxes( b.z, a, &out->z );
+}
+
+inline void IdentityTransform( SxTransform *out )
+{
+    IdentityAxes( &out->axes );
+    Vec3Clear( &out->origin );
+    Vec3Set( &out->scale, 1.0f, 1.0f, 1.0f );
+}
+
+inline void ConcatenateTransforms( const SxTransform &a, const SxTransform &b, SxTransform *out )
+{
+    ConcatenateAxes( b.axes, a.axes, &out->axes );
+    Vec3TransformPoint( b.origin, a, &out->origin );    
+    Vec3Mul( b.scale, a.scale, &out->scale );
+}
+
+inline void AnglesClear( SxAngles *out )
+{
+    out->yaw = 0.0f;
+    out->pitch = 0.0f;
+    out->roll = 0.0f;
+}
+
+inline void AnglesToAxes( const SxAngles &a, SxAxes *out )
+{
+    float   sy, sp, sr;
+    float   cy, cp, cr;
+
+    S_SinCos( a.yaw * (S_PI / 180.0f), &sy, &cy );
+    S_SinCos( a.pitch * (S_PI / 180.0f), &sp, &cp );
+    S_SinCos( a.roll * (S_PI / 180.0f), &sr, &cr );
+
+    Vec3Set( &out->x, cp*cy, cp*sy, -sp );
+    Vec3Set( &out->y, -sr*sp*cy + -cr*-sy, -sr*sp*sy + -cr*cy, -sr*cp );
+    Vec3Set( &out->z, cr*sp*cy + -sr*-sy, cr*sp*sy + -sr*cy, cr*cp );
+
+    IdentityAxes( out ); // $$$
+}
+
+inline void IdentityOrientation( SxOrientation *out )
+{
+    Vec3Clear( &out->origin );
+    AnglesClear( &out->angles );
+    Vec3Set( &out->scale, 1.0f, 1.0f, 1.0f );
+}
+
+inline void OrientationToTransform( const SxOrientation &a, SxTransform *out )
+{
+    AnglesToAxes( a.angles, &out->axes );
+    Vec3Copy( a.origin, &out->origin );
+    Vec3Copy( a.scale, &out->scale );
 }
 
 #endif
