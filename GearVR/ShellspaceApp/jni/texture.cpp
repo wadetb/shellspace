@@ -5,22 +5,28 @@
 
 void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat format )
 {
-	uint 	texIndex;
+	uint 	index;
 	uint 	texWidth;
 	uint 	texHeight;
 	GLuint 	texId;
 
 	Prof_Start( PROF_TEXTURE_RESIZE );
 
+	GL_CheckErrors( "before Texture_Resize" );
+
 	assert( texture );
 
-	texIndex = texture->updateIndex % BUFFER_COUNT;
+	LOG( "Texture_Resize: %d by %d", width, height );
+
+	index = texture->updateIndex % BUFFER_COUNT;
+
+	texId = texture->texId[index];
 
 	texWidth = S_NextPow2( width );
 	texHeight = S_NextPow2( height );
 
-	if ( texture->texId[texIndex] )
-		glDeleteTextures( 1, &texture->texId[texIndex] );
+	if ( texId )
+		glDeleteTextures( 1, &texId );
 
 	glGenTextures( 1, &texId );
 
@@ -35,9 +41,11 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
-	texture->texId[texIndex] = texId;
-	texture->texWidth[texIndex] = texWidth;
-	texture->texHeight[texIndex] = texHeight;
+	texture->texId[index] = texId;
+	texture->texWidth[index] = texWidth;
+	texture->texHeight[index] = texHeight;
+
+	GL_CheckErrors( "after Texture_Resize" );
 
 	Prof_Stop( PROF_TEXTURE_RESIZE );
 }
@@ -45,16 +53,20 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height, const void *data )
 {
-	int 	texIndex;
+	int 	index;
 
 	Prof_Start( PROF_TEXTURE_UPDATE );
 
+	GL_CheckErrors( "before Texture_Update" );
+
 	assert( texture );
 
-	texIndex = texture->updateIndex % BUFFER_COUNT;
-	assert( texture->texId[texIndex] );
+	LOG( "Texture_Update: (%d,%d) %d by %d", x, y, width, height );
 
-	glBindTexture( GL_TEXTURE_2D, texture->texId[texIndex] );
+	index = texture->updateIndex % BUFFER_COUNT;
+	assert( texture->texId[index] );
+
+	glBindTexture( GL_TEXTURE_2D, texture->texId[index] );
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, width );
 
 	glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data );
@@ -62,24 +74,28 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
+	GL_CheckErrors( "after Texture_Update" );
+
 	Prof_Stop( PROF_TEXTURE_UPDATE );
 }
 
 
 void Texture_Present( STexture *texture )
 {
-	int 	texIndex;
+	int 	index;
 
 	Prof_Start( PROF_TEXTURE_PRESENT );
+
+	GL_CheckErrors( "before Texture_Present" );
 
 	assert( texture );
 
 	texture->drawIndex = texture->updateIndex;
 
-	texIndex = texture->updateIndex % BUFFER_COUNT;
-	assert( texture->texId[texIndex] );
+	index = texture->updateIndex % BUFFER_COUNT;
+	assert( texture->texId[index] );
 
-	glBindTexture( GL_TEXTURE_2D, texture->texId[texIndex] );
+	glBindTexture( GL_TEXTURE_2D, texture->texId[index] );
 
 	// $$$ Could do some mipping of just rectangles affected by updates.
 	glGenerateMipmap( GL_TEXTURE_2D );
@@ -89,6 +105,8 @@ void Texture_Present( STexture *texture )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	GL_CheckErrors( "after Texture_Present" );
 
 	Prof_Stop( PROF_TEXTURE_PRESENT );
 }

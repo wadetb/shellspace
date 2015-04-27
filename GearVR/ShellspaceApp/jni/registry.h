@@ -55,6 +55,8 @@ struct SGeometry
 
 	byte 			updateIndex;
 	byte 			drawIndex;
+
+	uint 			presentFrame;
 };
 
 struct STexture
@@ -75,6 +77,8 @@ struct STexture
 
 	byte 			updateIndex;
 	byte 			drawIndex;
+
+	uint 			presentFrame;
 };
 
 struct SEntity
@@ -92,10 +96,9 @@ struct SEntity
 	SxOrientation	orientation;
 	float 			visibility;
 
-	sbool 			active : 1;
-
 	SRef 			parentRef;
 	SRefLink		parentLink;
+	SRef 			firstChild;
 };
 
 void Registry_Init();
@@ -118,5 +121,7 @@ SWidget *Registry_GetWidget( SRef ref );
 SGeometry *Registry_GetGeometry( SRef ref );
 STexture *Registry_GetTexture( SRef ref );
 SEntity *Registry_GetEntity( SRef ref );
+
+SRef Registry_GetEntityRefByPointer( SEntity *entity );
 
 #endif

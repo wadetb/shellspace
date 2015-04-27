@@ -1,13 +1,13 @@
 #!/bin/bash
 
-pushd ../ovr_mobile_sdk_0.4.3.1/VRLib
-./build.sh $1
-pushd
+# pushd ../ovr_mobile_sdk_0.4.3.1/VRLib
+# ./build.sh $1
+# pushd
 
 export BUILD_MODULE=Shellspace
 
-echo "========================== Update "${BUILD_MODULE}" Project ==========================="
-android update project -t android-19 -p . -s
+# echo "========================== Update "${BUILD_MODULE}" Project ==========================="
+# android update project -t android-19 -p . -s
  
 if [ -z "$ANDROID_NDK" ]; then
   ANDROID_NDK=~/ndk

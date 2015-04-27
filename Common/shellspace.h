@@ -161,7 +161,6 @@ enum SxTextureFormat
 
 struct SxOrientation
 {
-    SxEntityHandle  parent;
     SxVector3       origin;
     SxVector3       angles;
     SxVector3       scale;
@@ -244,6 +243,13 @@ typedef SxResult (*SxUpdateGeometryTexCoordRange)( SxGeometryHandle geo, unsigne
 typedef SxResult (*SxUpdateGeometryColorRange)( SxGeometryHandle geo, unsigned int firstVertex, unsigned int vertexCount, const SxColor *colors );
 
 //
+// sxPresentGeometry
+//
+// Makes the geometry visible, after all prior updates have completed.
+// 
+typedef SxResult (*SxPresentGeometry)( SxGeometryHandle geo );
+
+//
 // Textures
 //
 
@@ -311,6 +317,13 @@ typedef SxResult (*SxRenderTextureSvg)( SxTextureHandle tx, unsigned int x, unsi
 typedef SxResult (*SxRenderTextureJpeg)( SxTextureHandle tx, unsigned int x, unsigned int y, const void *jpeg );
 
 //
+// sxPresentTexture
+//
+// Makes the texture visible, after all prior updates have completed.
+// 
+typedef SxResult (*SxPresentTexture)( SxGeometryHandle geo );
+
+//
 // Entities
 //
 
@@ -354,6 +367,14 @@ typedef SxResult (*SxOrientEntity)( SxEntityHandle ent, const SxOrientation *o, 
 // 
 typedef SxResult (*SxSetEntityVisibility)( SxEntityHandle ent, float visibility, const SxTrajectory *tr );
 
+//
+// sxParentEntity
+//
+// Sets the parent of an entity.  
+// An entity's orientation is relative to the orientation of its parent.
+// 
+typedef SxResult (*SxParentEntity)( SxEntityHandle ent, SxEntityHandle parent );
+
 // 
 // Plugin interface
 //
@@ -379,6 +400,7 @@ struct SxPluginInterface
     SxUpdateGeometryPositionRange       updateGeometryPositionRange;
     SxUpdateGeometryTexCoordRange       updateGeometryTexCoordRange;
     SxUpdateGeometryColorRange          updateGeometryColorRange;
+    SxPresentGeometry                   presentGeometry;
     SxRegisterTexture                   registerTexture;
     SxUnregisterTexture                 unregisterTexture;
     SxFormatTexture                     formatTexture;
@@ -387,47 +409,16 @@ struct SxPluginInterface
     SxUpdateTextureRect                 updateTextureRect;
     SxRenderTextureSvg                  renderTextureSvg;
     SxRenderTextureJpeg                 renderTextureJpeg;
+    SxPresentTexture                    presentTexture;
     SxRegisterEntity                    registerEntity;
     SxUnregisterEntity                  unregisterEntity;
     SxSetEntityGeometry                 setEntityGeometry;
     SxSetEntityTexture                  setEntityTexture;
     SxOrientEntity                      orientEntity;
     SxSetEntityVisibility               setEntityVisibility;
+    SxParentEntity                      parentEntity;
 };
 
 extern SxPluginInterface g_pluginInterface;
-
-#if 0
-extern SxRegisterPlugin                    sxRegisterPlugin;
-extern SxUnregisterPlugin                  sxUnregisterPlugin;
-extern SxRegisterWidget                    sxRegisterWidget;
-extern SxUnregisterWidget                  sxUnregisterWidget;
-extern SxBroadcastMessage                  sxBroadcastMessage;
-extern SxSendMessage                       sxSendMessage;
-extern SxReceiveMessages                   sxReceiveMessages;
-extern SxRegisterMessageListeners          sxRegisterMessageListeners;
-extern SxUnregisterMessageListeners        sxUnregisterMessageListeners;
-extern SxRegisterGeometry                  sxRegisterGeometry;
-extern SxUnregisterGeometry                sxUnregisterGeometry;
-extern SxSizeGeometry                      sxSizeGeometry;
-extern SxUpdateGeometryIndexRange          sxUpdateGeometryIndexRange;
-extern SxUpdateGeometryPositionRange       sxUpdateGeometryPositionRange;
-extern SxUpdateGeometryTexCoordRange       sxUpdateGeometryTexCoordRange;
-extern SxUpdateGeometryColorRange          sxUpdateGeometryColorRange;
-extern SxRegisterTexture                   sxRegisterTexture;
-extern SxUnregisterTexture                 sxUnregisterTexture;
-extern SxFormatTexture                     sxFormatTexture;
-extern SxSizeTexture                       sxSizeTexture;
-extern SxClearTexture                      sxClearTexture;
-extern SxUpdateTextureRect                 sxUpdateTextureRect;
-extern SxRenderTextureSvg                  sxRenderTextureSvg;
-extern SxRenderTextureSvg                  sxRenderTextureSvg;
-extern SxRegisterEntity                    sxRegisterEntity;
-extern SxUnregisterEntity                  sxUnregisterEntity;
-extern SxSetEntityGeometry                 sxSetEntityGeometry;
-extern SxSetEntityTexture                  sxSetEntityTexture;
-extern SxOrientEntity                      sxOrientEntity;
-extern SxSetEntityVisibility               sxSetEntityVisibility;
-#endif
 
 #endif

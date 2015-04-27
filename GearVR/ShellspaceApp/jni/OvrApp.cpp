@@ -68,10 +68,10 @@ void APITest()
 
 	float positions[] = 
 	{ 
-		-1.0f, -1.0f, 0.0f, 
-		 1.0f, -1.0f, 0.0f,
-		-1.0f,  1.0f, 0.0f, 
-		 1.0f,  1.0f, 0.0f, 
+		-4.0f, -4.0f, -10.0f, 
+		 4.0f, -4.0f, -10.0f,
+		-4.0f,  4.0f, -10.0f, 
+		 4.0f,  4.0f, -10.0f, 
 	};
 
 	float texCoords[] = 
@@ -84,22 +84,37 @@ void APITest()
 
 	byte colors[] = 
 	{ 
-		255, 255, 255, 255, 
-		255, 255, 255, 255, 
-		255, 255, 255, 255, 
+		255, 128, 255, 255, 
+		255, 128, 255, 255, 
+		255, 128, 255, 255, 
+		255, 128, 255, 255, 
+	};
+
+	byte texels[] = 
+	{ 
 		255, 255, 255, 255, 
 	};
 
 	g_pluginInterface.registerPlugin( "apitest", SxPluginKind_Widget );
 	g_pluginInterface.registerWidget( "apitest" );
+
 	g_pluginInterface.registerGeometry( "apitest" );
 	g_pluginInterface.sizeGeometry( "apitest", 4, 6 );
 	g_pluginInterface.updateGeometryIndexRange( "apitest", 0, 6, indices );
 	g_pluginInterface.updateGeometryPositionRange( "apitest", 0, 4, (SxVector3 *)positions );
 	g_pluginInterface.updateGeometryTexCoordRange( "apitest", 0, 4, (SxVector2 *)texCoords );
 	g_pluginInterface.updateGeometryColorRange( "apitest", 0, 4, (SxColor *)colors );
+	g_pluginInterface.presentGeometry( "apitest" );
+
+	g_pluginInterface.registerTexture( "apitest" );
+	g_pluginInterface.sizeTexture( "apitest", 1, 1 );
+	g_pluginInterface.formatTexture( "apitest", SxTextureFormat_R8G8B8A8 );
+	g_pluginInterface.updateTextureRect( "apitest", 0, 0, 1, 1, 4, texels );
+	g_pluginInterface.presentTexture( "apitest" );
+
 	g_pluginInterface.registerEntity( "apitest" );
 	g_pluginInterface.setEntityGeometry( "apitest", "apitest" );
+	g_pluginInterface.setEntityTexture( "apitest", "apitest" );
 }
 
 
@@ -145,6 +160,8 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	Keyboard_Init();
 
 	vnc = VNC_CreateWidget();
+
+	APITest();
 
 	// VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
 	VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot; phone is 192.168.43.1
@@ -238,7 +255,7 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 #else
 	swapParms.WarpProgram = WP_CHROMATIC;
 
-	VNC_DrawWidget( vnc, view );
+	// VNC_DrawWidget( vnc, view );
 #endif
 
 	Entity_Draw( view );

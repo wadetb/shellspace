@@ -396,3 +396,19 @@ uint Registry_GetCount( ERegistry reg )
 {
 	return s_pool[reg].count;
 }
+
+
+SRef Registry_GetEntityRefByPointer( SEntity *entity )
+{
+	ptrdiff_t 	offset;
+	uint 		index;
+
+	offset = (byte *)entity - (byte *)s_pool[ENTITY_REGISTRY].entries;
+	assert( offset % sizeof( SEntity ) == 0 );
+
+	index = offset / sizeof( SEntity );
+	assertindex( index, s_pool[ENTITY_REGISTRY].count );
+
+	return (SRef)index;
+}
+

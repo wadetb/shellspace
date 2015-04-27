@@ -1,5 +1,6 @@
 #include "common.h"
 #include "entity.h"
+#include "reflist.h"
 #include "registry.h"
 #include <GlProgram.h>
 
@@ -30,7 +31,7 @@ void Entity_Init()
 		"{\n"
 		"   gl_Position = Mvpm * Position;\n"
 		"	oTexCoord = TexCoord;\n"
-		"   oColor = /* VertexColor * */ UniformColor;\n"
+		"   oColor = VertexColor;\n"
 		"}\n"
 		,
 		"#version 300 es\n"
@@ -40,15 +41,9 @@ void Entity_Init()
 		"out mediump vec4 fragColor;\n"
 		"void main()\n"
 		"{\n"
-		"	fragColor = texture( Texture0, oTexCoord );\n"
+		"	fragColor = oColor * texture( Texture0, oTexCoord );\n"
 		"}\n"
 		);
-}
-
-
-void Entity_Activate( SEntity *entity, sbool active )
-{
-	entity->active = active;
 }
 
 
@@ -56,6 +51,8 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 {
 	STexture 	*texture;
 	SGeometry	*geometry;
+	GLuint 		texId;
+	GLuint 		vertexArrayObject;
 	int 		triCount;
 	int 		indexOffset;
 	int 		batchTriCount;
@@ -65,20 +62,41 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	assert( entity );
 
+	GL_CheckErrors( "before Entity_DrawEntity" );
+
 	geometry = Registry_GetGeometry( entity->geometryRef );
 	assert( geometry );
 
-	texture = Registry_GetTexture( entity->textureRef );
-	assert( texture );
+	vertexArrayObject = geometry->vertexArrayObjects[geometry->drawIndex % BUFFER_COUNT];
+
+	if ( !vertexArrayObject )
+	{
+		Prof_Stop( PROF_DRAW_ENTITY );
+		return;
+	}
 
 	glUseProgram( s_ent.shader.program );
 
+	glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
 	glUniformMatrix4fv( s_ent.shader.uMvp, 1, GL_FALSE, view.Transposed().M[0] );
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, texture->texId[texture->drawIndex % BUFFER_COUNT] );
 
-	glBindVertexArrayOES_( geometry->vertexArrayObjects[geometry->drawIndex % BUFFER_COUNT] );
+	if ( entity->textureRef != S_NULL_REF )
+	{
+		texture = Registry_GetTexture( entity->textureRef );
+		assert( texture );
+
+		texId = texture->texId[texture->drawIndex % BUFFER_COUNT];
+
+		glBindTexture( GL_TEXTURE_2D, texId );
+	}
+	else
+	{
+		glBindTexture( GL_TEXTURE_2D, 0 );
+	}
+
+	glBindVertexArrayOES_( vertexArrayObject );
 
 	indexOffset = 0;
 	triCount = geometry->indexCount / 3;
@@ -87,7 +105,7 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 	while ( triCountLeft )
 	{
 #if USE_SPLIT_DRAW
-		batchTriCount = S_Min( triCountLeft, triCount / 10 );
+		batchTriCount = S_Min( triCountLeft, S_Max( 1, triCount / 10 ) );
 #else // #if USE_SPLIT_DRAW
 		batchTriCount = triCount;
 #endif // #else // #if USE_SPLIT_DRAW
@@ -98,8 +116,11 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 		triCountLeft -= batchTriCount;
 	}
 
-	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArrayOES_( 0 );
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	GL_CheckErrors( "after Entity_DrawEntity" );
 
 	Prof_Stop( PROF_DRAW_ENTITY );
 }
@@ -124,9 +145,31 @@ void Entity_Draw( const Matrix4f &view )
 		entity = Registry_GetEntity( Registry_RefForIndex( entityIter ) );
 		assert( entity );
 
-		// if ( !entity->active )
-		// 	continue;
+		if ( entity->visibility <= 0.0f )
+			continue;
 
 		Entity_DrawEntity( entity, view );
 	}
 }
+
+
+void Entity_SetParent( SEntity *entity, SRef parentRef )
+{
+	SEntity *parent;
+
+	if ( entity->parentRef != S_NULL_REF )
+	{
+		parent = Registry_GetEntity( entity->parentRef );
+		assert( parent );
+
+		RefList_Remove( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
+	}
+
+	entity->parentRef = parentRef;
+
+	parent = Registry_GetEntity( parentRef );
+	assert( parent );
+
+	RefList_Insert( entity, offsetof( SEntity, parentLink ), &parent->firstChild );
+}
+

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "entity.h"
 #include "inqueue.h"
 #include "registry.h"
 #include "thread.h"
@@ -219,9 +220,6 @@ SxResult sxUpdateGeometryIndexRange( SxGeometryHandle geo, unsigned int firstInd
 
 	InQueue_UpdateGeometryIndices( ref, firstIndex, indexCount, indices );
 
-	// $$$ Decide whether to add to API.
-	InQueue_PresentGeometry( ref );
-
 	return SX_OK;
 }
 
@@ -237,9 +235,6 @@ SxResult sxUpdateGeometryPositionRange( SxGeometryHandle geo, unsigned int first
 		return SX_INVALID_HANDLE;
 
 	InQueue_UpdateGeometryPositions( ref, firstVertex, vertexCount, positions );
-
-	// $$$ Decide whether to add to API.
-	InQueue_PresentGeometry( ref );
 
 	return SX_OK;
 }
@@ -257,9 +252,6 @@ SxResult sxUpdateGeometryTexCoordRange( SxGeometryHandle geo, unsigned int first
 
 	InQueue_UpdateGeometryTexCoords( ref, firstVertex, vertexCount, texCoords );
 
-	// $$$ Decide whether to add to API.
-	InQueue_PresentGeometry( ref );
-
 	return SX_OK;
 }
 
@@ -276,7 +268,20 @@ SxResult sxUpdateGeometryColorRange( SxGeometryHandle geo, unsigned int firstVer
 
 	InQueue_UpdateGeometryColors( ref, firstVertex, vertexCount, colors );
 
-	// $$$ Decide whether to add to API.
+	return SX_OK;
+}
+
+
+SxResult sxPresentGeometry( SxGeometryHandle geo )
+{
+	SRef 		ref;
+
+	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetGeometryRef( geo );
+	if ( ref == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
 	InQueue_PresentGeometry( ref );
 
 	return SX_OK;
@@ -347,6 +352,8 @@ SxResult sxFormatTexture( SxTextureHandle tex, SxTextureFormat format )
 	texture = Registry_GetTexture( ref );
 	assert( texture );
 
+	texture->format = format;
+
 	InQueue_ResizeTexture( ref, texture->width, texture->height, format );
 
 	return SX_OK;
@@ -366,6 +373,9 @@ SxResult sxSizeTexture( SxTextureHandle tex, unsigned int width, unsigned int he
 
 	texture = Registry_GetTexture( ref );
 	assert( texture );
+
+	texture->width = width;
+	texture->height = height;
 
 	InQueue_ResizeTexture( ref, width, height, texture->format );
 
@@ -409,8 +419,6 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 		return SX_NOT_IMPLEMENTED;
 
 	InQueue_UpdateTextureRect( ref, x, y, width, height, data );
-
-	InQueue_PresentTexture( ref );
 }
 
 
@@ -442,6 +450,21 @@ SxResult sxRenderTextureJpeg( SxTextureHandle tex, unsigned int x, unsigned int 
 }
 
 
+SxResult sxPresentTexture( SxTextureHandle tex )
+{
+	SRef 		ref;
+	STexture 	*texture;
+
+	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetTextureRef( tex );
+	if ( ref == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
+	InQueue_PresentTexture( ref );
+}
+
+
 SxResult sxRegisterEntity( SxEntityHandle ent )
 {
 	SRef 		ref;
@@ -463,6 +486,9 @@ SxResult sxRegisterEntity( SxEntityHandle ent )
 	assert( entity );
 
 	entity->id = id;
+
+	entity->visibility = 1.0f;
+	IdentityOrientation( &entity->orientation );
 
 	return SX_OK;
 }
@@ -586,6 +612,31 @@ SxResult sxSetEntityVisibility( SxEntityHandle ent, float visibility, const SxTr
 }
 
 
+SxResult sxParentEntity( SxEntityHandle ent, SxEntityHandle parent )
+{
+	SRef 	ref;
+	SRef 	parentRef;
+	SEntity *entity;
+
+	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetEntityRef( ent );
+	if ( ref == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
+	parentRef = Registry_GetEntityRef( parent );
+	if ( parentRef == S_NULL_REF )
+		return SX_INVALID_HANDLE;
+
+	entity = Registry_GetEntity( ref );
+	assert( entity );
+
+	Entity_SetParent( entity, parentRef );
+
+	return SX_OK;
+}
+
+
 SxPluginInterface g_pluginInterface =
 {
     SX_PLUGIN_INTERFACE_VERSION,			// version
@@ -605,6 +656,7 @@ SxPluginInterface g_pluginInterface =
     sxUpdateGeometryPositionRange,          // updateGeometryPositionRange
     sxUpdateGeometryTexCoordRange,          // updateGeometryTexCoordRange
     sxUpdateGeometryColorRange,             // updateGeometryColorRange
+    sxPresentGeometry,                    	// presentGeometry
     sxRegisterTexture,                      // registerTexture
     sxUnregisterTexture,                    // unregisterTexture
     sxFormatTexture,                        // formatTexture
@@ -613,10 +665,12 @@ SxPluginInterface g_pluginInterface =
     sxUpdateTextureRect,                    // updateTextureRect
     sxRenderTextureSvg,                     // renderTextureSvg
     sxRenderTextureJpeg,                    // renderTextureJpeg
+    sxPresentTexture,                    	// presentTexture
     sxRegisterEntity,                       // registerEntity
     sxUnregisterEntity,                     // unregisterEntity
     sxSetEntityGeometry,                    // setEntityGeometry
     sxSetEntityTexture,                     // setEntityTexture
     sxOrientEntity,                         // orientEntity
     sxSetEntityVisibility,                  // setEntityVisibility
+    sxParentEntity,                  		// parentEntity
 };

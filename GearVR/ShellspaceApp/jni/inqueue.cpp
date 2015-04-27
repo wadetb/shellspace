@@ -85,10 +85,73 @@ struct SInQueueGlobals
 {
 	SItem 				queue[INQUEUE_SIZE];
 	uint 				count;
+	uint 				presentFrame;
 };
 
 
 SInQueueGlobals s_iq;
+
+
+const char *s_itemKindNames[] =
+{
+	"Nop", 							// INQUEUE_NOP
+	"TextureResize", 				// INQUEUE_TEXTURE_RESIZE
+	"TextureUpdate", 				// INQUEUE_TEXTURE_UPDATE
+	"TexturePresent", 				// INQUEUE_TEXTURE_PRESENT
+	"GeometryResize", 				// INQUEUE_GEOMETRY_RESIZE
+	"GeometryUpdateIndex", 			// INQUEUE_GEOMETRY_UPDATE_INDEX
+	"GeometryUpdatePosition", 		// INQUEUE_GEOMETRY_UPDATE_POSITION
+	"GeometryUpdateTexcoord", 		// INQUEUE_GEOMETRY_UPDATE_TEXCOORD
+	"GeometryUpdateColor", 			// INQUEUE_GEOMETRY_UPDATE_COLOR
+	"GeometryPresent", 				// INQUEUE_GEOMETRY_PRESENT
+};
+
+
+void InQueue_CheckAdvance( uint count )
+{
+	uint 		index;
+	SItem 		*in;
+	STexture 	*texture;
+	SGeometry 	*geometry;
+
+	for ( index = 0; index < count; index++ )
+	{
+		in = &s_iq.queue[index];
+
+		switch ( in->kind )
+		{
+		case INQUEUE_TEXTURE_RESIZE:
+		case INQUEUE_TEXTURE_UPDATE:
+			{
+				texture = Registry_GetTexture( in->texture.ref );
+				assert( texture );
+
+				if ( !( in->texture.updateMask & (1 << texture->updateIndex) ) )
+					if ( texture->updateIndex == texture->drawIndex )
+						texture->updateIndex++;
+			}
+			break;
+
+		case INQUEUE_GEOMETRY_RESIZE:
+		case INQUEUE_GEOMETRY_UPDATE_INDEX:
+		case INQUEUE_GEOMETRY_UPDATE_POSITION:
+		case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+		case INQUEUE_GEOMETRY_UPDATE_COLOR:
+			{
+				geometry = Registry_GetGeometry( in->geometry.ref );
+				assert( geometry );
+
+				if ( !( in->geometry.updateMask & (1 << geometry->updateIndex) ) )
+					if ( geometry->updateIndex == geometry->drawIndex )
+						geometry->updateIndex++;
+			}
+			break;
+
+		default: 
+			break;
+		}
+	}
+}
 
 
 void InQueue_ProcessTextureItem( SItem *in )
@@ -99,7 +162,12 @@ void InQueue_ProcessTextureItem( SItem *in )
 	texture = Registry_GetTexture( in->texture.ref );
 	assert( texture );
 
+	if ( texture->presentFrame == s_iq.presentFrame )
+		return;
+
 	updateMask = 1 << (texture->updateIndex % BUFFER_COUNT);
+
+	LOG( "%s - mask=%d update=%d draw=%d", s_itemKindNames[in->kind], in->texture.updateMask, texture->updateIndex, texture->drawIndex );
 
 	switch ( in->kind )
 	{
@@ -159,8 +227,7 @@ void InQueue_ProcessTextureItem( SItem *in )
 			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
 				in->kind = INQUEUE_NOP;
 
-			// $$$ Mark that no more events should be processed for this texture this frame, e.g.
-			//  goto finished_updates in VNC code. 
+			texture->presentFrame = s_iq.presentFrame;
 		}
 		break;
 
@@ -179,6 +246,13 @@ void InQueue_ProcessGeometryItem( SItem *in )
 	geometry = Registry_GetGeometry( in->geometry.ref );
 	assert( geometry );
 
+	LOG( "%s - mask=%d update=%d draw=%d pf=%d:%d", s_itemKindNames[in->kind], 
+		in->geometry.updateMask, geometry->updateIndex, geometry->drawIndex, 
+		geometry->presentFrame, s_iq.presentFrame );
+
+	if ( geometry->presentFrame == s_iq.presentFrame )
+		return;
+
 	updateMask = 1 << (geometry->updateIndex % BUFFER_COUNT);
 
 	switch ( in->kind )
@@ -186,12 +260,6 @@ void InQueue_ProcessGeometryItem( SItem *in )
 	case INQUEUE_GEOMETRY_RESIZE:
 		if ( !(in->geometry.updateMask & updateMask) )
 		{
-			if ( geometry->updateIndex == geometry->drawIndex )
-			{
-				geometry->updateIndex++;
-				updateMask = 1 << (geometry->updateIndex % BUFFER_COUNT);
-			}
-
 			Geometry_Resize( geometry, 
 				in->geometry.resize.vertexCount, 
 				in->geometry.resize.indexCount );
@@ -208,12 +276,6 @@ void InQueue_ProcessGeometryItem( SItem *in )
 	case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
 		if ( !(in->geometry.updateMask & updateMask) )
 		{
-			if ( geometry->updateIndex == geometry->drawIndex )
-			{
-				geometry->updateIndex++;
-				updateMask = 1 << (geometry->updateIndex % BUFFER_COUNT);
-			}
-
 			switch ( in->kind )
 			{
 			case INQUEUE_GEOMETRY_UPDATE_INDEX:
@@ -265,8 +327,7 @@ void InQueue_ProcessGeometryItem( SItem *in )
 			if ( in->geometry.updateMask == ALL_BUFFERS_MASK )
 				in->kind = INQUEUE_NOP;
 
-			// $$$ Mark that no more events should be processed for this geometry this frame, e.g.
-			//  goto finished_updates in VNC code. 
+			geometry->presentFrame = s_iq.presentFrame;
 		}
 		break;
 
@@ -313,6 +374,8 @@ void InQueue_Frame()
 
 	Prof_Start( PROF_GPU_UPDATE );
 
+	LOG( "InQueue_Frame" );
+
 	Thread_Lock( MUTEX_INQUEUE );
 
 	// This is safe because other threads can only append to or modify the queue.
@@ -322,6 +385,8 @@ void InQueue_Frame()
 
 	if ( !count )
 		return;
+
+	InQueue_CheckAdvance( count );
 
 	startMs = Prof_MS();
 
@@ -359,6 +424,8 @@ void InQueue_Frame()
 	}
 
 	InQueue_Compact();
+
+	s_iq.presentFrame++;
 
 	Prof_Stop( PROF_GPU_UPDATE );
 }
@@ -455,6 +522,8 @@ void InQueue_ResizeTexture( SRef ref, uint width, uint height, SxTextureFormat f
 
 	in = InQueue_BeginAppend( INQUEUE_TEXTURE_RESIZE );
 
+	LOG( "InQueue_ResizeTexture %d by %d", width, height );
+	
 	in->texture.ref = ref;
 	in->texture.resize.width = width;
 	in->texture.resize.height = height;

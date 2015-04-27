@@ -6,8 +6,8 @@
 enum
 {
 	VERTEX_ATTRIBUTE_POSITION 	= 0,
-	VERTEX_ATTRIBUTE_TEXCOORD 	= 1,
-	VERTEX_ATTRIBUTE_COLOR 		= 2
+	VERTEX_ATTRIBUTE_TEXCOORD 	= 5,
+	VERTEX_ATTRIBUTE_COLOR 		= 4
 };
 
 void Geometry_Resize( SGeometry *geometry, uint vertexCount, uint indexCount );
