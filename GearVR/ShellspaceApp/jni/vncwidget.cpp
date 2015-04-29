@@ -950,6 +950,8 @@ static void vnc_thread_got_x_cut_text( rfbClient *client, const char *text, int 
 
 	assert( client );
 
+	LOG( "vnc_thread_got_x_cut_text: %s", text );
+
 	vncThread = (SVNCThread *)rfbClientGetClientData( client, &s_vncThreadClientKey );
 	assert( vncThread );
 
@@ -1795,9 +1797,9 @@ static void VNC_HandleClipboard( SVNCWidget *vnc, SVNCInQueueItem *in )
 
 	text = in->clipboard.text;
 
-	if ( strncasecmp( text, "$vrvnc:", 7 ) == 0 )
+	if ( strncasecmp( text, "$$!", 3 ) == 0 )
 	{
-		Cmd_Add( text + 7 );
+		Cmd_Add( text + 3 );
 	}	
 	else
 	{
