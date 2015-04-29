@@ -63,6 +63,7 @@ struct SKeyboardGlobals
 	Vector3f			right;
 	Vector3f			normal;
 	float				scale;
+	float 				depth;
 
 	int 				key;
 
@@ -88,21 +89,22 @@ static const char *s_builtinKeyboards[] =
 void Keyboard_Init()
 {
 	s_keyGlob.scale = 0.05f;
-
-	s_keyGlob.visible = false;
+	s_keyGlob.depth = 20.0f;
 
 	s_keyGlob.activeIndex = 0;
 	s_keyGlob.key = INVALID_KEY;
 
-	s_keyGlob.pos = Vector3f( 0.0f, 0.0f, 1.0f );
+	s_keyGlob.pos = Vector3f( 0.0f, 0.0f, -1.0f );
 	s_keyGlob.pos.Normalize();
-	s_keyGlob.pos *= 15.0f;
+	s_keyGlob.pos *= s_keyGlob.depth;
 
 	s_keyGlob.up = Vector3f( 0.0f, 1.0f, 0.0f );
 	s_keyGlob.right = Vector3f( 1.0f, 0.0f, 0.0f );
 	s_keyGlob.normal = s_keyGlob.right.Cross( s_keyGlob.up );
 
 	Keyboard_LoadKeyboards();
+
+	s_keyGlob.visible = true;
 }
 
 
@@ -119,15 +121,6 @@ void Keyboard_Toggle()
 		Keyboard_LoadKeyboards();
 
 		s_keyGlob.visible = true;
-
-		Vector3f pos = Vector3f( 0.0f, 0.0f, -1.0f );
-		pos.Normalize();
-		pos *= 15.0f;
-		s_keyGlob.pos = pos;
-
-		s_keyGlob.up = Vector3f( 0.0f, 1.0f, 0.0f );
-		s_keyGlob.right = Vector3f( 1.0f, 0.0f, 0.0f );
-		s_keyGlob.normal = s_keyGlob.right.Cross( s_keyGlob.up );
 	}
 }
 
@@ -522,7 +515,7 @@ void Keyboard_FreeKeyboards()
 }
 
 
-#define KEYBOARD_FILESYS_PATH "Oculus/VrVnc/"
+#define KEYBOARD_FILESYS_PATH "Oculus/Shellspace/"
 
 
 void Keyboard_LoadKeyboards()

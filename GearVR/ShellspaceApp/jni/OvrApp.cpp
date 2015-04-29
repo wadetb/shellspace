@@ -193,10 +193,10 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	vnc = VNC_CreateWidget();
 
-	APITest();
+	// APITest();
 
 	// VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
-	VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot; phone is 192.168.43.1
+	// VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot; phone is 192.168.43.1
 	// VNC_Connect( vnc, "192.168.0.103:0", "asdf" ); // rangeley
 	// VNC_Connect( vnc, "10.90.240.66:0", "asdf" );
 	// VNC_Connect( vnc, "10.90.240.93:0", "asdf" );
@@ -230,8 +230,10 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 	if ( eventType == KeyState::KEY_EVENT_DOWN ||
 		 eventType == KeyState::KEY_EVENT_UP )
 	{
-		vncCode = VNC_KeyCodeForAndroidCode( keyCode );
+		LOG( "Android Key: %d eventType=%d", keyCode, eventType );
 		
+		vncCode = VNC_KeyCodeForAndroidCode( keyCode );
+	
 		if ( vncCode != INVALID_KEY_CODE )
 		{
 			isDown = (eventType == KeyState::KEY_EVENT_DOWN);

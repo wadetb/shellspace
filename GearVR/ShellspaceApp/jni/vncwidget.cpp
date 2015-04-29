@@ -860,6 +860,9 @@ static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 	SVNCThread 		*vncThread;
 	SVNCInQueueItem *in;
 
+	if ( s_vncGlob.headmouse )
+		return TRUE;
+
 	Prof_Start( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 
 	assert( client );
@@ -1095,6 +1098,12 @@ static void VNCThread_Output( SVNCThread *vncThread )
 			SendKeyEvent( client, out->keyboard.code, out->keyboard.down );
 			break;
 		case VNC_OUTQUEUE_MOUSE:
+			if ( s_vncGlob.headmouse )
+			{
+				s_vncGlob.headmouse = false;
+				vnc_thread_handle_cursor_pos( client, out->mouse.x, out->mouse.y );
+				s_vncGlob.headmouse = true;
+			}
 			SendPointerEvent( client, out->mouse.x, out->mouse.y, out->mouse.buttons );
 			break;
 		default:
@@ -2086,6 +2095,7 @@ int VNC_GetTexHeight( SVNCWidget *vnc )
 
 SVNCKeyMap s_vncKeyMap[] =
 {
+	{ "unknown"   , AKEYCODE_UNKNOWN        , XK_Escape      },
 	{ "bkspc"     , AKEYCODE_DEL            , XK_BackSpace   },
 	{ "tab"       , AKEYCODE_TAB            , XK_Tab         },
 	{ "clear"     , AKEYCODE_UNKNOWN        , XK_Clear       },
@@ -2152,7 +2162,53 @@ SVNCKeyMap s_vncKeyMap[] =
 	{ "print"     , AKEYCODE_BREAK          , XK_Print       },
 	{ "sysreq"    , AKEYCODE_SYSRQ          , XK_Sys_Req     },
 	{ "break"     , AKEYCODE_UNKNOWN        , XK_Break       },
-	{ NULL        , AKEYCODE_UNKNOWN        , 0              }
+	{ "0"         , AKEYCODE_0              , '0'            },
+	{ "1"         , AKEYCODE_1              , '1'            },
+	{ "2"         , AKEYCODE_2              , '2'            },
+	{ "3"         , AKEYCODE_3              , '3'            },
+	{ "4"         , AKEYCODE_4              , '4'            },
+	{ "5"         , AKEYCODE_5              , '5'            },
+	{ "6"         , AKEYCODE_6              , '6'            },
+	{ "7"         , AKEYCODE_7              , '7'            },
+	{ "8"         , AKEYCODE_8              , '8'            },
+	{ "9"         , AKEYCODE_9              , '9'            },
+	{ "a"         , AKEYCODE_A              , 'a'            },
+	{ "b"         , AKEYCODE_B              , 'b'            },
+	{ "c"         , AKEYCODE_C              , 'c'            },
+	{ "d"         , AKEYCODE_D              , 'd'            },
+	{ "e"         , AKEYCODE_E              , 'e'            },
+	{ "f"         , AKEYCODE_F              , 'f'            },
+	{ "g"         , AKEYCODE_G              , 'g'            },
+	{ "h"         , AKEYCODE_H              , 'h'            },
+	{ "i"         , AKEYCODE_I              , 'i'            },
+	{ "j"         , AKEYCODE_J              , 'j'            },
+	{ "k"         , AKEYCODE_K              , 'k'            },
+	{ "l"         , AKEYCODE_L              , 'l'            },
+	{ "m"         , AKEYCODE_M              , 'm'            },
+	{ "n"         , AKEYCODE_N              , 'n'            },
+	{ "o"         , AKEYCODE_O              , 'o'            },
+	{ "p"         , AKEYCODE_P              , 'p'            },
+	{ "q"         , AKEYCODE_Q              , 'q'            },
+	{ "r"         , AKEYCODE_R              , 'r'            },
+	{ "s"         , AKEYCODE_S              , 's'            },
+	{ "t"         , AKEYCODE_T              , 't'            },
+	{ "u"         , AKEYCODE_U              , 'u'            },
+	{ "v"         , AKEYCODE_V              , 'v'            },
+	{ "w"         , AKEYCODE_W              , 'w'            },
+	{ "x"         , AKEYCODE_X              , 'x'            },
+	{ "y"         , AKEYCODE_Y              , 'y'            },
+	{ "z"         , AKEYCODE_Z              , 'z'            },
+	{ "grave"     , AKEYCODE_GRAVE          , '~'            },
+	{ "minus"     , AKEYCODE_MINUS          , '-'            },
+	{ "plus"      , AKEYCODE_PLUS           , '+'            },
+	{ "lbracket"  , AKEYCODE_LEFT_BRACKET   , '['            },
+	{ "rbracket"  , AKEYCODE_RIGHT_BRACKET  , ']'            },
+	{ "backslash" , AKEYCODE_BACKSLASH      , '\\'           },
+	{ "semicolon" , AKEYCODE_SEMICOLON      , ';'            },
+	{ "apostrophe", AKEYCODE_APOSTROPHE     , '\''           },
+	{ "slash"     , AKEYCODE_SLASH          , '/'            },
+	{ "comma"     , AKEYCODE_COMMA          , ','            },
+	{ "period"    , AKEYCODE_PERIOD         , '.'            },
 };
 
 

@@ -1,8 +1,10 @@
 {
 	"keys" : [
-		{ "x": 0,  "y": -60, "label": "Welcome to VrVnc" },
-		{ "x": 0,  "y":   0, "label": "Use the back button to toggle the keyboard." },
-		{ "x": 0,  "y":  60, "label": "Swipe left/right on the touchpad" },
-		{ "x": 0,  "y":  90, "label": "to switch keyboards." }
+		{ "x": 0,  "y": -120, "label": "Welcome to Shellspace" },
+		{ "x": 0,  "y":  -60, "label": "Use the back button to toggle the menu." },
+		{ "x": 0,  "y":  -30, "label": "Swipe left/right on the touchpad to switch menus." },
+		{ "x": 0,  "y":   30, "label": "If you haven't already, you'll need to edit" },
+		{ "x": 0,  "y":   60, "label": "connect.vrkey and place it on your SD card." },
+		{ "x": 0,  "y":   90, "label": "in order to connect to a VNC server." },
 	]
 }

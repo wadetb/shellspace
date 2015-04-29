@@ -230,7 +230,7 @@ void Prof_Frame()
 	if ( s_profGlob.frameCount == PROF_FRAME_COUNT )
 	{
 		Prof_Normalize();
-		Prof_Print();
+		// Prof_Print();
 		s_profGlob.frameCount = 0;
 	}
 }
