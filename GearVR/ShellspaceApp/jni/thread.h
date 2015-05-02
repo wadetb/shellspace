@@ -22,7 +22,8 @@
 enum EMutex
 {
 	MUTEX_API,
-	MUTEX_INQUEUE,
+    MUTEX_INQUEUE,
+	MUTEX_CMD,
 	MUTEX_COUNT
 };
 

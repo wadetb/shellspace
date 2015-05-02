@@ -228,12 +228,27 @@ static void rfb_log(const char *format, ...)
 }
 
 
+static void rfb_error(const char *format, ...)
+{
+    va_list args;
+    char msg[256];
+
+    va_start( args, format );
+    vsnprintf( msg, sizeof( msg ) - 1, format, args );
+    va_end( args );
+
+    LOG( msg );
+
+    Cmd_Add( "notify \"%s\"", msg );
+}
+
+
 static void VNC_OneTimeInit()
 {
 	int err;
 
 	rfbClientLog = rfb_log;
-	rfbClientErr = rfb_log;
+	rfbClientErr = rfb_error;
 
 	glGetIntegerv( GL_MAX_TEXTURE_SIZE, &s_vncGlob.maxTextureSize );
 
@@ -1047,7 +1062,7 @@ static sbool VNCThread_Input( SVNCThread *vncThread )
 	client = vncThread->client;
 	assert( client );
 
-	timeout = 1 * 1000; // 1 millisecond
+	timeout = 100 * 1000; // 100 milliseconds
 
 	Prof_Start( PROF_VNC_THREAD_WAIT );
 	result = WaitForMessage( client, timeout );
@@ -1554,8 +1569,8 @@ static void VNC_RebuildGlobe( SVNCWidget *vnc )
 	const float radius = vnc->globeRadius;
 
 	// $$$ TODO- handle 0 fov with a special case
-	const float yExtent = radius * sinf( 0.5f * fov );
-	const float zExtent = radius * cosf( 0.5f * fov ) * cosf( 0.5f * fov * aspect );
+	const float yExtent = radius * sinf( 0.5f * fov / aspect );
+	const float zExtent = radius * cosf( 0.5f * fov ) * cosf( 0.5f * fov );
 
 	const float scale = vnc->globeSize / yExtent;
 	// Globe is set up to initially face down -z.  Love OpenGL.	
@@ -1572,13 +1587,13 @@ static void VNC_RebuildGlobe( SVNCWidget *vnc )
 	{
 		float yf;
 		yf = (float) y / vertical;
-		const float lat = ( yf - 0.5f ) * fov;
+		const float lat = ( yf - 0.5f ) * fov / aspect;
 		const float cosLat = cosf( lat );
 		const float sinLat = sinf( lat );
 		for ( int x = 0; x <= horizontal; x++ )
 		{
 			const float xf = (float)x / (float)horizontal;
-			const float lon = 1.5f*M_PI + ( xf - 0.5f ) * fov * aspect;
+			const float lon = 1.5f*M_PI + ( xf - 0.5f ) * fov;
 			const int index = y * ( horizontal + 1 ) + x;
 
 			attribs.position[index].x = scale * radius * cosf( lon ) * cosLat;
@@ -1634,6 +1649,19 @@ static void VNC_HandleState( SVNCWidget *vnc, const SVNCInQueueItem *in )
 	{
 		vnc->thread->referenced = sfalse;
 		vnc->thread = NULL;
+	}
+
+	switch ( vnc->state )
+	{
+	case VNCSTATE_CONNECTING:
+		Cmd_Add( "notify \"Connecting\"" );
+		break;
+	case VNCSTATE_CONNECTED:
+		Cmd_Add( "notify \"Connected\"" );
+		break;
+	case VNCSTATE_DISCONNECTED:
+		Cmd_Add( "notify \"Disconnected\"" );
+		break;
 	}
 }
 
@@ -2379,7 +2407,6 @@ sbool VNC_Command( SVNCWidget *vnc )
 		}
 
 		vnc->globeFov = S_Maxf( vnc->globeFov, 1.0f );
-		vnc->globeFov = S_Minf( vnc->globeFov, 90.0f );
 
 		LOG( "globe fov is %f", vnc->globeFov );
 
@@ -2443,7 +2470,6 @@ sbool VNC_Command( SVNCWidget *vnc )
 		}
 
 		vnc->globeSize = S_Maxf( vnc->globeSize, 1.0f );
-		vnc->globeSize = S_Minf( vnc->globeSize, 500.0f );
 
 		LOG( "globe size is %f", vnc->globeSize );
 

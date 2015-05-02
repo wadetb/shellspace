@@ -77,6 +77,19 @@ const char *s_profNames[PROF_COUNT] =
 	"  Lock InQueue", 			// PROF_VNC_THREAD_LOCK_IN_QUEUE
 	"  UpdateTextureRect",      // PROF_VNC_THREAD_UPDATE_TEXTURE_RECT
 	" Output", 					// PROF_VNC_THREAD_OUTPUT
+	"  Update",					// PROF_RFB_UPDATE
+	"   EncRaw",				// PROF_RFB_ENCODING_RAW
+	"   EncCopyRect",			// PROF_RFB_ENCODING_COPY_RECT
+	"   EncRRE",				// PROF_RFB_ENCODING_RRE
+	"   EncCoRRE",				// PROF_RFB_ENCODING_CO_RRE
+	"   EncHextile",			// PROF_RFB_ENCODING_HEXTILE
+	"   EncUltra",				// PROF_RFB_ENCODING_ULTRA
+	"   EncUltraZip",			// PROF_RFB_ENCODING_ULTRA_ZIP
+	"   EncLibZ",				// PROF_RFB_ENCODING_LIBZ
+	"   EncTight",				// PROF_RFB_ENCODING_TIGHT
+	"    EncTightJpeg", 		// PROF_RFB_ENCODING_TIGHT_JPEG
+	"   EncZYWRLE",				// PROF_RFB_ENCODING_ZYWRLE
+	"   EncH264",				// PROF_RFB_ENCODING_H264
 	"GpuUpdate", 				// PROF_GPU_UPDATE
 	" Append", 					// PROF_GPU_UPDATE_APPEND
 	" Texture Resize",			// PROF_TEXTURE_RESIZE,
@@ -97,6 +110,13 @@ double Prof_MS()
 }
 
 
+Prof_Scope::Prof_Scope( EProfType prof ) :
+	savedProf( prof )
+{
+	Prof_Start( prof );
+}
+
+
 void Prof_Start( EProfType prof )
 {
 	// assert( s_profGlob.start[prof] == 0.0 ); // if this fails, timer was not stopped
@@ -104,6 +124,12 @@ void Prof_Start( EProfType prof )
 	s_profGlob.hits[prof]++;
 }
  
+
+Prof_Scope::~Prof_Scope()
+{
+	Prof_Stop( savedProf );
+}
+
 
 void Prof_Stop( EProfType prof )
 {
@@ -230,7 +256,9 @@ void Prof_Frame()
 	if ( s_profGlob.frameCount == PROF_FRAME_COUNT )
 	{
 		Prof_Normalize();
-		// Prof_Print();
+		Prof_Print();
 		s_profGlob.frameCount = 0;
 	}
 }
+
+

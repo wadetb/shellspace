@@ -25,14 +25,14 @@
 
 # TODO for next milestone
  
-+ Crash reporter: http://www.acra.ch
++ Tuning - what is RFB_BUFFER_SIZE?
+
 + 565 support - runtime toggle
++ client->appData.qualityLevel - runtime setting?
 + Supersample - runtime toggle?
 + Test with Jennie's laptop
 + Profile VNC root code
 + Use notification/Toast API from Oculus for connection messages
-+ Option to change background color
-+ Option to wrap geometry around the user
 + Keep working on plugin refactor
 
 + Keyboard rectangle intersect (draw background rect?).

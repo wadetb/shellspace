@@ -1,7 +1,7 @@
 	{
 		"keys" : [
 			{ "x":    0, "y":  -90, "label": "Connections" },
-			{ "x":    0, "y":  -30, "code": "connect 10.90.240.160:0 asdf" },
+			{ "x":    0, "y":  -30, "code": "connect 10.0.1.40:0 asdf" },
 			{ "x":    0, "y":   90, "code": "disconnect" }
 		]
 	}

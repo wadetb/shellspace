@@ -66,7 +66,7 @@ static char* ReadPassword(rfbClient* client) {
         return NoPassword(client);
 #else
         int i;
-        char* p=malloc(9);
+        char* p=(char*)malloc(9);
         struct termios save,noecho;
         p[0]=0;
         if(tcgetattr(fileno(stdin),&save)!=0) return p;
@@ -105,7 +105,7 @@ static rfbBool MallocFrameBuffer(rfbClient* client) {
     return FALSE;
   }
 
-  client->frameBuffer=malloc( (size_t)allocSize );
+  client->frameBuffer=(uint8_t*)malloc( (size_t)allocSize );
 
   if (client->frameBuffer == NULL)
     rfbClientErr("CRITICAL: frameBuffer allocation failed, requested size too large or not enough memory?\n");

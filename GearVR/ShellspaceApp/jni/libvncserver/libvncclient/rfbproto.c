@@ -69,6 +69,8 @@
 #include "minilzo.h"
 #include "tls.h"
 
+#include "../profile.h"
+
 #ifdef _MSC_VER
 #  define snprintf _snprintf /* MSVC went straight to the underscored syntax */
 #endif
@@ -123,7 +125,7 @@ void rfbClientSetClientData(rfbClient* client, void* tag, void* data)
         while(clientData && clientData->tag != tag)
                 clientData = clientData->next;
         if(clientData == NULL) {
-                clientData = calloc(sizeof(rfbClientData), 1);
+                clientData = (rfbClientData*)calloc(sizeof(rfbClientData), 1);
                 clientData->next = client->clientData;
                 client->clientData = clientData;
                 clientData->tag = tag;
@@ -517,7 +519,7 @@ rfbHandleAuthResult(rfbClient* client)
         /* we have an error following */
         if (!ReadFromRFBServer(client, (char *)&reasonLen, 4)) return FALSE;
         reasonLen = rfbClientSwap32IfLE(reasonLen);
-        reason = malloc(reasonLen+1);
+        reason = (char*)malloc(reasonLen+1);
         if (!ReadFromRFBServer(client, reason, reasonLen)) { free(reason); return FALSE; }
         reason[reasonLen]=0;
         rfbClientLog("VNC connection failed: %s\n",reason);
@@ -545,7 +547,7 @@ ReadReason(rfbClient* client)
     /* we have an error following */
     if (!ReadFromRFBServer(client, (char *)&reasonLen, 4)) return;
     reasonLen = rfbClientSwap32IfLE(reasonLen);
-    reason = malloc(reasonLen+1);
+    reason = (char*)malloc(reasonLen+1);
     if (!ReadFromRFBServer(client, reason, reasonLen)) { free(reason); return; }
     reason[reasonLen]=0;
     rfbClientLog("VNC connection failed: %s\n",reason);
@@ -1257,7 +1259,7 @@ InitialiseRFBConnection(rfbClient* client)
   client->si.nameLength = rfbClientSwap32IfLE(client->si.nameLength);
 
   /* To guard against integer wrap-around, si.nameLength is cast to 64 bit */
-  client->desktopName = malloc((uint64_t)client->si.nameLength + 1);
+  client->desktopName = (char*)malloc((uint64_t)client->si.nameLength + 1);
   if (!client->desktopName) {
     rfbClientLog("Error allocating memory for desktop name, %lu bytes\n",
             (unsigned long)client->si.nameLength);
@@ -1783,6 +1785,8 @@ HandleRFBServerMessage(rfbClient* client)
 
   case rfbFramebufferUpdate:
   {
+    Prof_Scope prof( PROF_RFB_UPDATE );
+
     rfbFramebufferUpdateRectHeader rect;
     int linesToRead;
     int bytesPerLine;
@@ -1879,7 +1883,7 @@ HandleRFBServerMessage(rfbClient* client)
       /* rect.r.w=byte count, rect.r.h=# of encodings */
       if (rect.encoding == rfbEncodingSupportedEncodings) {
           char *buffer;
-          buffer = malloc(rect.r.w);
+          buffer = (char*)malloc(rect.r.w);
           if (!ReadFromRFBServer(client, buffer, rect.r.w))
           {
               free(buffer);
@@ -1895,7 +1899,7 @@ HandleRFBServerMessage(rfbClient* client)
       /* rect.r.w=byte count */
       if (rect.encoding == rfbEncodingServerIdentity) {
           char *buffer;
-          buffer = malloc(rect.r.w+1);
+          buffer = (char*)malloc(rect.r.w+1);
           if (!ReadFromRFBServer(client, buffer, rect.r.w))
           {
               free(buffer);
@@ -1935,7 +1939,10 @@ HandleRFBServerMessage(rfbClient* client)
 
       switch (rect.encoding) {
 
-      case rfbEncodingRaw: {
+      case rfbEncodingRaw: 
+      {
+        Prof_Scope prof( PROF_RFB_ENCODING_RAW );
+        
         int y=rect.r.y, h=rect.r.h;
 
         bytesPerLine = rect.r.w * client->format.bitsPerPixel / 8;
@@ -1959,6 +1966,8 @@ HandleRFBServerMessage(rfbClient* client)
 
       case rfbEncodingCopyRect:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_COPY_RECT );
+        
         rfbCopyRect cr;
 
         if (!ReadFromRFBServer(client, (char *)&cr, sz_rfbCopyRect))
@@ -1986,6 +1995,8 @@ HandleRFBServerMessage(rfbClient* client)
 
       case rfbEncodingRRE:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_RRE );
+        
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2005,6 +2016,8 @@ HandleRFBServerMessage(rfbClient* client)
 
       case rfbEncodingCoRRE:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_CO_RRE );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleCoRRE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2024,6 +2037,8 @@ HandleRFBServerMessage(rfbClient* client)
 
       case rfbEncodingHextile:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_HEXTILE );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleHextile8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2043,6 +2058,8 @@ HandleRFBServerMessage(rfbClient* client)
 
       case rfbEncodingUltra:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_ULTRA );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleUltra8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2061,6 +2078,8 @@ HandleRFBServerMessage(rfbClient* client)
       }
       case rfbEncodingUltraZip:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_ULTRA_ZIP );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleUltraZip8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2081,6 +2100,8 @@ HandleRFBServerMessage(rfbClient* client)
 #ifdef LIBVNCSERVER_HAVE_LIBZ
       case rfbEncodingZlib:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_LIBZ );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleZlib8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2097,10 +2118,11 @@ HandleRFBServerMessage(rfbClient* client)
         }
         break;
      }
-
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
       case rfbEncodingTight:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_TIGHT );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleTight8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2124,6 +2146,8 @@ HandleRFBServerMessage(rfbClient* client)
         /* fall through */
       case rfbEncodingZYWRLE:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_ZYWRLE );
+
         switch (client->format.bitsPerPixel) {
         case 8:
           if (!HandleZRLE8(client, rect.r.x,rect.r.y,rect.r.w,rect.r.h))
@@ -2160,11 +2184,12 @@ HandleRFBServerMessage(rfbClient* client)
         }
         break;
      }
-
 #endif
 #ifdef LIBVNCSERVER_CONFIG_LIBVA
       case rfbEncodingH264:
       {
+        Prof_Scope prof( PROF_RFB_ENCODING_H264 );
+
         if (!HandleH264(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h))
           return FALSE;
         break;
@@ -2220,7 +2245,7 @@ HandleRFBServerMessage(rfbClient* client)
 
     msg.sct.length = rfbClientSwap32IfLE(msg.sct.length);
 
-    buffer = malloc(msg.sct.length+1);
+    buffer = (char*)malloc(msg.sct.length+1);
 
     if (!ReadFromRFBServer(client, buffer, msg.sct.length))
       return FALSE;
@@ -2259,7 +2284,7 @@ HandleRFBServerMessage(rfbClient* client)
               client->HandleTextChat(client, (int)rfbTextChatFinished, NULL);
           break;
       default:
-          buffer=malloc(msg.tc.length+1);
+          buffer=(char*)malloc(msg.tc.length+1);
           if (!ReadFromRFBServer(client, buffer, msg.tc.length))
           {
               free(buffer);

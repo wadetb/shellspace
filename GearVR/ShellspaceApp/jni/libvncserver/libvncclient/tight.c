@@ -529,13 +529,15 @@ DecompressJpegRectBPP(rfbClient* client, int x, int y, int w, int h)
   int pitch;
   unsigned char *pixelPtr;
 
+  Prof_Scope prof( PROF_RFB_ENCODING_TIGHT_JPEG );
+
   compressedLen = (int)ReadCompactLen(client);
   if (compressedLen <= 0) {
     rfbClientLog("Incorrect data received from the server.\n");
     return FALSE;
   }
 
-  compressedData = malloc(compressedLen);
+  compressedData = (uint8_t*)malloc(compressedLen);
   if (compressedData == NULL) {
     rfbClientLog("Memory allocation error.\n");
     return FALSE;

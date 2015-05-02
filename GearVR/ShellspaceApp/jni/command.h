@@ -20,7 +20,7 @@
 #define __COMMAND_H__
 
 void Cmd_Frame();
-void Cmd_Add( const char *cmd );
+void Cmd_Add( const char *format, ... );
 
 uint Cmd_Argc();
 const char *Cmd_Argv( uint argIndex );

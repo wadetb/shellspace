@@ -19,6 +19,7 @@
 #include "common.h"
 #include "command.h"
 #include "OvrApp.h"
+#include "thread.h"
 #include "vncwidget.h"
 
 
@@ -44,6 +45,27 @@ struct SCmdGlob
 static SCmdGlob s_cmdGlob;
 
 
+sbool Cmd_IsSpace( char ch )
+{
+	if ( ch == ' ' || ch == '\t' )
+		return true;
+
+	return false;
+}
+
+
+sbool Cmd_IsDelim( char ch )
+{
+	if ( ch == ';' )
+		return true;
+
+	if ( ch == '\r' || ch == '\n' )
+		return true;
+
+	return false;
+}
+
+
 sbool Cmd_CopyOneToArgBuffer( char **cmd )
 {
 	char 	*in;
@@ -65,7 +87,7 @@ sbool Cmd_CopyOneToArgBuffer( char **cmd )
 		if ( ch == '"' )
 			inQuote ^= 1;
 
-		if ( !ch || (ch == ';' && !inQuote) )
+		if ( !ch || (Cmd_IsDelim( ch ) && !inQuote) )
 			break;
 
 		if ( out <= end )
@@ -75,7 +97,7 @@ sbool Cmd_CopyOneToArgBuffer( char **cmd )
 		out++;
 	}
 
-	while ( *in == ';' || *in == ' ' )
+	while ( Cmd_IsDelim( *in ) || Cmd_IsSpace( *in ) )
 		in++;
 		
 	*cmd = in;
@@ -110,7 +132,7 @@ sbool Cmd_Parse( char **cmd )
 	p = s_cmdGlob.argBuffer;
 	for ( ;; )
 	{
-		while ( *p == ' ' )
+		while ( Cmd_IsSpace( *p ) )
 			p++;
 
 		if ( *p == 0 )
@@ -137,7 +159,7 @@ sbool Cmd_Parse( char **cmd )
 		{
 			s_cmdGlob.args[s_cmdGlob.argCount] = p;
 
-			while ( *p && *p != ' ' )
+			while ( *p && !Cmd_IsSpace( *p ) )
 				p++;
 
 			if ( *p )
@@ -180,28 +202,35 @@ const char *Cmd_Argv( uint argIndex )
 }
 
 
-void Cmd_Add( const char *cmd )
+void Cmd_Add( const char *format, ... )
 {
+    va_list args;
 	char 	*buffer;
 	size_t 	bufferLen;
 	int 	written;
 
+	Thread_ScopeLock lock( MUTEX_CMD );
+
 	buffer = &s_cmdGlob.buffer[s_cmdGlob.bufferPos];
 	bufferLen = CMD_BUFFER_SIZE - s_cmdGlob.bufferPos;
 
-	written = snprintf( buffer, bufferLen, "%s;", cmd );
+    va_start( args, format );
+    written = vsnprintf( buffer, bufferLen - 1, format, args );
+    va_end( args );
 
 	if ( written < 0 )
 	{
-		LOG( "Invalid command characters '%s'", cmd );
+		LOG( "Invalid command characters." );
 		return;
 	}
 
 	if ( written >= bufferLen )
 	{
-		LOG( "Command buffer too full for '%s'", cmd );
+		LOG( "Command buffer too full." );
 		return;
 	}
+
+    buffer[written] = ';';
 
 	s_cmdGlob.bufferPos += written;
 	s_cmdGlob.buffer[s_cmdGlob.bufferPos] = 0;

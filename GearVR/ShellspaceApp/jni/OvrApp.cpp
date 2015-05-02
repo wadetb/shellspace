@@ -34,6 +34,13 @@ jlong Java_oculus_MainActivity_nativeSetAppInterface( JNIEnv * jni, jclass clazz
 
 } // extern "C"
 
+struct SAppGlobals
+{
+	float clearColor[3];
+};
+
+static SAppGlobals s_app;
+
 JNIEnv *g_jni;
 OvrApp *g_app;
 SVNCWidget *vnc;
@@ -151,7 +158,11 @@ void APITest()
 
 void OvrApp::OneTimeInit( const char * launchIntent )
 {
-	g_jni = app->GetUiJni();
+	g_jni = app->GetVrJni();
+
+	s_app.clearColor[0] = 0.5f;
+	s_app.clearColor[1] = 0.5f;
+	s_app.clearColor[2] = 0.5f;
 
 	Thread_Init();
 	Registry_Init();
@@ -254,7 +265,7 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 
 	const Matrix4f view = Scene.DrawEyeView( eye, fovDegrees );
 
-	glClearColor( 0.5f, 0.5f, 0.5f, 1.0f );
+	glClearColor( s_app.clearColor[0], s_app.clearColor[1], s_app.clearColor[2], 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT );
 
 	TimeWarpParms & swapParms = app->GetSwapParms();
@@ -365,6 +376,36 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 
 sbool App_Command()
 {
+	if ( strcasecmp( Cmd_Argv( 0 ), "clearcolor" ) == 0 )
+	{
+		if ( Cmd_Argc() != 4 )
+		{
+			LOG( "Usage: clearcolor <r> <g> <b>" );
+			return strue;
+		}
+
+		s_app.clearColor[0] = atoi( Cmd_Argv( 1 ) ) / 255.0f;
+		s_app.clearColor[1] = atoi( Cmd_Argv( 2 ) ) / 255.0f;
+		s_app.clearColor[2] = atoi( Cmd_Argv( 3 ) ) / 255.0f;
+
+		LOG( "clear color is %f %f %f", s_app.clearColor[0], s_app.clearColor[1], s_app.clearColor[2] );
+
+		return strue;
+	}
+
+	if ( strcasecmp( Cmd_Argv( 0 ), "notify" ) == 0 )
+	{
+		if ( Cmd_Argc() != 2 )
+		{
+			LOG( "Usage: notify <msg>" );
+			return strue;
+		}
+
+		g_app->app->CreateToast( Cmd_Argv( 1 ) );
+
+		return strue;
+	}
+
 	return sfalse;
 }
 
