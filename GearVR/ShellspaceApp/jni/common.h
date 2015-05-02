@@ -26,6 +26,8 @@
 #include <GlUtils.h>
 #include <Log.h>
 #include <OVR.h>
+// #include "coffeecatch/coffeecatch.h"
+// #include "coffeecatch/coffeejni.h"
 
 using namespace OVR;
 

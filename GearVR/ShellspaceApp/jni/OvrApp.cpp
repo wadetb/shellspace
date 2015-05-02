@@ -29,7 +29,6 @@ extern "C" {
 jlong Java_oculus_MainActivity_nativeSetAppInterface( JNIEnv * jni, jclass clazz, jobject activity )
 {
        LOG( "nativeSetAppInterface");
-       g_jni = jni;
        return (new OvrApp())->SetActivity( jni, clazz, activity );
 }
 
@@ -152,6 +151,8 @@ void APITest()
 
 void OvrApp::OneTimeInit( const char * launchIntent )
 {
+	g_jni = app->GetUiJni();
+
 	Thread_Init();
 	Registry_Init();
 	Entity_Init();
@@ -231,7 +232,7 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 		 eventType == KeyState::KEY_EVENT_UP )
 	{
 		LOG( "Android Key: %d eventType=%d", keyCode, eventType );
-		
+
 		vncCode = VNC_KeyCodeForAndroidCode( keyCode );
 	
 		if ( vncCode != INVALID_KEY_CODE )

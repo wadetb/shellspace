@@ -33,112 +33,116 @@
       <plugin>
         <groupId>com.jayway.maven.plugins.android.generation2</groupId>
         <artifactId>android-maven-plugin</artifactId>
-                <executions>
+        <executions>
                     <!--
                     Add the execution of the ndk-build goal - this will compile the native code in addition
                     to building the Java & APK
-                    -->
-                    <execution>
-                        <goals>
-                            <goal>ndk-build</goal>
-                        </goals>
-                        <configuration>
+                  -->
+                  <execution>
+                    <goals>
+                      <goal>ndk-build</goal>
+                    </goals>
+                    <configuration>
                             <!--
                             Configure the plugin to remove all built artifacts from the libs/armeabi folder
                             when the native build is complete
-                            -->
-                            <clearNativeArtifacts>false</clearNativeArtifacts>
+                          -->
+                          <clearNativeArtifacts>false</clearNativeArtifacts>
                             <!--
                             Configure the plugin to also attach the built, native, artifact from the libs/armeabi folder
                             when the native build is complete.  This puts the artifact into the Maven repository
-                            -->
-                            <attachNativeArtifacts>true</attachNativeArtifacts>
+                          -->
+                          <attachNativeArtifacts>true</attachNativeArtifacts>
                         </configuration>
-                    </execution>
-                </executions>
-        <configuration>
-			<androidManifestFile>${project.basedir}/AndroidManifest.xml</androidManifestFile>
-			<assetsDirectory>${project.basedir}/assets</assetsDirectory>
-			<resourceDirectory>${project.basedir}/res</resourceDirectory>
-			<undeployBeforeDeploy>true</undeployBeforeDeploy>
-            
-          <sdk>
-              <!-- platform as api level (api level 19 = platform 4.2.2)-->
-              <platform>19</platform>
-          </sdk>
-            
-          <ndk>
-            <path>${env.ANDROID_NDK}</path>
-          </ndk>
-         <ndkFinalLibraryName>ovrapp</ndkFinalLibraryName>
-         <target>all</target>
+                      </execution>
+                    </executions>
+                    <configuration>
+
+                     <androidManifestFile>${project.basedir}/AndroidManifest.xml</androidManifestFile>
+
+                     <assetsDirectory>${project.basedir}/assets</assetsDirectory>
+
+                     <resourceDirectory>${project.basedir}/res</resourceDirectory>
+                     
+                     <undeployBeforeDeploy>true</undeployBeforeDeploy>
+                     
+                     <sdk>
+                      <!-- platform as api level (api level 19 = platform 4.2.2)-->
+                      <platform>19</platform>
+                    </sdk>
+                    
+                    <ndk>
+                      <path>${env.ANDROID_NDK}</path>
+                    </ndk>
+                    <ndkFinalLibraryName>ovrapp</ndkFinalLibraryName>
+                    <target>all</target>
                             <!--
                             Configure the plugin to remove all built artifacts from the libs/armeabi folder
                             when the native build is complete
-                            -->
-                            <clearNativeArtifacts>false</clearNativeArtifacts>
+                          -->
+                          <clearNativeArtifacts>false</clearNativeArtifacts>
                             <!--
                             Configure the plugin to also attach the built, native, artifact from the libs/armeabi folder
                             when the native build is complete.  This puts the artifact into the Maven repository
-                            -->
-                            <attachNativeArtifacts>true</attachNativeArtifacts>
-        </configuration>
-        <extensions>true</extensions>
-      </plugin>
-    </plugins>
-    
-<pluginManagement>
-<plugins>
-<plugin>
- <groupId>org.eclipse.m2e</groupId>
- <artifactId>lifecycle-mapping</artifactId>
- <version>1.0.0</version>
- <configuration>
-   <lifecycleMappingMetadata>
-     <pluginExecutions>
-       <pluginExecution>
-         <pluginExecutionFilter>
-           <groupId>com.jayway.maven.plugins.android.generation2</groupId>
-           <artifactId>android-maven-plugin</artifactId>
-           <versionRange>3.7.0</versionRange>
-           <goals>
-             <goal>ndk-build</goal>
-           </goals>
-         </pluginExecutionFilter>
-         <action>
-           <ignore >
-             <runOnIncremental>false</runOnIncremental>
-           </ignore >
-         </action>
-       </pluginExecution>
-     </pluginExecutions>
-   </lifecycleMappingMetadata>
- </configuration>
-</plugin>
-</plugins>
-</pluginManagement>
-  </build>
-  
- <dependencies>
-<dependency>
-  <groupId>android</groupId>
-  <artifactId>android</artifactId>
-  <version>4.2.2_r2</version>
-  <scope>provided</scope>
-</dependency>
-<dependency>
-  <groupId>com.oculusvr</groupId>
-  <artifactId>VRLib</artifactId>
-  <version>0.2.5-SNAPSHOT</version>
-  <type>apklib</type>
-</dependency>
-  <dependency>
-  	<groupId>com.oculusvr</groupId>
-  	<artifactId>VRLib</artifactId>
-  	<version>0.2.5-SNAPSHOT</version>
-    <scope>runtime</scope>
-    <classifier>armeabi-v7a</classifier>
-    <type>a</type>
-  </dependency>
- </dependencies>
-</project>
+                          -->
+                          <attachNativeArtifacts>true</attachNativeArtifacts>
+                        </configuration>
+                        <extensions>true</extensions>
+                      </plugin>
+                    </plugins>
+                    
+                    <pluginManagement>
+                      <plugins>
+                        <plugin>
+                         <groupId>org.eclipse.m2e</groupId>
+                         <artifactId>lifecycle-mapping</artifactId>
+                         <version>1.0.0</version>
+                         <configuration>
+                           <lifecycleMappingMetadata>
+                             <pluginExecutions>
+                               <pluginExecution>
+                                 <pluginExecutionFilter>
+                                   <groupId>com.jayway.maven.plugins.android.generation2</groupId>
+                                   <artifactId>android-maven-plugin</artifactId>
+                                   <versionRange>3.7.0</versionRange>
+                                   <goals>
+                                     <goal>ndk-build</goal>
+                                   </goals>
+                                 </pluginExecutionFilter>
+                                 <action>
+                                   <ignore >
+                                     <runOnIncremental>false</runOnIncremental>
+                                   </ignore >
+                                 </action>
+                               </pluginExecution>
+                             </pluginExecutions>
+                           </lifecycleMappingMetadata>
+                         </configuration>
+                       </plugin>
+                     </plugins>
+                   </pluginManagement>
+                 </build>
+                 
+                 <dependencies>
+                  <dependency>
+                    <groupId>android</groupId>
+                    <artifactId>android</artifactId>
+                    <version>4.2.2_r2</version>
+                    <scope>provided</scope>
+                  </dependency>
+                  <dependency>
+                    <groupId>com.oculusvr</groupId>
+                    <artifactId>VRLib</artifactId>
+                    <version>0.2.5-SNAPSHOT</version>
+                    <type>apklib</type>
+                  </dependency>
+                  <dependency>
+                   <groupId>com.oculusvr</groupId>
+                   <artifactId>VRLib</artifactId>
+                   <version>0.2.5-SNAPSHOT</version>
+                   <scope>runtime</scope>
+                   <classifier>armeabi-v7a</classifier>
+                   <type>a</type>
+                 </dependency>
+               </dependencies>
+             </project>

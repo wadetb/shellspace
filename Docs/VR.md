@@ -24,11 +24,16 @@
 # Q&A questions
 
 # TODO for next milestone
-
-+ Print connection status on VR window - use Toast API?
-+ Restart connection automatically when lost 
-
-/ Passthrough Android keyboard events.  (Need to do letters)
+ 
++ Crash reporter: http://www.acra.ch
++ 565 support - runtime toggle
++ Supersample - runtime toggle?
++ Test with Jennie's laptop
++ Profile VNC root code
++ Use notification/Toast API from Oculus for connection messages
++ Option to change background color
++ Option to wrap geometry around the user
++ Keep working on plugin refactor
 
 + Keyboard rectangle intersect (draw background rect?).
 + Bluetooth mouse
@@ -258,6 +263,7 @@ http://vrjam.challengepost.com/submissions/37014-rex - Real estate
 
 http://vrjam.challengepost.com/submissions/36844-chess-vr - Really?
 
-# Sticky
+# Builds
 
-Pulled pork platter (& sausage?)- Caesar salad & Mac n Cheese
++ Test1 -
+  https://s3.amazonaws.com/vrjam-submissions/signed/2ad5dd20bc9b/rnpUzvDdRo6w6pkmAUqf_Shellspace-test1.apk

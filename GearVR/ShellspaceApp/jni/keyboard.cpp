@@ -108,9 +108,20 @@ void Keyboard_Init()
 }
 
 
+void Crash()
+{
+	// *(int*)0 = 0;
+	assert( false );
+	// g_app->app->GetVrJni()->ThrowNew(g_app->app->GetVrJni()->FindClass("java/lang/Exception"), "HIHIHI" );
+}
+
+
 void Keyboard_Toggle()
 {
 	s_keyGlob.key = INVALID_KEY;
+
+	// COFFEE_TRY_JNI(g_jni, Crash());
+	// Crash();
 
 	if ( s_keyGlob.visible )
 	{

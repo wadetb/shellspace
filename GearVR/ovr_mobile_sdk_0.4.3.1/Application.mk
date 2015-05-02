@@ -18,4 +18,4 @@ NDK_TOOLCHAIN_VERSION := 4.8
 
 # Define the directories for $(import-module, ...) to look in
 ROOT_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
-NDK_MODULE_PATH := $(ROOT_DIR)/3rdParty/breakpad/android$(HOST_DIRSEP)$(ROOT_DIR)/Tools$(HOST_DIRSEP)$(ROOT_DIR)
+#NDK_MODULE_PATH := $(ROOT_DIR)/3rdParty/breakpad/android$(HOST_DIRSEP)$(ROOT_DIR)/Tools$(HOST_DIRSEP)$(ROOT_DIR)
