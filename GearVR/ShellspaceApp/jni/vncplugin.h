@@ -16,13 +16,9 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-#ifndef __COMMAND_H__
-#define __COMMAND_H__
-    
-void Cmd_Frame();
-void Cmd_Add( const char *format, ... );
+#ifndef __VNCPLUGIN_H__
+#define __VNCPLUGIN_H__
 
-uint Cmd_Argc();
-const char *Cmd_Argv( uint argIndex );
+void VNC_InitPlugin();
 
 #endif

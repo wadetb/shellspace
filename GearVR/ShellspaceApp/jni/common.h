@@ -80,14 +80,37 @@ inline float S_Minf( float a, float b )
 	return a < b ? a : b;
 }
 
-inline int S_strcmp( const char * a, const char *b )
+inline sbool S_strempty( const char *s )
+{
+    return s[0] != '\0';
+}
+
+inline int S_strcmp( const char *a, const char *b )
 {
     return strcmp( a, b );
 }
 
-inline int S_stricmp( const char * a, const char *b )
+inline int S_stricmp( const char *a, const char *b )
 {
     return strcasecmp( a, b );
+}
+
+inline int S_sprintfPos( char *buffer, uint bufferLen, uint *pos, const char *format, ... )
+{
+    uint    currentPos;
+    int     written;
+    va_list args;
+
+    currentPos = *pos;
+
+    va_start( args, format );
+    written = vsnprintf( buffer + currentPos, bufferLen - currentPos, format, args );
+    va_end( args );
+
+    if ( written >= 0 )
+        *pos = currentPos + written;
+
+    return written;
 }
 
 #define FNV_32_PRIME ((uint)0x01000193)

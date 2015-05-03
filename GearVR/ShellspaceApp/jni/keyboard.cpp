@@ -19,14 +19,12 @@
 #include "common.h"
 #include "keyboard.h"
 #include "command.h"
-#include "vncwidget.h"
 #include <App.h>
 #include <BitmapFont.h>
 #include <Input.h>
 #include <OvrApp.h>
 #include <PackageFiles.h>
 #include "gason/gason.h"
-#include "libvncserver/rfb/keysym.h"
 
 
 #define MAX_KEYBOARDS 			32

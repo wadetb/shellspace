@@ -19,6 +19,8 @@
 #ifndef __REGISTRY_H__
 #define __REGISTRY_H__
 
+#include "message.h"
+
 enum ERegistry
 {
 	PLUGIN_REGISTRY,
@@ -28,6 +30,8 @@ enum ERegistry
 	ENTITY_REGISTRY,
 	REGISTRY_COUNT
 };
+
+#define ID_LIMIT			32
 
 #define BUFFER_COUNT 		3
 #define ALL_BUFFERS_MASK	0x7
@@ -41,6 +45,8 @@ struct SPlugin
 	SxPluginKind	kind;
 
 	SRefLink		widgetList;
+
+	SMsgQueue		msgQueue;
 };
 
 struct SWidget
@@ -54,6 +60,8 @@ struct SWidget
 	SRefLink		entityList;
 	
 	SRefLink		pluginLink;
+
+	SMsgQueue		msgQueue;
 };
 
 struct SGeometry
@@ -125,6 +133,7 @@ struct SEntity
 void Registry_Init();
 void Registry_Shutdown();
 
+sbool Registry_IsValidId( const char *id );
 SRef Registry_Register( ERegistry reg, const char *id );
 void Registry_Unregister( ERegistry reg, SRef ref );
 uint Registry_GetCount( ERegistry reg );

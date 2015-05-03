@@ -9,7 +9,7 @@ include $(OVR_MOBILE_SDK)/VRLib/import_vrlib.mk		# import VRLib for this module.
 
 PLUGIN_SRC_FILES := \
 	v8.cpp \
-	vncwidget.cpp \
+	vncplugin.cpp \
 	libvncserver/common/minilzo.c \
 	libvncserver/libvncclient/cursor.c \
 	libvncserver/libvncclient/listen.c \
@@ -26,6 +26,7 @@ COMMON_SRC_FILES := \
 	geometry.cpp \
 	inqueue.cpp \
 	keyboard.cpp \
+	message.cpp \
 	OvrApp.cpp \
 	profile.cpp \
 	registry.cpp \

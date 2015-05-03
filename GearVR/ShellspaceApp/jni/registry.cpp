@@ -141,6 +141,9 @@ SRef Registry_Get( ERegistry reg, const char *id )
 	uint 		slot;
 	SRef 		hashRef;
 
+	if ( !id )
+		return S_NULL_REF;
+
 	r = &s_reg[reg];
 
 	names = r->names;
@@ -154,7 +157,10 @@ SRef Registry_Get( ERegistry reg, const char *id )
         hashRef = hash[slot];
 
         if ( hashRef == S_NULL_REF )
+        {
+        	LOG( "Registry_Get: %s not found", id );
             return hashRef; // not found
+        }
 
         if ( S_strcmp( names[hashRef], id ) == 0 )
             return hashRef;
@@ -306,9 +312,43 @@ SRef Registry_Free( ERegistry reg, SRef ref )
 }
 
 
+sbool Registry_IsValidId( const char *id )
+{
+	const char 	*p;
+	char 		ch;
+
+	if ( !id )
+		return sfalse;
+
+	for ( p = id; *p; p++ )
+	{
+		ch = *p;
+
+		if ( ch >= 'a' && ch <= 'z' )
+			continue;
+
+		if ( ch >= '0' && ch <= '9' )
+			continue;
+
+		if ( ch == '_' )
+			continue;
+
+		return sfalse;
+	}
+
+	if ( p - id > ID_LIMIT )
+		return sfalse;
+
+	return strue;
+}
+
+
 SRef Registry_Register( ERegistry reg, const char *id )
 {
 	SRef 	ref;
+
+	if ( !Registry_IsValidId( id ) )
+		return S_NULL_REF;
 
 	if ( Registry_Get( reg, id ) != S_NULL_REF )
 		return S_NULL_REF;

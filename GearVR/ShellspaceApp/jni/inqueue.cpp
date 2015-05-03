@@ -24,7 +24,7 @@
 #include "thread.h"
 
 
-#define INQUEUE_SIZE 	256
+#define INQUEUE_SIZE 	1024
 
 
 enum EInQueueKind
@@ -183,8 +183,6 @@ void InQueue_ProcessTextureItem( SItem *in )
 
 	updateMask = 1 << (texture->updateIndex % BUFFER_COUNT);
 
-	LOG( "%s - mask=%d update=%d draw=%d", s_itemKindNames[in->kind], in->texture.updateMask, texture->updateIndex, texture->drawIndex );
-
 	switch ( in->kind )
 	{
 	case INQUEUE_TEXTURE_RESIZE:
@@ -261,10 +259,6 @@ void InQueue_ProcessGeometryItem( SItem *in )
 
 	geometry = Registry_GetGeometry( in->geometry.ref );
 	assert( geometry );
-
-	LOG( "%s - mask=%d update=%d draw=%d pf=%d:%d", s_itemKindNames[in->kind], 
-		in->geometry.updateMask, geometry->updateIndex, geometry->drawIndex, 
-		geometry->presentFrame, s_iq.presentFrame );
 
 	if ( geometry->presentFrame == s_iq.presentFrame )
 		return;
@@ -390,11 +384,9 @@ void InQueue_Frame()
 
 	Prof_Start( PROF_GPU_UPDATE );
 
-	LOG( "InQueue_Frame" );
-
 	Thread_Lock( MUTEX_INQUEUE );
 
-	// This is safe because other threads can only append to or modify the queue.
+	// This is safe because other threads can only append to or modify the queue but not decrease its count.
 	count = s_iq.count;
 
 	Thread_Unlock( MUTEX_INQUEUE );
@@ -516,7 +508,7 @@ SItem *InQueue_BeginAppend( EInQueueKind kind )
 
 		if ( !logged )
 		{
-			LOG( "GPU update queue is full, stalling." );
+			LOG( "InQueue_BeginAppend: GPU update queue is full, stalling." );
 			logged = strue;
 		}
 
@@ -536,9 +528,10 @@ void InQueue_ResizeTexture( SRef ref, uint width, uint height, SxTextureFormat f
 {
 	SItem 	*in;
 
-	in = InQueue_BeginAppend( INQUEUE_TEXTURE_RESIZE );
+	assert( width );
+	assert( height );
 
-	LOG( "InQueue_ResizeTexture %d by %d", width, height );
+	in = InQueue_BeginAppend( INQUEUE_TEXTURE_RESIZE );
 
 	in->texture.ref = ref;
 	in->texture.resize.width = width;
@@ -554,6 +547,9 @@ void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint heigh
 	SItem 		*in;
 	uint 		dataSize;
 	void 		*dataCopy;
+
+	assert( width );
+	assert( height );
 
 	texture = Registry_GetTexture( ref );
 	assert( texture );
@@ -593,6 +589,9 @@ void InQueue_ResizeGeometry( SRef ref, uint vertexCount, uint indexCount )
 {
 	SItem 	*in;
 
+	assert( indexCount );
+	assert( vertexCount );
+
 	in = InQueue_BeginAppend( INQUEUE_GEOMETRY_RESIZE );
 
 	in->geometry.ref = ref;
@@ -608,6 +607,8 @@ void InQueue_UpdateGeometryIndices( SRef ref, uint firstIndex, uint indexCount, 
 	SItem 	*in;
 	uint 	dataSize;
 	void 	*dataCopy;
+
+	assert( indexCount );
 
 	dataSize = indexCount * sizeof( ushort );
 
@@ -632,6 +633,8 @@ void InQueue_UpdateGeometryPositions( SRef ref, uint firstVertex, uint vertexCou
 	uint 	dataSize;
 	void 	*dataCopy;
 
+	assert( vertexCount );
+
 	dataSize = vertexCount * sizeof( float ) * 3;
 	
 	dataCopy = malloc( dataSize );
@@ -655,6 +658,8 @@ void InQueue_UpdateGeometryTexCoords( SRef ref, uint firstVertex, uint vertexCou
 	uint 	dataSize;
 	void 	*dataCopy;
 
+	assert( vertexCount );
+
 	dataSize = vertexCount * sizeof( float ) * 2;
 	
 	dataCopy = malloc( dataSize );
@@ -677,6 +682,8 @@ void InQueue_UpdateGeometryColors( SRef ref, uint firstVertex, uint vertexCount,
 	SItem 	*in;
 	uint 	dataSize;
 	void 	*dataCopy;
+
+	assert( vertexCount );
 
 	dataSize = vertexCount * sizeof( byte ) * 4;
 	

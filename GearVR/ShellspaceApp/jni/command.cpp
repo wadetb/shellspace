@@ -18,9 +18,10 @@
 */
 #include "common.h"
 #include "command.h"
+#include "message.h"
+#include "registry.h"
 #include "OvrApp.h"
 #include "thread.h"
-#include "vncwidget.h"
 
 
 #define CMD_BUFFER_SIZE		(64 * 1024)
@@ -237,10 +238,32 @@ void Cmd_Add( const char *format, ... )
 }
 
 
+void Cmd_AddToQueue( SMsgQueue *queue )
+{
+	char text[MSG_LIMIT];
+	uint textPos;
+	uint argIndex;
+
+	assert( queue );
+	assert( s_cmdGlob.argCount );
+
+	textPos = 0;
+
+	for ( argIndex = 0; argIndex < s_cmdGlob.argCount; argIndex++ )
+		S_sprintfPos( text, MSG_LIMIT, &textPos, "\"%s\" ", s_cmdGlob.args[argIndex] );
+
+	MsgQueue_Put( queue, text );
+}
+
+
 void Cmd_Frame()
 {
 	uint 	read;
 	char 	*p;
+	uint 	pluginIndex;
+	SPlugin *plugin;
+	uint 	widgetIndex;
+	SWidget	*widget;
 
 	if ( !s_cmdGlob.bufferPos )
 		return;
@@ -255,27 +278,47 @@ void Cmd_Frame()
 		if ( !Cmd_Parse( &p ) )
 		{
 			Cmd_Clear();
-			continue;
+			goto next_cmd;
 		}
 
 		if ( !Cmd_Argc() )
-			continue;
-
-		// $$$ When there are multiple widgets, send to the active one here.
-		if ( VNC_Command( vnc ) )
-		{
-			Cmd_Clear();
-			continue;
-		}
+			goto next_cmd;
 
 		if ( App_Command() )
 		{
 			Cmd_Clear();
-			continue;
+			goto next_cmd;
+		}
+
+		for ( pluginIndex = 0; pluginIndex < Registry_GetCount( PLUGIN_REGISTRY ); pluginIndex++ )
+		{
+			plugin = Registry_GetPlugin( Registry_RefForIndex( pluginIndex ) );
+			assert( plugin );
+
+			if ( S_strcmp( plugin->id, Cmd_Argv( 0 ) ) == 0 )
+			{
+				Cmd_AddToQueue( &plugin->msgQueue );
+				Cmd_Clear();
+				goto next_cmd;
+			}
+		}
+
+		for ( widgetIndex = 0; widgetIndex < Registry_GetCount( WIDGET_REGISTRY ); widgetIndex++ )
+		{
+			widget = Registry_GetWidget( Registry_RefForIndex( widgetIndex ) );
+			assert( widget );
+
+			if ( S_strcmp( widget->id, Cmd_Argv( 0 ) ) == 0 )
+			{
+				Cmd_AddToQueue( &widget->msgQueue );
+				Cmd_Clear();
+				goto next_cmd;
+			}
 		}
 
 		LOG( "Unrecognized command '%s'.", Cmd_Argv( 0 ) );
 		Cmd_Clear();
+next_cmd:;
 	}
 
 	s_cmdGlob.bufferPos = 0;

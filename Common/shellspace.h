@@ -31,7 +31,6 @@ enum SxResult
     SX_OUT_OF_RANGE,                        // Argument was out of range
 };
 
-
 //
 // Handles
 //
@@ -78,6 +77,8 @@ enum SxPluginKind
 typedef SxResult (*SxRegisterPlugin)( SxPluginHandle wd, SxPluginKind kind );
 typedef SxResult (*SxUnregisterPlugin)( SxPluginHandle wd );
 
+typedef SxResult (*SxReceivePluginMessage)( SxPluginHandle wd, uint waitMs, char *result, unsigned int resultLen );
+
 //
 // Widgets
 // 
@@ -110,12 +111,14 @@ typedef SxResult (*SxUnregisterWidget)( SxWidgetHandle wd );
 //  consume itself to the active widget.
 //
 
+#define SX_WAIT_INFINITE    0
+
 typedef SxResult (*SxBroadcastMessage)( const char *message );
 typedef SxResult (*SxSendMessage)( SxWidgetHandle wd, const char *message );
-typedef SxResult (*SxReceiveMessages)( SxWidgetHandle wd, const char *result, unsigned int resultLen );
+typedef SxResult (*SxReceiveWidgetMessage)( SxWidgetHandle wd, uint waitMs, char *result, unsigned int resultLen );
 
-typedef SxResult (*SxRegisterMessageListeners)( SxWidgetHandle wd, const char *messages );
-typedef SxResult (*SxUnregisterMessageListeners)( SxWidgetHandle wd, const char *messages );
+typedef SxResult (*SxRegisterMessageListener)( SxWidgetHandle wd, const char *message );
+typedef SxResult (*SxUnregisterMessageListener)( SxWidgetHandle wd, const char *message );
 
 //
 // Entities
@@ -409,13 +412,14 @@ struct SxPluginInterface
     unsigned int                        version;
     SxRegisterPlugin                    registerPlugin;
     SxUnregisterPlugin                  unregisterPlugin;
+    SxReceivePluginMessage              receivePluginMessage;
     SxRegisterWidget                    registerWidget;
     SxUnregisterWidget                  unregisterWidget;
     SxBroadcastMessage                  broadcastMessage;
     SxSendMessage                       sendMessage;
-    SxReceiveMessages                   receiveMessages;
-    SxRegisterMessageListeners          registerMessageListeners;
-    SxUnregisterMessageListeners        unregisterMessageListeners;
+    SxReceiveWidgetMessage              receiveWidgetMessage;
+    SxRegisterMessageListener           registerMessageListener;
+    SxUnregisterMessageListener         unregisterMessageListener;
     SxRegisterGeometry                  registerGeometry;
     SxUnregisterGeometry                unregisterGeometry;
     SxSizeGeometry                      sizeGeometry;

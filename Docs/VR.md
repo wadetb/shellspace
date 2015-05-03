@@ -108,10 +108,6 @@ https://developers.google.com/v8/get_started
 Skia (By Google) - Seems like the winner?
 https://skia.org/user/sample/hello
 
-http://stackoverflow.com/questions/19213655/java-lang-outofmemoryerror-out-of-stack-in-jni-pushlocalframe
-
-https://github.com/anoek/android-cairo
-
 # Speed
 
 + 16bit pixel support (runtime option)
@@ -192,13 +188,7 @@ Have to plumb this through from the Java code:
 
 Consider throttling on the VNC thread by not allowing it to contain more than N pixels (or MB?), instead of throttling on the render by not executing the entire queue.
 
-# Threads and the API
-
-Each plugin (and in some cases each widget) will be running on a separate thread inside the core process.  To avoid corrupting data structures like the registry, API calls need to be totally serialized.
-
-So, I think I'm just going to have a global critical section that stays alive through _all_ shellspace.h API calls.
-
-That means that if I destroy a texture SRef, I can lock and clear any updates from the InQueue, remove that texture SRef from the registry, and know that any future updates (from ANY plugin on ANY thread) will return S_INVALID_HANDLE.  (Hm should that be SX_INVALID_HANDLE...?)
+This would be a form of cooperative throttling that might encourage the server to gather more updates together.
 
 # App ideas
 
@@ -251,7 +241,6 @@ http://vrjam.challengepost.com/submissions/36902-browser-bubble - Commented
 # Video players / streaming video
 
 http://vrjam.challengepost.com/submissions/36500-fdplayer - Commented
-
 
 # School
 

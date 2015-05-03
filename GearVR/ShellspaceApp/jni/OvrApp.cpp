@@ -17,7 +17,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "keyboard.h"
 #include "registry.h"
 #include "thread.h"
-#include "vncwidget.h"
+#include "vncplugin.h"
 
 #include <android/keycodes.h>
 #include <jni.h>
@@ -43,7 +43,6 @@ static SAppGlobals s_app;
 
 JNIEnv *g_jni;
 OvrApp *g_app;
-SVNCWidget *vnc;
 
 OvrApp::OvrApp()
 {
@@ -82,10 +81,10 @@ void APITest()
 
 	float texCoords[] = 
 	{ 
-		-1.0f, -1.0f, 
-		 1.0f, -1.0f, 
-		-1.0f,  1.0f, 
+		 0.0f,  1.0f, 
 		 1.0f,  1.0f, 
+		 0.0f,  0.0f, 
+		 1.0f,  0.0f, 
 	};
 
 	byte colors[] = 
@@ -160,9 +159,9 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 {
 	g_jni = app->GetVrJni();
 
-	s_app.clearColor[0] = 0.5f;
-	s_app.clearColor[1] = 0.5f;
-	s_app.clearColor[2] = 0.5f;
+	s_app.clearColor[0] = 0.0f;
+	s_app.clearColor[1] = 0.0f;
+	s_app.clearColor[2] = 0.0f;
 
 	Thread_Init();
 	Registry_Init();
@@ -201,22 +200,19 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	Scene.Znear = 1.0f;
 	Scene.Zfar = 1000.0f;
 
+	APITest();
+
+	VNC_InitPlugin();
+
 	Keyboard_Init();
 
-	vnc = VNC_CreateWidget();
-
-	// APITest();
-
-	// VNC_Connect( vnc, "10.0.1.39:0", "asdf" ); // home; phone is 10.0.1.4
-	// VNC_Connect( vnc, "192.168.43.9:0", "asdf" ); // hotspot; phone is 192.168.43.1
-	// VNC_Connect( vnc, "192.168.0.103:0", "asdf" ); // rangeley
-	// VNC_Connect( vnc, "10.90.240.66:0", "asdf" );
-	// VNC_Connect( vnc, "10.90.240.93:0", "asdf" );
+	// Cmd_Add( "vnc create vnc0" );
+	// Cmd_Add( "vnc connect vnc0 192.168.43.9:0" );
 }
 
 void OvrApp::OneTimeShutdown()
 {
-	VNC_DestroyWidget( vnc );
+	// $$$ Destroy all widgets, entities, textures, geometries, plugins.
 
 	Registry_Shutdown();
 	Thread_Shutdown();
@@ -228,8 +224,7 @@ void OvrApp::Command( const char * msg )
 
 bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventType )
 {
-	uint 	vncCode;
-	bool 	isDown;
+	sbool 	isDown;
 
 	if ( keyCode == AKEYCODE_BACK )
 	{
@@ -242,17 +237,9 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 	if ( eventType == KeyState::KEY_EVENT_DOWN ||
 		 eventType == KeyState::KEY_EVENT_UP )
 	{
-		LOG( "Android Key: %d eventType=%d", keyCode, eventType );
-
-		vncCode = VNC_KeyCodeForAndroidCode( keyCode );
-	
-		if ( vncCode != INVALID_KEY_CODE )
-		{
-			isDown = (eventType == KeyState::KEY_EVENT_DOWN);
-
-			VNC_KeyboardEvent( vnc, vncCode, isDown );
-		}
-
+		isDown = (eventType == KeyState::KEY_EVENT_DOWN);
+		Cmd_Add( "vnc0 key %d %d", keyCode, isDown );
+		// $$$ vnc0 -> registering for key events / active widget tracking
 		return true;
 	}
 
@@ -283,8 +270,8 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 		swapParms.Images[eye][1].TexId = VNC_GetTexID( vnc );
 
 		float aspect = (float)VNC_GetWidth( vnc ) / VNC_GetHeight( vnc );
-		float uScale = (float)VNC_GetWidth( vnc ) / VNC_GetTexWidth( vnc );
-		float vScale = (float)VNC_GetHeight( vnc ) / VNC_GetTexHeight( vnc );
+		float uScale = (float)VNC_GetWidth( vnc ) / VNC_GetTexWidth( vnc );  	// $$$ Need to query into a widget
+		float vScale = (float)VNC_GetHeight( vnc ) / VNC_GetTexHeight( vnc );   //     to make this work again.
 
 		float uOffset = (1.0f - uScale);
 		float vOffset = (1.0f - vScale);
@@ -300,8 +287,6 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 	}
 #else
 	swapParms.WarpProgram = WP_CHROMATIC;
-
-	VNC_DrawWidget( vnc, view );
 #endif
 
 	Entity_Draw( view );
@@ -340,15 +325,13 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 
 	InQueue_Frame();
 
-	VNC_UpdateWidget( vnc );
+	Keyboard_Frame( vrFrame.Input.buttonState, eyePos, eyeDir );
 
 	if ( !Keyboard_IsVisible() )
 	{
-		sbool touch = (vrFrame.Input.buttonState & BUTTON_TOUCH) != 0;
-		VNC_UpdateHeadMouse( vnc, eyePos, eyeDir, touch );
+		Cmd_Add( "vnc0 touch %d", (vrFrame.Input.buttonState & BUTTON_TOUCH) != 0 );
+		Cmd_Add( "vnc0 gaze %f %f %f", eyeDir.x, eyeDir.y, eyeDir.z );
 	}
-
-	Keyboard_Frame( vrFrame.Input.buttonState, eyePos, eyeDir );
 
 	Cmd_Frame();
 

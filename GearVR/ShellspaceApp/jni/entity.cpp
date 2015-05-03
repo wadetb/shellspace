@@ -50,7 +50,7 @@ void Entity_Init()
 		"void main()\n"
 		"{\n"
 		"   gl_Position = Mvpm * Position;\n"
-		"	oTexCoord = TexCoord;\n"
+		"	oTexCoord = TexCoord * UniformColor.xy;\n"
 		"   oColor = VertexColor;\n"
 		"}\n"
 		,
@@ -76,6 +76,8 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 	uint 		geometryIndex;
 	uint 		textureIndex;
 	GLuint 		texId;
+	float 		uScale;
+	float 		vScale;
 	GLuint 		vertexArrayObject;
 	int 		triCount;
 	int 		indexOffset;
@@ -102,8 +104,9 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	glUseProgram( s_ent.shader.program );
 
-	glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
 	glUniformMatrix4fv( s_ent.shader.uMvp, 1, GL_FALSE, view.Transposed().M[0] );
+
+	glBindVertexArrayOES_( vertexArrayObject );
 
 	glActiveTexture( GL_TEXTURE0 );
 
@@ -116,13 +119,27 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 		texId = texture->texId[textureIndex];
 
 		glBindTexture( GL_TEXTURE_2D, texId );
+
+		if ( texId )
+		{
+			assert( texture->texWidth[textureIndex] );
+			assert( texture->texHeight[textureIndex] );
+
+			uScale = (float)texture->width / texture->texWidth[textureIndex];
+			vScale = (float)texture->height / texture->texHeight[textureIndex];
+
+			glUniform4f( s_ent.shader.uColor, uScale, vScale, 1.0f, 1.0f );
+		}
+		else
+		{
+			glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
+		}
 	}
 	else
 	{
 		glBindTexture( GL_TEXTURE_2D, 0 );
+		glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
 	}
-
-	glBindVertexArrayOES_( vertexArrayObject );
 
 	indexOffset = 0;
 	triCount = geometry->indexCounts[geometryIndex] / 3;

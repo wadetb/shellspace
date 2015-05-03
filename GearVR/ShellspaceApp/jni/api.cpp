@@ -29,6 +29,9 @@ SxResult sxRegisterPlugin( SxPluginHandle pl, SxPluginKind kind )
 	char		*id;
 	SPlugin 	*plugin;
 
+	if ( !Registry_IsValidId( pl ) )
+		return SX_INVALID_HANDLE;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
 	id = strdup( pl );
@@ -45,6 +48,10 @@ SxResult sxRegisterPlugin( SxPluginHandle pl, SxPluginKind kind )
 
 	plugin->id = id;
 	plugin->kind = kind;
+
+	MsgQueue_Create( &plugin->msgQueue );
+
+	LOG( "Registered plugin %s.", id );
 
 	return SX_OK;
 }
@@ -64,9 +71,49 @@ SxResult sxUnregisterPlugin( SxPluginHandle pl )
 	plugin = Registry_GetPlugin( ref );
 	assert( plugin );
 
+	MsgQueue_Destroy( &plugin->msgQueue );
+
+	LOG( "Unregistered plugin %s.", plugin->id );
+
 	free( plugin->id );
 
 	Registry_Unregister( PLUGIN_REGISTRY, ref );
+
+	return SX_OK;
+}
+
+
+SxResult sxReceivePluginMessage( SxPluginHandle pl, uint waitMs, char *result, uint resultLen )
+{
+	SRef 		ref;
+	SPlugin 	*plugin;
+	char 		*text;
+
+	Thread_Lock( MUTEX_API );
+
+	ref = Registry_GetPluginRef( pl );
+	if ( ref == S_NULL_REF )
+	{
+		Thread_Unlock( MUTEX_API );
+		return SX_INVALID_HANDLE;
+	}
+
+	plugin = Registry_GetPlugin( ref );
+	assert( plugin );
+
+	Thread_Unlock( MUTEX_API );
+
+	text = MsgQueue_Get( &plugin->msgQueue, waitMs );
+
+	if ( text )
+	{
+		snprintf( result, resultLen, "%s", text );
+		free( text );
+	}
+	else
+	{
+		strcpy( result, "" );
+	}
 
 	return SX_OK;
 }
@@ -77,6 +124,9 @@ SxResult sxRegisterWidget( SxWidgetHandle wd )
 	SRef 		ref;
 	char		*id;
 	SWidget 	*widget;
+
+	if ( !Registry_IsValidId( wd ) )
+		return SX_INVALID_HANDLE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -136,7 +186,43 @@ SxResult sxSendMessage( SxWidgetHandle wd, const char *message )
 }
 
 
-SxResult sxReceiveMessages( SxWidgetHandle wd, const char *result, unsigned int resultLen )
+SxResult sxReceiveWidgetMessage( SxWidgetHandle wd, uint waitMs, char *result, unsigned int resultLen )
+{
+	SRef 		ref;
+	SWidget 	*widget;
+	char 		*text;
+
+	Thread_Lock( MUTEX_API );
+
+	ref = Registry_GetWidgetRef( wd );
+	if ( ref == S_NULL_REF )
+	{
+		Thread_Unlock( MUTEX_API );
+		return SX_INVALID_HANDLE;
+	}
+
+	widget = Registry_GetWidget( ref );
+	assert( widget );
+
+	Thread_Unlock( MUTEX_API );
+
+	text = MsgQueue_Get( &widget->msgQueue, waitMs );
+
+	if ( text )
+	{
+		snprintf( result, resultLen, "%s", text );
+		free( text );
+	}
+	else
+	{
+		strcpy( result, "" );
+	}
+
+	return SX_OK;
+}
+
+
+SxResult sxRegisterMessageListener( SxWidgetHandle wd, const char *messages )
 {
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -144,15 +230,7 @@ SxResult sxReceiveMessages( SxWidgetHandle wd, const char *result, unsigned int 
 }
 
 
-SxResult sxRegisterMessageListeners( SxWidgetHandle wd, const char *messages )
-{
-	Thread_ScopeLock lock( MUTEX_API );
-
-	return SX_NOT_IMPLEMENTED;
-}
-
-
-SxResult sxUnregisterMessageListeners( SxWidgetHandle wd, const char *messages )
+SxResult sxUnregisterMessageListener( SxWidgetHandle wd, const char *messages )
 {
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -165,6 +243,9 @@ SxResult sxRegisterGeometry( SxGeometryHandle geo )
 	SRef 		ref;
 	char		*id;
 	SGeometry 	*geometry;
+
+	if ( !Registry_IsValidId( geo ) )
+		return SX_INVALID_HANDLE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -241,6 +322,9 @@ SxResult sxUpdateGeometryIndexRange( SxGeometryHandle geo, unsigned int firstInd
 	SRef 		ref;
 	SGeometry 	*geometry;
 
+	if ( !indexCount )
+		return SX_OUT_OF_RANGE;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
@@ -263,6 +347,9 @@ SxResult sxUpdateGeometryPositionRange( SxGeometryHandle geo, unsigned int first
 {
 	SRef 		ref;
 	SGeometry 	*geometry;
+
+	if ( !vertexCount )
+		return SX_OUT_OF_RANGE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -287,6 +374,9 @@ SxResult sxUpdateGeometryTexCoordRange( SxGeometryHandle geo, unsigned int first
 	SRef 		ref;
 	SGeometry 	*geometry;
 
+	if ( !vertexCount )
+		return SX_OUT_OF_RANGE;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetGeometryRef( geo );
@@ -309,6 +399,9 @@ SxResult sxUpdateGeometryColorRange( SxGeometryHandle geo, unsigned int firstVer
 {
 	SRef 		ref;
 	SGeometry 	*geometry;
+
+	if ( !vertexCount )
+		return SX_OUT_OF_RANGE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -356,6 +449,9 @@ SxResult sxRegisterTexture( SxTextureHandle tex )
 	SRef 		ref;
 	char		*id;
 	STexture 	*texture;
+
+	if ( !Registry_IsValidId( tex ) )
+		return SX_INVALID_HANDLE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -417,7 +513,8 @@ SxResult sxFormatTexture( SxTextureHandle tex, SxTextureFormat format )
 
 	texture->format = format;
 
-	InQueue_ResizeTexture( ref, texture->width, texture->height, format );
+	if ( texture->width && texture->height )
+		InQueue_ResizeTexture( ref, texture->width, texture->height, format );
 
 	return SX_OK;
 }
@@ -428,14 +525,14 @@ SxResult sxSizeTexture( SxTextureHandle tex, unsigned int width, unsigned int he
 	SRef 		ref;
 	STexture 	*texture;
 
+	if ( !width || !height )
+		return SX_OUT_OF_RANGE;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetTextureRef( tex );
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
-
-	if ( !width || !height )
-		return SX_OUT_OF_RANGE;
 
 	texture = Registry_GetTexture( ref );
 	assert( texture );
@@ -468,6 +565,9 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 	SRef 		ref;
 	STexture 	*texture;
 
+	if ( !width || !height )
+		return SX_OUT_OF_RANGE;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetTextureRef( tex );
@@ -482,6 +582,9 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 
 	// $$$ Support pitch in the update function by doing a strided memcpy.
 	if ( pitch != width * 4 )
+		return SX_NOT_IMPLEMENTED;
+
+	if ( x > texture->width || y > texture->height )
 		return SX_NOT_IMPLEMENTED;
 
 	if ( x + width > texture->width || y + height > texture->height )
@@ -545,6 +648,9 @@ SxResult sxRegisterEntity( SxEntityHandle ent )
 	SRef 		ref;
 	char		*id;
 	SEntity 	*entity;
+
+	if ( !Registry_IsValidId( ent ) )
+		return SX_INVALID_HANDLE;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -718,13 +824,14 @@ SxPluginInterface g_pluginInterface =
     SX_PLUGIN_INTERFACE_VERSION,			// version
     sxRegisterPlugin,                       // registerPlugin
     sxUnregisterPlugin,                     // unregisterPlugin
+    sxReceivePluginMessage,					// receivePluginMessage
     sxRegisterWidget,                       // registerWidget
     sxUnregisterWidget,                     // unregisterWidget
     sxBroadcastMessage,                     // broadcastMessage
     sxSendMessage,                          // sendMessage
-    sxReceiveMessages,                      // receiveMessages
-    sxRegisterMessageListeners,             // registerMessageListeners
-    sxUnregisterMessageListeners,           // unregisterMessageListeners
+    sxReceiveWidgetMessage,                 // receiveWidgetMessage
+    sxRegisterMessageListener,              // registerMessageListener
+    sxUnregisterMessageListener,            // unregisterMessageListener
     sxRegisterGeometry,                     // registerGeometry
     sxUnregisterGeometry,                   // unregisterGeometry
     sxSizeGeometry,                         // sizeGeometry
