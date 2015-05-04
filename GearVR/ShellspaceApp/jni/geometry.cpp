@@ -30,7 +30,6 @@ void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 	uint 	vertexCount;
 	uint 	positionSize;
 	uint 	texCoordSize;
-	uint 	colorSize;
 	uint 	positionOffset;
 	uint 	texCoordOffset;
 	uint 	colorOffset;
@@ -40,8 +39,8 @@ void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 	vertexBuffer = geometry->vertexBuffers[index];
 	indexBuffer = geometry->indexBuffers[index];
 
-	if ( !vertexBuffer || !indexBuffer )
-		return;
+	assert( vertexBuffer );
+	assert( indexBuffer );
 
 	GL_CheckErrors( "before Geometry_MakeVertexArrayObject" );
 
@@ -63,7 +62,6 @@ void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 
 	positionSize = sizeof( float ) * 3 * vertexCount;
 	texCoordSize = sizeof( float ) * 2 * vertexCount;
-	colorSize = sizeof( byte ) * 4 * vertexCount;
 
 	positionOffset = 0;
 	texCoordOffset = positionOffset + positionSize;
@@ -100,6 +98,7 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 {
 	uint 	index;
 	GLuint 	vertexBuffer;
+	uint 	vertexSize;
 
 	GL_CheckErrors( "before Geometry_ResizeVertexBuffer" );
 
@@ -110,8 +109,10 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 
 	glGenBuffers( 1, &vertexBuffer );
 
+	vertexSize = sizeof( float ) * 3 + sizeof( float ) * 2 + sizeof( byte ) * 4;
+
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
-	glBufferData( GL_ARRAY_BUFFER, vertexCount * sizeof( float ) * 6, NULL, GL_STATIC_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, vertexCount * vertexSize, NULL, GL_STATIC_DRAW );
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	geometry->vertexBuffers[index] = vertexBuffer; 
@@ -228,6 +229,8 @@ void Geometry_UpdateVertexPositions( SGeometry *geometry, uint firstVertex, uint
 
 	glBufferSubData( GL_ARRAY_BUFFER, offset, size, data );
 
+	glBindVertexArrayOES_( 0 );
+
 	GL_CheckErrors( "after Geometry_UpdateVertexPositions" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
@@ -266,6 +269,8 @@ void Geometry_UpdateVertexTexCoords( SGeometry *geometry, uint firstVertex, uint
 
 	glBufferSubData( GL_ARRAY_BUFFER, offset, size, data );
 
+	glBindVertexArrayOES_( 0 );
+
 	GL_CheckErrors( "after Geometry_UpdateVertexTexCoords" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
@@ -297,12 +302,14 @@ void Geometry_UpdateVertexColors( SGeometry *geometry, uint firstVertex, uint ve
 
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
 
-	streamOffset = geometry->vertexCount * sizeof( float ) * 5;
+	streamOffset = geometry->vertexCount * (sizeof( float ) * 3 + sizeof( float ) * 2);
 
 	offset = streamOffset + firstVertex * sizeof( byte ) * 4;
 	size = vertexCount * sizeof( byte ) * 4;
 
 	glBufferSubData( GL_ARRAY_BUFFER, offset, size, data );
+
+	glBindVertexArrayOES_( 0 );
 
 	GL_CheckErrors( "after Geometry_UpdateVertexColors" );
 
@@ -336,8 +343,8 @@ void Geometry_Decommit( SGeometry *geometry )
 			assert( geometry->vertexArrayObjects[index] );
 			assert( geometry->indexBuffers[index] );
 
-			glDeleteBuffers( 1, &geometry->vertexBuffers[index] );
 			glDeleteVertexArraysOES_( 1, &geometry->vertexArrayObjects[index] );
+			glDeleteBuffers( 1, &geometry->vertexBuffers[index] );
 			glDeleteBuffers( 1, &geometry->indexBuffers[index] );
 
 			geometry->vertexBuffers[index] = 0;

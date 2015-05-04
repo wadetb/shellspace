@@ -61,6 +61,40 @@ void Msg_Shift( SMsg *msg, uint count )
 }
 
 
+void Msg_Unshift( SMsg *msg, char *text )
+{
+	uint argIndex;
+
+	if ( msg->argCount == MSG_ARG_LIMIT )
+		return;
+
+	for ( argIndex = msg->argCount; argIndex > 0; argIndex-- )
+		msg->args[argIndex] = msg->args[argIndex - 1];
+
+	msg->args[0] = msg->buffer + msg->bufferUsed;
+
+	S_sprintfPos( msg->buffer, MSG_LIMIT, &msg->bufferUsed, "\"%s\"", text );
+	msg->bufferUsed++;
+
+	msg->argCount++;
+}
+
+
+void Msg_Format( const SMsg *msg, char *result, uint resultLen )
+{
+	uint textPos;
+	uint argIndex;
+
+	assert( msg );
+	assert( result );
+
+	textPos = 0;
+
+	for ( argIndex = 0; argIndex < msg->argCount; argIndex++ )
+		S_sprintfPos( result, resultLen, &textPos, "\"%s\" ", msg->args[argIndex] );
+}
+
+
 sbool Msg_IsArgv( const SMsg *msg, uint argIndex, const char *value )
 {
 	assert( msg );
@@ -153,7 +187,7 @@ sbool Msg_CopyOneToArgBuffer( SMsg *msg, const char **cmd )
 
 	while ( Msg_IsDelim( *in ) || Msg_IsSpace( *in ) )
 		in++;
-		
+	
 	*cmd = in;
 
 	if ( out > end )
@@ -171,8 +205,6 @@ sbool Msg_CopyOneToArgBuffer( SMsg *msg, const char **cmd )
 
 sbool Msg_Parse( SMsg *msg, const char **cmd )
 {
-	uint 	read;
-	int 	argIndex;
 	char 	*p;
 
 	assert( msg );
@@ -183,6 +215,7 @@ sbool Msg_Parse( SMsg *msg, const char **cmd )
 	msg->argCount = 0;
 
 	p = msg->buffer;
+
 	for ( ;; )
 	{
 		while ( Msg_IsSpace( *p ) )
@@ -230,6 +263,8 @@ sbool Msg_Parse( SMsg *msg, const char **cmd )
 		msg->argCount++;
 	}
 
+	msg->bufferUsed = p - msg->buffer;
+
 	return strue;
 }
 
@@ -253,7 +288,7 @@ void MsgQueue_Create( SMsgQueue *queue )
 
 void MsgQueue_Destroy( SMsgQueue *queue )
 {
-	int msgIter;
+	uint msgIter;
 
 	assert( queue );
 

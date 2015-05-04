@@ -121,8 +121,6 @@ sbool Cmd_CopyOneToArgBuffer( char **cmd )
 // Returns number of bytes read from cmd
 sbool Cmd_Parse( char **cmd )
 {
-	uint 	read;
-	int 	argIndex;
 	char 	*p;
 
 	if ( !Cmd_CopyOneToArgBuffer( cmd ) )
@@ -208,7 +206,7 @@ void Cmd_Add( const char *format, ... )
     va_list args;
 	char 	*buffer;
 	size_t 	bufferLen;
-	int 	written;
+	uint 	written;
 
 	Thread_ScopeLock lock( MUTEX_CMD );
 
@@ -232,6 +230,7 @@ void Cmd_Add( const char *format, ... )
 	}
 
     buffer[written] = ';';
+    written++;
 
 	s_cmdGlob.bufferPos += written;
 	s_cmdGlob.buffer[s_cmdGlob.bufferPos] = 0;
@@ -258,7 +257,6 @@ void Cmd_AddToQueue( SMsgQueue *queue )
 
 void Cmd_Frame()
 {
-	uint 	read;
 	char 	*p;
 	uint 	pluginIndex;
 	SPlugin *plugin;

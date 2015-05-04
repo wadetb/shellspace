@@ -42,6 +42,7 @@ template <typename T>
 SRef RefList_GetRef( T *t )
 {
 	assert( false );
+	return S_NULL_REF;
 }
 template <>
 SRef RefList_GetRef( SEntity *ent )
@@ -56,9 +57,7 @@ void RefList_Insert( T* t, uint linkOffset, SRef *head )
 	SRef 		ref;
 	SRefLink	*link;
 	SEntity 	*next;
-	SEntity 	*prev;
 	SRefLink	*nextLink;
-	SRefLink	*prevLink;
 
 	first = *head;
 	ref = RefList_GetRef( t );
@@ -81,14 +80,12 @@ void RefList_Insert( T* t, uint linkOffset, SRef *head )
 template <typename T>
 void RefList_Remove( T* t, uint linkOffset, SRef *head )
 {
-	SRef 		ref;
 	SRefLink	*link;
 	SEntity 	*next;
 	SEntity 	*prev;
 	SRefLink	*nextLink;
 	SRefLink	*prevLink;
 
-	ref = RefList_GetRef( t );
 	link = RefList_GetLink( t, linkOffset );
 
 	if ( link->prev != S_NULL_REF )
@@ -101,6 +98,7 @@ void RefList_Remove( T* t, uint linkOffset, SRef *head )
 	}
 	else
 	{
+		assert( *head == RefList_GetRef( t ) );
 		*head = link->next;
 	}
 

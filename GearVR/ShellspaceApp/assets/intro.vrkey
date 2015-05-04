@@ -1,6 +1,6 @@
 {
 	"keys" : [
-		{ "x": 0,  "y": -120, "label": "Welcome to Shellspace" },
+		{ "x": 0,  "y": -100, "label": "Welcome to Shellspace" },
 		{ "x": 0,  "y":  -60, "label": "Use the back button to toggle the menu." },
 		{ "x": 0,  "y":  -30, "label": "Swipe left/right on the touchpad to switch menus." },
 		{ "x": 0,  "y":   30, "label": "If you haven't already, you'll need to edit" },

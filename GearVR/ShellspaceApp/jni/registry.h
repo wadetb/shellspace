@@ -44,8 +44,6 @@ struct SPlugin
 
 	SxPluginKind	kind;
 
-	SRefLink		widgetList;
-
 	SMsgQueue		msgQueue;
 };
 
@@ -54,12 +52,6 @@ struct SWidget
 	SRefLink		poolLink;
 
 	char			*id;
-
-	SRefLink		geometryList;
-	SRefLink		textureList;
-	SRefLink		entityList;
-	
-	SRefLink		pluginLink;
 
 	SMsgQueue		msgQueue;
 };
@@ -70,8 +62,6 @@ struct SGeometry
 	
 	char			*id;
 	
-	SRefLink		widgetLink;
-
 	uint 			vertexCount;
 	uint 			indexCount;
 
@@ -94,8 +84,6 @@ struct STexture
 	
 	char			*id;
 	
-	SRefLink		widgetLink;
-
 	SxTextureFormat	format;
 	ushort 			width;
 	ushort 			height;
@@ -116,8 +104,6 @@ struct SEntity
 	SRefLink		activeLink;
 	
 	char			*id;
-	
-	SRefLink		widgetLink;
 	
 	SRef 			geometryRef;
 	SRef 			textureRef;

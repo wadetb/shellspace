@@ -23,6 +23,8 @@ void Keyboard_Init();
 void Keyboard_LoadKeyboards();
 void Keyboard_Frame( uint buttonState, const Vector3f &eyePos, const Vector3f &eyeDir );
 void Keyboard_Draw();
+void Keyboard_Show( const char *name );
+void Keyboard_Orient( const SxVector3& eyeDir, float depth );
 void Keyboard_Toggle();
 bool Keyboard_IsVisible();
 

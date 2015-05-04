@@ -48,6 +48,13 @@ inline void Vec3Add( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
     out->z = a.z + b.z;
 }
 
+inline void Vec3Avg( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
+{
+    out->x = (a.x + b.x) * 0.5f;
+    out->y = (a.y + b.y) * 0.5f;
+    out->z = (a.z + b.z) * 0.5f;
+}
+
 inline void Vec3Clear( SxVector3 *out )
 {
     out->x = 0.0f;
@@ -62,6 +69,34 @@ inline void Vec3Copy( const SxVector3 &a, SxVector3 *out )
     out->z = a.z;
 }
 
+inline float Vec3Distance( const SxVector3& a, const SxVector3& b )
+{
+    float dx;
+    float dy;
+    float dz;
+
+    dx = a.x - b.x;
+    dy = a.y - b.y;
+    dz = a.z - b.z;
+
+    return sqrtf( dx * dx + dy * dy + dz * dz );
+}
+
+inline float Vec3Dot( const SxVector3& a, const SxVector3& b )
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline float Vec3Length( const SxVector3 &a )
+{
+    return sqrtf( a.x * a.x + a.y * a.y + a.z * a.z );
+}
+
+inline float Vec3LengthSqr( const SxVector3 &a )
+{
+    return a.x * a.x + a.y * a.y + a.z * a.z; 
+}
+
 inline void Vec3Mad( const SxVector3 &a, float b, const SxVector3 &c, SxVector3 *out )
 {
     out->x = a.x * b * c.x;
@@ -74,6 +109,28 @@ inline void Vec3Mul( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
     out->x = a.x * b.x;
     out->y = a.y * b.y;
     out->z = a.z * b.z;
+}
+
+inline void Vec3Normalize( const SxVector3 &a, SxVector3 *out )
+{
+    float l;
+    float invL;
+
+    l = Vec3Length( a );
+
+    if ( l > 0.000001f )
+    {
+        invL = 1.0f / l;
+        out->x = a.x * invL;
+        out->y = a.y * invL;
+        out->z = a.z * invL;
+    }
+    else
+    {
+        out->x = 0.0f;
+        out->y = 0.0f;
+        out->z = 1.0f;
+    }
 }
 
 inline void Vec3Reciprocal( const SxVector3 &a, SxVector3 *out )

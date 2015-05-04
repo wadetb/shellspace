@@ -27,6 +27,7 @@ struct SMsg
 {
 	uint 	argCount;
 	char 	*args[MSG_ARG_LIMIT];
+	uint 	bufferUsed;
 	char 	buffer[MSG_LIMIT];
 };
 
@@ -58,6 +59,7 @@ const char *Msg_Argv( const SMsg *msg, uint argIndex );
 sbool Msg_IsArgv( const SMsg *msg, uint argIndex, const char *value );
 
 void Msg_Shift( SMsg *msg, uint count );
+void Msg_Format( const SMsg *msg, char *result, uint resultLen );
 
 sbool MsgCmd_Dispatch( const SMsg *msg, const SMsgCmd *cmdList, void *context );
 

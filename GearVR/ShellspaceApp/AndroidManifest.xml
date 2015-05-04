@@ -19,7 +19,6 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
         
     <!-- Needed for PVRTune to communicate, and to stream files --> 
-    <!-- And for Akra -->    
     <uses-permission android:name="android.permission.INTERNET" />
     
     <uses-feature android:name="android.hardware.camera" />
@@ -40,8 +39,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
         
-        <!-- <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/> -->
-        <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_dual"/>
+        <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
 
         <!-- singleTask launchMode because we never want multiple copies of the app running, -->
         <!-- but we might want to internally spawn other activities -->        

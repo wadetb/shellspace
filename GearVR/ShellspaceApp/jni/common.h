@@ -36,7 +36,7 @@ using namespace OVR;
 #define USE_SUPERSAMPLE_2X 		1
 #define USE_SUPERSAMPLE_1_5X 	0
 #define USE_SRGB 				1
-#define USE_SPLIT_DRAW 			1
+#define USE_SPLIT_DRAW 			0
 
 typedef unsigned int sbool;
 #define strue  1
@@ -126,13 +126,25 @@ inline uint S_FNV32( const char *str, uint hval )
     return hval;
 }
 
+#define S_PI 3.141592653589793238462643383f
+
+#define S_COS_ONE_TENTH_DEGREE 0.9999984769132877f
+
 inline void S_SinCos( float angle, float *s, float *c )
 {
     *s = sinf( angle );
     *c = cosf( angle );
 }
 
-#define S_PI (float)M_PI
+inline float S_degToRad( float a )
+{
+    return a * (S_PI / 180.0f);
+}
+
+inline float S_radToDeg( float a )
+{
+    return a * (180.0f / S_PI);
+}
 
 #define S_NULL_REF  0xffff
 

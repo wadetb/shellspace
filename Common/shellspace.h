@@ -113,7 +113,7 @@ typedef SxResult (*SxUnregisterWidget)( SxWidgetHandle wd );
 
 #define SX_WAIT_INFINITE    0
 
-typedef SxResult (*SxBroadcastMessage)( const char *message );
+typedef SxResult (*SxPostMessage)( const char *message );
 typedef SxResult (*SxSendMessage)( SxWidgetHandle wd, const char *message );
 typedef SxResult (*SxReceiveWidgetMessage)( SxWidgetHandle wd, uint waitMs, char *result, unsigned int resultLen );
 
@@ -415,7 +415,7 @@ struct SxPluginInterface
     SxReceivePluginMessage              receivePluginMessage;
     SxRegisterWidget                    registerWidget;
     SxUnregisterWidget                  unregisterWidget;
-    SxBroadcastMessage                  broadcastMessage;
+    SxPostMessage                       postMessage;
     SxSendMessage                       sendMessage;
     SxReceiveWidgetMessage              receiveWidgetMessage;
     SxRegisterMessageListener           registerMessageListener;

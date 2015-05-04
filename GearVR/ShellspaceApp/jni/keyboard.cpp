@@ -79,7 +79,7 @@ static const char *s_builtinKeyboards[] =
 	"assets/intro.vrkey",
 	"assets/connect.vrkey",
 	"assets/alphanum.vrkey",
-	"assets/view.vrkey",
+	// "assets/view.vrkey",
 	NULL
 };
 
@@ -103,6 +103,49 @@ void Keyboard_Init()
 	Keyboard_LoadKeyboards();
 
 	s_keyGlob.visible = true;
+}
+
+
+void Keyboard_Show( const char *name )
+{
+	uint 		keyboardIter;
+	SKeyboard 	*keyboard;
+
+	Keyboard_LoadKeyboards();
+
+	for ( keyboardIter = 0; keyboardIter < s_keyGlob.keyboardCount; keyboardIter++ ) 
+	{
+		keyboard = &s_keyGlob.keyboards[keyboardIter];
+
+		if ( strcmp( keyboard->fileName, name ) == 0 )
+		{
+			s_keyGlob.activeIndex = keyboardIter;
+			break;
+		}
+	}
+
+	s_keyGlob.visible = true;
+}
+
+
+void Keyboard_Orient( const SxVector3& eyeDir, float depth )
+{
+	s_keyGlob.depth = depth;
+
+	s_keyGlob.pos = Vector3f( eyeDir.x, eyeDir.y, eyeDir.z );
+	s_keyGlob.pos.Normalize();
+	s_keyGlob.pos *= s_keyGlob.depth;
+
+	s_keyGlob.normal = s_keyGlob.pos;
+	s_keyGlob.normal.Normalize();
+	s_keyGlob.normal = -s_keyGlob.normal;
+
+	s_keyGlob.up = Vector3f( 0.0f, 1.0f, 0.0f );
+	s_keyGlob.right = s_keyGlob.up.Cross( s_keyGlob.normal );
+	s_keyGlob.right.Normalize();
+	s_keyGlob.up = s_keyGlob.normal.Cross( s_keyGlob.right );
+	s_keyGlob.up.Normalize();
+	s_keyGlob.right = -s_keyGlob.right; // $$$
 }
 
 
@@ -136,7 +179,7 @@ void Keyboard_Toggle()
 
 static SKeyboard *Keyboard_GetActive()
 {
-	assert( s_keyGlob.activeIndex < s_keyGlob.keyboardCount );
+	assert( (int)s_keyGlob.activeIndex < (int)s_keyGlob.keyboardCount );
 	return &s_keyGlob.keyboards[s_keyGlob.activeIndex];
 }
 
@@ -242,8 +285,6 @@ static void Keyboard_UpdatePickedKey( uint buttonState )
 
 void Keyboard_Frame( uint buttonState, const Vector3f &eyePos, const Vector3f &eyeDir )
 {
-	SKeyboard 	*keyboard;
-
 	if ( !s_keyGlob.visible )
 		return;
 
@@ -293,7 +334,7 @@ void Keyboard_Draw()
 
 	keyboard = Keyboard_GetActive();
 
-	for ( keyIter = 0; keyIter < keyboard->keyCount; keyIter++ )
+	for ( keyIter = 0; keyIter < (uint)keyboard->keyCount; keyIter++ )
 	{
 		key = &keyboard->keys[keyIter];
 
@@ -301,7 +342,7 @@ void Keyboard_Draw()
 			s_keyGlob.right * (float)key->x * s_keyGlob.scale - 
 			s_keyGlob.up    * (float)key->y * s_keyGlob.scale;
 
-		if ( keyIter == s_keyGlob.key )
+		if ( keyIter == (uint)s_keyGlob.key )
 			color = Vector4f( 1.0f, 0.0f, 0.0f, 1.0f );
 		else
 			color = Vector4f( 1.0f, 1.0f, 1.0f, 1.0f );
@@ -505,7 +546,7 @@ void Keyboard_FreeKeyboards()
 	{
 		keyboard = &s_keyGlob.keyboards[keyboardIter];
 
-		for ( keyIter = 0; keyIter < keyboard->keyCount; keyIter++ )
+		for ( keyIter = 0; keyIter < (uint)keyboard->keyCount; keyIter++ )
 		{
 			key = &keyboard->keys[keyIter];
 
@@ -536,7 +577,7 @@ void Keyboard_LoadKeyboards()
 	StringHash< String >	uniqueFileList;
 	uint 					keyboardIter;
 
-	if ( s_keyGlob.activeIndex >= 0 && s_keyGlob.activeIndex < s_keyGlob.keyboardCount )
+	if ( (int)s_keyGlob.activeIndex >= 0 && (int)s_keyGlob.activeIndex < (int)s_keyGlob.keyboardCount )
 		oldFileName = strdup( s_keyGlob.keyboards[s_keyGlob.activeIndex].fileName );
 	else
 		oldFileName = NULL;

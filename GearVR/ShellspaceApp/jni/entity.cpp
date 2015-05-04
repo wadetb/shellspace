@@ -35,9 +35,6 @@ SEntityGlobals	s_ent;
 
 void Entity_Init()
 {
-	int err;
-
-	// $$$ Shader needs to handle texture Pow2 scale.
 	s_ent.shader = BuildProgram(
 		"#version 300 es\n"
 		"uniform mediump mat4 Mvpm;\n"
@@ -143,6 +140,7 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	indexOffset = 0;
 	triCount = geometry->indexCounts[geometryIndex] / 3;
+
 	triCountLeft = triCount;
 
 	while ( triCountLeft )
@@ -171,7 +169,6 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef first )
 {
-	uint 			entityCount;
 	SRef  			ref;
 	SEntity 		*entity;
 	SxTransform		entityXform;

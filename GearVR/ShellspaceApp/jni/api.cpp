@@ -17,6 +17,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 #include "common.h"
+#include "command.h"
 #include "entity.h"
 #include "inqueue.h"
 #include "registry.h"
@@ -170,19 +171,36 @@ SxResult sxUnregisterWidget( SxWidgetHandle wd )
 }
 
 
-SxResult sxBroadcastMessage( const char *message )
+SxResult sxPostMessage( const char *message )
 {
 	Thread_ScopeLock lock( MUTEX_API );
 
-	return SX_NOT_IMPLEMENTED;
+	Cmd_Add( message );
+
+	return SX_OK;
 }
 
 
 SxResult sxSendMessage( SxWidgetHandle wd, const char *message )
 {
+	SRef 		ref;
+	SWidget 	*widget;
+
 	Thread_ScopeLock lock( MUTEX_API );
 
-	return SX_NOT_IMPLEMENTED;
+	ref = Registry_GetWidgetRef( wd );
+	if ( ref == S_NULL_REF )
+	{
+		LOG( "sxSendMessage: Invalid widget %s", wd );
+		return SX_INVALID_HANDLE;
+	}
+
+	widget = Registry_GetWidget( ref );
+	assert( widget );
+
+	MsgQueue_Put( &widget->msgQueue, message );
+
+	return SX_OK;
 }
 
 
@@ -206,6 +224,7 @@ SxResult sxReceiveWidgetMessage( SxWidgetHandle wd, uint waitMs, char *result, u
 
 	Thread_Unlock( MUTEX_API );
 
+	// $$$ If widget is destroyed, crash here.  But can't hold the global API lock while waiting.
 	text = MsgQueue_Get( &widget->msgQueue, waitMs );
 
 	if ( text )
@@ -591,6 +610,8 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 		return SX_NOT_IMPLEMENTED;
 
 	InQueue_UpdateTextureRect( ref, x, y, width, height, data );
+
+	return SX_OK;
 }
 
 
@@ -640,6 +661,8 @@ SxResult sxPresentTexture( SxTextureHandle tex )
 		return SX_OUT_OF_RANGE;
 
 	InQueue_PresentTexture( ref );
+
+	return SX_OK;
 }
 
 
@@ -806,9 +829,16 @@ SxResult sxParentEntity( SxEntityHandle ent, SxEntityHandle parent )
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
 
-	parentRef = Registry_GetEntityRef( parent );
-	if ( parentRef == S_NULL_REF )
-		return SX_INVALID_HANDLE;
+	if ( S_strempty( parent ) )
+	{
+		parentRef = S_NULL_REF;
+	}
+	else
+	{
+		parentRef = Registry_GetEntityRef( parent );
+		if ( parentRef == S_NULL_REF )
+			return SX_INVALID_HANDLE;
+	}
 
 	entity = Registry_GetEntity( ref );
 	assert( entity );
@@ -827,7 +857,7 @@ SxPluginInterface g_pluginInterface =
     sxReceivePluginMessage,					// receivePluginMessage
     sxRegisterWidget,                       // registerWidget
     sxUnregisterWidget,                     // unregisterWidget
-    sxBroadcastMessage,                     // broadcastMessage
+    sxPostMessage,                    		// postMessage
     sxSendMessage,                          // sendMessage
     sxReceiveWidgetMessage,                 // receiveWidgetMessage
     sxRegisterMessageListener,              // registerMessageListener

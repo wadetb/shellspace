@@ -16,7 +16,8 @@ PLUGIN_SRC_FILES := \
 	libvncserver/libvncclient/rfbproto.c \
 	libvncserver/libvncclient/sockets.c \
 	libvncserver/libvncclient/tls_none.c \
-	libvncserver/libvncclient/vncviewer.c
+	libvncserver/libvncclient/vncviewer.c \
+	shellplugin.cpp 
 
 COMMON_SRC_FILES := \
 	api.cpp \
@@ -41,7 +42,7 @@ LOCAL_ARM_MODE   := arm
 LOCAL_MODULE     := ovrapp
 LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(PLUGIN_SRC_FILES)
 LOCAL_LDLIBS	 +=
-LOCAL_CFLAGS	 += -x c++ -std=c++11 -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common
+LOCAL_CFLAGS	 += -Wall -x c++ -std=c++11 -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common
 LOCAL_CFLAGS     += -funwind-tables -Wl,--no-merge-exidx-entries
 LOCAL_C_INCLUDES += 
 

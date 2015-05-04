@@ -10,7 +10,7 @@
         Bluetooth keyboard & mouse support.
         Prettify the menu for the screenshot.
         Get a video of me using it to code?
-
+        
 5/4 - First video of app running
         This is all about the shell.
         Multiple widgets; the "shell" part.
@@ -21,41 +21,53 @@
         Polish
         Battery life & Framerate optimization
 
-# Q&A questions
-
-# TODO for next milestone
- 
-+ Tuning - what is RFB_BUFFER_SIZE?
-
-+ 565 support - runtime toggle
-+ client->appData.qualityLevel - runtime setting?
-+ Supersample - runtime toggle?
-+ Test with Jennie's laptop
-+ Profile VNC root code
-+ Use notification/Toast API from Oculus for connection messages
-+ Keep working on plugin refactor
-
-+ Keyboard rectangle intersect (draw background rect?).
-+ Bluetooth mouse
-
-+ BT console?
-
 # TODO
 
-# API
+# Shell
 
-+ Attach entities to widgets before they are rendered, without a widget the entity should not draw.
++ Add a gutter between cells (5%?) to fix rapid oscillation.
++ Fix edges not linking up exactly.
++ Make text readable.
++ Custom wraparound geometry for 2D.
++ Context specific menus.
 
-# Texture queue
+The workflow is that the user gazes at an empty cell, taps the touchpad, and a menu appears with various choices like "add/del row, add/del column, spawn vnc widget".  They select "spawn vnc widget" and a command is executed.  (Does the shell pick the widget ID?)  After the widget initializes and creates its first entity, it executes "shell register <wid> <eid>" and that causes the entity to be parented, and the entity and widget to be remembered in the cell.
 
-Do I want a single queue for all textures, or a separate queue per texture?  
-(Or one in side the other?)
+In the sense of a single cell, it occupies an arc of the globe in latitude and longitude.  Adjacent arcs don't need to be contiguous, in fact raycasting against entity geometry is likely a valuable feature to allow aiming at things in further cell layers, as is the notion of having some padding between cells.
 
-Do I want strict FIFO or do I want to prioritize by what the user is looking at?
+When 2D apps are in focus, like virtual desktops, there is also a desire for apps to span multiple cells and "wrap around" the user.  If the app is just presenting a 2D quad, this wrap around is not possible without dividing the geometry.  Thus we need both the notion of widgets occupying a range of cells (likely leaving filler cells for bookkeeping) but we also want to create custom geometry for 2D applications that implements the curvature of the cell.
 
-Effectively I want a single large priority queue that is FIFO by default but adjusted for factors like widget priority (active widget gets higher priority) and per-widget / per-plugin bytes per second quotas.
+Lets think of the cell unwrapped, as a 2D coordinate system of U and V.  The grid is divided into W steps of U and V steps of H, perhaps with some empty padding around the cells within the steps.  U=[0,1] represents a 360 degree horizontal arc with U=0.5 at V=(0,0,-1).  V=[0,1] represents a roughly 120 degree vertical arc.
 
-For now I can just have a single global queue that advances like the VNC texture queue.  The meaning of the per element mask will be defined differently for different types, but I'm guessing initially there will be 3 of everything.
+To position and size an element (like the frame) we assume the element bounds itself naturally in a -1..1 space in X,Y,Z.
+
+(TBD - Are we going to start keeping CPU copies of vertex data for Bounds building?  Seems like a good idea...)
+
+For 3D elements we prefer to scale them uniformly, but for 2D elements we actually want to create custom curved geometry.
+
+(TBD - Runtime grid resizing in X and Y sounds like a useful thing... let's get these basics done so we can move on to the fun stuff!)
+
+Starting with 3D... we take a UV=[a,b] range at constant depth D.  Project both a and b onto the sphere, measure, and take that as the scale factor.  Put the origin at depth.  Rotation is a "look at" matrix aimed at the origin.  (Can we cut use of AnglesToAxis?)
+
+# VNC
+
++ client->appData.qualityLevel - runtime setting?
+
++ When app suspends, the texture input queue fills up and this (currently, thanks to Present semantics) deadlocks the app.  Detect this and stop sending updates, but accumulate a texture dirty rectangle.  When unsuspended, submit the entire dirty rectangle.
+
+# Performance
+
++ Bounds accumulation for Geometry objects, frustum culling
++ Subrectangle texture update throttling
++ Optimize various decoders using NEON.
++ Accelerated CopyRect?
++ 16bit pixel support (runtime option)
++ Server-side scaling support?  Check to see if it actually works.
++ More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
+
+# Files
+
+Idea for file widget- drag a file into a cell, it's represented by a filename and MIME icon.  Context menu provides "open with" options.
 
 # DLLs
 
@@ -63,22 +75,6 @@ For now I can just have a single global queue that advances like the VNC texture
     /jni
         Android.mk
         shell.cpp
-
-What is the plan for DLLs?  Do I start by writing a "V8" plugin that exposes the API to JavaScript?  Would that be a "widget" plugin?  Not really, it's a "host" plugin and the individual JavaScript scripts that are downloaded and executed are the widget plugins.
-
-Or do I build V8 directly into the runtime?  I'd rather not just for stability and extensibility, though it would surely be part of the "core" module set.
-
-In practice I'd like to be able to say "v8 load http://shellspace.org/hula.js" and the V8 plugin would download the JavaScript file, create a runtime environment, and "run" that plugin in the runtime environment.  
-
-So v8 needs to register that it supports the command "v8", and hula.js needs to register that it supports the command "hula" and also needs to execute "shell hula" or something in order to promote itself to be the shell.
-
-(Note I haven't really defined what "running" a plugin means from a thread model standpoint- does hula.js get a CPU thread of its own, with IPC API calls via queues?)
-
-(Ideally I'd like to go with the pluginhost model such that if the v8 process dies, it can be respawned without restarting the shellspace core process...)
-
-But I have to consider what's actually possible by Monday.  Can I get V8 running in-process?  Can I get it running out-of-process?  Does the SDK even exist or do I have to download and compile it?  Are there gradual steps I can take toward the final goal that are still useful?
-
-What if I simply make the SS API in-process, build V8 in-process, load JS files from disk, and proceed with iteration?  Then I just have to figure out how to hook V8 API calls back to in-process Shellspace API calls, and that doesn't sound insurmountable.  I can skip the entire dlopen mess by leaning on the Javascript.  
 
 # JavaScript
 
@@ -108,13 +104,6 @@ https://developers.google.com/v8/get_started
 Skia (By Google) - Seems like the winner?
 https://skia.org/user/sample/hello
 
-# Speed
-
-+ 16bit pixel support (runtime option)
-+ Server-side scaling support?  Check to see if it actually works.
-+ Accelerated CopyRect.
-+ More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
-
 # Keyboard
 
 + Bind a "console" hotkey with an editor for arbitrary console commands.
@@ -124,7 +113,6 @@ https://skia.org/user/sample/hello
 
 # Image quality improvements
 
-+ Reorient command
 + Temporal jitter + reprojection with point filtering
 + Render direct to screen with homemade distortion (loses timewarp unless I reimplement it)
 
@@ -133,6 +121,7 @@ https://skia.org/user/sample/hello
 A lazy free system could be implemented such that if inactive textures aren't used for N frames they are discarded, and created again on demand.  When a new texture is created the current texture is copied into it (assuming there is a GL API for this like CopySubResource) and the bits in the update queue are made equal between them.  This would cut the memory usage for inactive windows greatly but with some GPU cost on the first frame they are updated again.
 
 # Note about memory usage
+
 1440*900 -> 2048x1024 = 8MB x3 = 24MB texture data
 
 GPU specs seem to indicate it uses shared GDDR3, and there is 3GB in the phone.  10x triple buffered VNC widgets + framebuffer copy (owned by the thread and not padded) would be ~320MB, significant but not worth worrying about right now.  
@@ -141,13 +130,6 @@ GPU specs seem to indicate it uses shared GDDR3, and there is 3GB in the phone. 
 
 https://danielrapp.github.io/doppler/
 https://github.com/rygorous/mini_arith/blob/master/main.cpp
-
-# Video capture
-
-Jose wrote:
-Does anyone have any recommended methods for screen recording a gear vr game? On PC, I would normally use fraps or obs, but I'm unaware of any similar software for Android or gear vr.
-
-You can use the apps mobizen or recordable from the Play Store
 
 # Rendering to TimeWarp overlay plane
 
@@ -196,6 +178,12 @@ Post-It
 Twitter
 Profiler
 Plot
+
+# Recordable settings
+
+http://www.reddit.com/r/oculus/comments/2p812e/gear_vr_recording_at_solid_720p60_using/
+
+- Note had to set 720p and 30hz manually.
 
 # Book readers
 

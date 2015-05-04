@@ -166,14 +166,13 @@ static void VNCThread_RebuildGlobe( SVNCWidget *vnc )
 	const int vertical = 32;
 
 	const float fov = vnc->globeFov * M_PI / 180.0f;
-	const float radius = vnc->globeRadius;
 
 	// $$$ TODO- handle 0 fov with a special case
-	const float yExtent = radius * sinf( 0.5f * fov );
-	const float zExtent = radius * cosf( 0.5f * fov ) * cosf( 0.5f * fov * aspect );
+	const float yExtent = sinf( 0.5f * fov );
+	const float zExtent = cosf( 0.5f * fov ) * cosf( 0.5f * fov * aspect );
 
-	const float scale = vnc->globeSize / yExtent;
-	const float zOffset = -vnc->globeZ + (scale * zExtent);
+	const float scale = 1.0f / yExtent;
+	const float zOffset = (scale * zExtent);
 
 	const int vertexCount = ( horizontal + 1 ) * ( vertical + 1 );
 	const int indexCount = horizontal * vertical * 6;
@@ -197,9 +196,9 @@ static void VNCThread_RebuildGlobe( SVNCWidget *vnc )
 			const float lon = 1.5f*M_PI + ( xf - 0.5f ) * fov * aspect;
 			const int index = y * ( horizontal + 1 ) + x;
 
-			positions[index].x = scale * radius * cosf( lon ) * cosLat;
-			positions[index].y = scale * radius * sinLat;
-			positions[index].z = (scale * radius * sinf( lon ) * cosLat) + zOffset;
+			positions[index].x = scale * cosf( lon ) * cosLat;
+			positions[index].y = scale * sinLat;
+			positions[index].z = (scale * sinf( lon ) * cosLat) + zOffset;
 
 			texCoords[index].x = xf;
 			texCoords[index].y = 1.0f - yf;
@@ -244,7 +243,7 @@ static void VNCThread_RebuildGlobe( SVNCWidget *vnc )
 
 	vnc->globeCenter.x = 0.0f;
 	vnc->globeCenter.y = 0.0f;
-	vnc->globeCenter.z = (scale * -radius) + zOffset;
+	vnc->globeCenter.z = zOffset - scale;
 }
 
 
@@ -292,7 +291,7 @@ static rfbBool vnc_thread_resize( rfbClient *client )
 
 	SetFormatAndEncodings( client );
 
-	g_pluginInterface.formatTexture( vnc->textureId, SxTextureFormat_R8G8B8A8 );
+	g_pluginInterface.formatTexture( vnc->textureId, SxTextureFormat_R8G8B8A8_SRGB );
 	g_pluginInterface.sizeTexture( vnc->textureId, width, height );
 
 	vnc->width = width;
@@ -443,12 +442,6 @@ void VNCThread_UpdateTextureRect( SVNCWidget *vnc, int x, int y, int width, int 
 void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 {
 	SVNCWidget 		*vnc;
-	byte 			color[4];
-	byte 			*frameBuffer;
-	uint 			frameBufferWidth;
-	byte 			*buffer;
-	int 			xc;
-	int 			yc;
 
 	Prof_Start( PROF_VNC_THREAD_HANDLE_UPDATE );
 
@@ -531,7 +524,6 @@ void VNCThread_CopyCursor( SVNCWidget *vnc, uint direction )
 	uint 	height;
 	byte 	*frameBuffer;
 	uint 	cursorWidth;
-	uint 	cursorHeight;
 	byte 	*cursorData;
 	uint 	xStart;
 	uint 	xEnd;
@@ -628,7 +620,6 @@ void VNCThread_UpdateCursorTextureRect( SVNCWidget *vnc )
 void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int width, int height, int bytesPerPixel )
 {
 	SVNCWidget 		*vnc;
-	byte 			*cursor;
 	byte 			maskPixel;
 	int 			x;
 	int 			y;
@@ -892,6 +883,7 @@ static sbool VNCThread_Input( SVNCWidget *vnc )
 
 SVNCKeyMap s_vncKeyMap[] =
 {
+	{ "unknown"   , AKEYCODE_UNKNOWN        , XK_Escape      },
 	{ "bkspc"     , AKEYCODE_DEL            , XK_BackSpace   },
 	{ "tab"       , AKEYCODE_TAB            , XK_Tab         },
 	{ "clear"     , AKEYCODE_UNKNOWN        , XK_Clear       },
@@ -958,7 +950,53 @@ SVNCKeyMap s_vncKeyMap[] =
 	{ "print"     , AKEYCODE_BREAK          , XK_Print       },
 	{ "sysreq"    , AKEYCODE_SYSRQ          , XK_Sys_Req     },
 	{ "break"     , AKEYCODE_UNKNOWN        , XK_Break       },
-	{ NULL        , AKEYCODE_UNKNOWN        , 0              }
+	{ "0"         , AKEYCODE_0              , '0'            },
+	{ "1"         , AKEYCODE_1              , '1'            },
+	{ "2"         , AKEYCODE_2              , '2'            },
+	{ "3"         , AKEYCODE_3              , '3'            },
+	{ "4"         , AKEYCODE_4              , '4'            },
+	{ "5"         , AKEYCODE_5              , '5'            },
+	{ "6"         , AKEYCODE_6              , '6'            },
+	{ "7"         , AKEYCODE_7              , '7'            },
+	{ "8"         , AKEYCODE_8              , '8'            },
+	{ "9"         , AKEYCODE_9              , '9'            },
+	{ "a"         , AKEYCODE_A              , 'a'            },
+	{ "b"         , AKEYCODE_B              , 'b'            },
+	{ "c"         , AKEYCODE_C              , 'c'            },
+	{ "d"         , AKEYCODE_D              , 'd'            },
+	{ "e"         , AKEYCODE_E              , 'e'            },
+	{ "f"         , AKEYCODE_F              , 'f'            },
+	{ "g"         , AKEYCODE_G              , 'g'            },
+	{ "h"         , AKEYCODE_H              , 'h'            },
+	{ "i"         , AKEYCODE_I              , 'i'            },
+	{ "j"         , AKEYCODE_J              , 'j'            },
+	{ "k"         , AKEYCODE_K              , 'k'            },
+	{ "l"         , AKEYCODE_L              , 'l'            },
+	{ "m"         , AKEYCODE_M              , 'm'            },
+	{ "n"         , AKEYCODE_N              , 'n'            },
+	{ "o"         , AKEYCODE_O              , 'o'            },
+	{ "p"         , AKEYCODE_P              , 'p'            },
+	{ "q"         , AKEYCODE_Q              , 'q'            },
+	{ "r"         , AKEYCODE_R              , 'r'            },
+	{ "s"         , AKEYCODE_S              , 's'            },
+	{ "t"         , AKEYCODE_T              , 't'            },
+	{ "u"         , AKEYCODE_U              , 'u'            },
+	{ "v"         , AKEYCODE_V              , 'v'            },
+	{ "w"         , AKEYCODE_W              , 'w'            },
+	{ "x"         , AKEYCODE_X              , 'x'            },
+	{ "y"         , AKEYCODE_Y              , 'y'            },
+	{ "z"         , AKEYCODE_Z              , 'z'            },
+	{ "grave"     , AKEYCODE_GRAVE          , '~'            },
+	{ "minus"     , AKEYCODE_MINUS          , '-'            },
+	{ "plus"      , AKEYCODE_PLUS           , '+'            },
+	{ "lbracket"  , AKEYCODE_LEFT_BRACKET   , '['            },
+	{ "rbracket"  , AKEYCODE_RIGHT_BRACKET  , ']'            },
+	{ "backslash" , AKEYCODE_BACKSLASH      , '\\'           },
+	{ "semicolon" , AKEYCODE_SEMICOLON      , ';'            },
+	{ "apostrophe", AKEYCODE_APOSTROPHE     , '\''           },
+	{ "slash"     , AKEYCODE_SLASH          , '/'            },
+	{ "comma"     , AKEYCODE_COMMA          , ','            },
+	{ "period"    , AKEYCODE_PERIOD         , '.'            },
 };
 
 
@@ -993,9 +1031,11 @@ void VNC_KeyCmd( const SMsg *msg, void *context )
 	code = atoi( Msg_Argv( msg, 1 ) );
 	down = atoi( Msg_Argv( msg, 2 ) );
 
+	LOG( "VNC_KeyCmd: %d %d", code, down );
+
 	vncCode = VNC_KeyCodeForAndroidCode( code );
 	if ( vncCode != INVALID_KEY_CODE )
-		SendKeyEvent( vnc->client, code, down );
+		SendKeyEvent( vnc->client, vncCode, down );
 }
 
 
@@ -1013,6 +1053,7 @@ void VNC_MouseCmd( const SMsg *msg, void *context )
 	y = atoi( Msg_Argv( msg, 2 ) );
 
 	buttons = 0;
+
 	if ( atoi( Msg_Argv( msg, 3 ) ) )
 		buttons |= rfbButton1Mask;
 	if ( atoi( Msg_Argv( msg, 4 ) ) )
@@ -1027,9 +1068,9 @@ void VNC_MouseCmd( const SMsg *msg, void *context )
 void VNC_TouchCmd( const SMsg *msg, void *context )
 {
 	SVNCWidget 	*vnc;
-	sbool 		touch;
-	float 		x;
-	float 		y;
+	// sbool 		touch;
+	// float 		x;
+	// float 		y;
 
 	if ( !s_vncGlob.headmouse )
 		return;
@@ -1037,9 +1078,9 @@ void VNC_TouchCmd( const SMsg *msg, void *context )
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	touch = atoi( Msg_Argv( msg, 1 ) );
-	x = atof( Msg_Argv( msg, 2 ) );
-	y = atof( Msg_Argv( msg, 3 ) );
+	// touch = atoi( Msg_Argv( msg, 1 ) );
+	// x = atof( Msg_Argv( msg, 2 ) );
+	// y = atof( Msg_Argv( msg, 3 ) );
 
 	// $$$ synthesize mouse down/up, sync with gaze events
 }
@@ -1123,7 +1164,7 @@ void VNC_GazeCmd( const SMsg *msg, void *context )
 
 SMsgCmd s_vncWidgetCmds[] =
 {
-	{ "key", 			VNC_KeyCmd, 			"key <code> <up|down>" },
+	{ "key", 			VNC_KeyCmd, 			"key <code> <down>" },
 	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <button1> <button2> <button3>" },
 	{ "touch", 			VNC_TouchCmd, 			"touch <up|down|moved> <x> <y>" },
 	{ "gaze", 			VNC_GazeCmd, 			"gaze <x> <y> <z>" },
@@ -1172,8 +1213,6 @@ static void VNCThread_Loop( SVNCWidget *vnc )
 
 static void VNCThread_Cleanup( SVNCWidget *vnc )
 {
-	int err;
-
 	assert( vnc );
 	assert( vnc->client );
 
@@ -1223,8 +1262,7 @@ static void *VNCThread( void *context )
 
 void VNC_Connect( SVNCWidget *vnc, const char *server, const char *password )
 {
-	uint 		threadId;
-	int 		err;
+	int 	err;
 
 	assert( vnc );
 
@@ -1602,7 +1640,8 @@ SVNCWidget *VNC_GetWidget( SxWidgetHandle id )
 void VNC_CreateCmd( const SMsg *msg, void *context )
 {
 	SxWidgetHandle 	id;
-	SVNCWidget 	*vnc;
+	SVNCWidget 		*vnc;
+	char 			msgBuf[MSG_LIMIT];
 
 	id = Msg_Argv( msg, 1 );
 	
@@ -1632,6 +1671,9 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	g_pluginInterface.registerEntity( vnc->id );
 	g_pluginInterface.setEntityTexture( vnc->id, vnc->textureId );
 	g_pluginInterface.setEntityGeometry( vnc->id, vnc->geometryId );
+
+	snprintf( msgBuf, MSG_LIMIT, "shell register %s %s", vnc->id, vnc->id );
+	g_pluginInterface.postMessage( msgBuf );
 }
 
 
@@ -1644,7 +1686,10 @@ void VNC_DestroyCmd( const SMsg *msg, void *context )
 	
 	vnc = VNC_GetWidget( id );
 	if ( !vnc )
+	{
+		LOG( "VNC_DestroyCmd: Widget %s does not exist.", id );
 		return;
+	}
 
 	if ( vnc->thread )
 		VNC_Disconnect( vnc );

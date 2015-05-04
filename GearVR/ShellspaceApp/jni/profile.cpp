@@ -180,7 +180,6 @@ static void Prof_Print()
 	uint 	profIter;
 	uint 	hitIter;
 	uint 	hitFrame;
-	double	frameAvg;
 	double	frameTotal;
 	double	frameMin;
 	double	frameMax;

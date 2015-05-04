@@ -379,7 +379,6 @@ void InQueue_Frame()
 	int 		count;
 	int 		index;
 	SItem 		*in;
-	uint 		updateMask;
 	double 		startMs;
 
 	Prof_Start( PROF_GPU_UPDATE );
@@ -441,7 +440,7 @@ void InQueue_Frame()
 
 void InQueue_ClearRefs( SRef ref )
 {
-	int 		index;
+	uint 		index;
 	SItem 		*in;
 
 	Thread_Lock( MUTEX_INQUEUE );
