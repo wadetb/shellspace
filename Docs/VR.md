@@ -25,11 +25,6 @@
 
 # For this release:
 
-Vertical curve separate from horizontal curve (or just axe vcurve)
-
-+ Fix the autoexec bug - issue is that command.cpp tries to execute the command before the thread creates the widget, so the widget isn't found.
-  Could have a "wait vnc0" command that just cycles command.cpp though frames until vnc0 is created?  Or a way to queue messages for not-yet-created widgets/plugins?
-
 # Shell
 
 + Context specific menus.
@@ -64,6 +59,11 @@ Vertical curve separate from horizontal curve (or just axe vcurve)
 
 + Test performance of double (vs triple) buffer.
   (This may require stddev profiling info over a long period of time, maybe just do a strict CSV dump mode, could even use a file)
+
+# Misc
+
++ Fix the autoexec bug - issue is that command.cpp tries to execute the command before the thread creates the widget, so the widget isn't found.
+  Could have a "wait vnc0" command that just cycles command.cpp though frames until vnc0 is created?  Or a way to queue messages for not-yet-created widgets/plugins?
 
 # Files
 
