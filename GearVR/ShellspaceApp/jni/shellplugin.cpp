@@ -4,11 +4,13 @@
 #include "message.h"
 
 
-#define ROOT_DEPTH 			20.0f
+#define ROOT_DEPTH 			40.0f
 #define ROOT_LAT_ARC 		120
 #define ROOT_LON_ARC 		360
 #define ROOT_GRID_WIDTH 	5
 #define ROOT_GRID_HEIGHT 	3
+
+#define ROOT_GUTTER 		5
 
 
 enum ECellKind
@@ -201,7 +203,26 @@ void Shell_GetCellPoint( float lat, float lon, float depth, SxVector3 *out )
 }
 
 
-void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid, bool uniformScale )
+void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid )
+{
+	SxOrientation	orient;
+	SxTrajectory 	tr;
+
+	IdentityOrientation( &orient );
+
+	Shell_GetCellPoint( cell->lat, cell->lon, ROOT_DEPTH, &orient.origin );
+
+	// $$$ Grrrh, these are reversed.
+	orient.angles.pitch = -cell->lon;
+	orient.angles.yaw = cell->lat;
+
+	tr.kind = SxTrajectoryKind_Instant;
+
+	g_pluginInterface.orientEntity( eid, &orient, &tr );
+}
+
+
+void Shell_OrientSquareToCell( SCell *cell, const char *eid )
 {
 	SxOrientation	orient;
 	float 			lat0;
@@ -213,7 +234,6 @@ void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid, bool uniformScal
 	SxVector3 		p2;
 	float 			uSize;
 	float 			vSize;
-	float 			scale;
 	SxTrajectory 	tr;
 
 	IdentityOrientation( &orient );
@@ -228,21 +248,13 @@ void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid, bool uniformScal
 	Shell_GetCellPoint( lat0, lon1, ROOT_DEPTH, &p1 );
 	Shell_GetCellPoint( lat1, lon0, ROOT_DEPTH, &p2 );
 
-	Shell_GetCellPoint( cell->lat, cell->lon, ROOT_DEPTH, &orient.origin );
+	Vec3Avg( p1, p2, &orient.origin );
 
-	// Assumes contents modeled in -1..1 coords.
+	// Assumes square is modeled in -1..1 coords.
 	uSize = Vec3Distance( p0, p1 ) * 0.5f;
 	vSize = Vec3Distance( p0, p2 ) * 0.5f;
 
-	if ( uniformScale )
-	{
-		scale = S_Min( uSize, vSize );
-		Vec3Set( &orient.scale, scale, scale, scale );
-	}
-	else
-	{
-		Vec3Set( &orient.scale, uSize, vSize, 1.0f );
-	}
+	Vec3Set( &orient.scale, uSize, vSize, 1.0f );
 
 	// $$$ Grrrh, these are reversed.
 	orient.angles.pitch = -cell->lon;
@@ -254,8 +266,57 @@ void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid, bool uniformScal
 }
 
 
-// $$$ lat/lon/arc should probably be specified as uMin/uMax/vMin/vMax.
-void Shell_Layout_r( SCell *cell, float lat, float lon, float latArc, float lonArc )
+void Shell_LayoutWidget( SCell *cell )
+{
+	char 	msgBuf[MSG_LIMIT];
+
+	assert( cell->kind = CELL_WIDGET );
+	assert( cell->widget.eid );
+
+	Shell_OrientEntityToCell( cell, cell->widget.eid );
+
+	snprintf( msgBuf, MSG_LIMIT, "arc %f %f %f", cell->latArc, cell->lonArc, ROOT_DEPTH );
+
+	g_pluginInterface.sendMessage( cell->widget.wid, msgBuf );
+}
+
+
+void Shell_LayoutWidgets_r( SCell *cell )
+{
+	uint 			x;
+	uint 			y;
+	SCell 			*child;
+
+	if ( cell->kind == CELL_GRID )
+	{
+		assert( cell->grid.width );
+		assert( cell->grid.height );
+		assert( cell->grid.children );
+
+		for ( y = 0; y < cell->grid.height; y++ )
+		{
+			for ( x = 0; x < cell->grid.width; x++ )
+			{
+				child = Shell_GetGridChild( cell, x, y );
+
+				Shell_LayoutWidgets_r( child );
+			}
+		}
+	}
+	else if ( cell->kind == CELL_WIDGET )
+	{
+		Shell_LayoutWidget( cell );
+	}
+}
+
+
+void Shell_LayoutWidgets()
+{
+	Shell_LayoutWidgets_r( &s_shell.root );
+}
+
+
+void Shell_LayoutCells_r( SCell *cell, float lat, float lon, float latArc, float lonArc )
 {
 	uint 			x;
 	uint 			y;
@@ -267,8 +328,8 @@ void Shell_Layout_r( SCell *cell, float lat, float lon, float latArc, float lonA
 
 	cell->lat = lat;
 	cell->lon = lon;
-	cell->latArc = latArc;
-	cell->lonArc = lonArc;
+	cell->latArc = latArc - ROOT_GUTTER;
+	cell->lonArc = lonArc - ROOT_GUTTER;
 
 	if ( cell->kind == CELL_GRID )
 	{
@@ -289,7 +350,7 @@ void Shell_Layout_r( SCell *cell, float lat, float lon, float latArc, float lonA
 			{
 				child = Shell_GetGridChild( cell, x, y );
 
-				Shell_Layout_r( child, childLat, childLon, childLatArc, childLonArc );
+				Shell_LayoutCells_r( child, childLat, childLon, childLatArc, childLonArc );
 
 				childLon += childLonArc;
 			}
@@ -297,18 +358,12 @@ void Shell_Layout_r( SCell *cell, float lat, float lon, float latArc, float lonA
 			childLat += childLatArc;
 		}
 	}
-	else if ( cell->kind == CELL_WIDGET )
-	{
-		assert( cell->widget.eid );
-
-		Shell_OrientEntityToCell( cell, cell->widget.eid, true );
-	}
 }
 
 
-void Shell_Layout()
+void Shell_LayoutCells()
 {
-	Shell_Layout_r( &s_shell.root, 0, 0, ROOT_LAT_ARC, ROOT_LON_ARC );
+	Shell_LayoutCells_r( &s_shell.root, 0, 0, ROOT_LAT_ARC, ROOT_LON_ARC );
 }
 
 
@@ -358,10 +413,10 @@ SCell *Shell_GetActiveCell()
 
 	assert( Vec3LengthSqr( s_shell.gazeDir ) > 0.0f );
 
+	Shell_LayoutCells();
+
 	targetLat = S_radToDeg( atan2f( s_shell.gazeDir.y, -s_shell.gazeDir.z ) );
 	targetLon = S_radToDeg( atan2f( s_shell.gazeDir.x, -s_shell.gazeDir.z ) );
-
-	Shell_Layout();
 
 	return Shell_Raycast( targetLat, targetLon );
 }
@@ -417,7 +472,7 @@ void Shell_CreateRoot()
 	// Divide the top middle cell.
 	Shell_MakeGrid( Shell_GetGridChild( &s_shell.root, 2, 2 ), 4, 2 );
 
-	Shell_Layout();
+	Shell_LayoutCells();
 
 	// tr.kind = SxTrajectoryKind_Instant;
 
@@ -530,7 +585,7 @@ void Shell_RegisterCmd( const SMsg *msg, void *context )
 
 	LOG( "Register %s with gazeDir %f %f %f", eid, s_shell.gazeDir.x, s_shell.gazeDir.y, s_shell.gazeDir.z );
 
-	Shell_Layout(); // $$$ Can we layout just one entity?  Would have to store lat/lon/arcs in SCell.
+	Shell_LayoutWidgets();
 }
 
 
@@ -613,7 +668,7 @@ void Shell_GazeCmd( const SMsg *msg, void *context )
 
 	activeCell = Shell_GetActiveCell();
 	if ( activeCell )
-		Shell_OrientEntityToCell( activeCell, "square", false );
+		Shell_OrientSquareToCell( activeCell, "square" );
 }
 
 

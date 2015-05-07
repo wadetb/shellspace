@@ -149,7 +149,7 @@ void InQueue_CheckAdvance( uint count )
 
 				if ( texture->updateIndex == texture->drawIndex )
 				{
-					if ( !(in->texture.updateMask & (1<<(texture->updateIndex % BUFFER_COUNT)) ) )
+					// if ( !(in->texture.updateMask & (1<<(texture->updateIndex % BUFFER_COUNT)) ) )
 						texture->updateIndex = (texture->updateIndex + 1) % BUFFER_COUNT;
 				}
 			}
@@ -166,7 +166,7 @@ void InQueue_CheckAdvance( uint count )
 
 				if ( geometry->updateIndex == geometry->drawIndex )
 				{
-					if ( !(in->geometry.updateMask & (1<<(geometry->updateIndex % BUFFER_COUNT)) ) )
+					// if ( !(in->geometry.updateMask & (1<<(geometry->updateIndex % BUFFER_COUNT)) ) )
 						geometry->updateIndex = (geometry->updateIndex + 1) % BUFFER_COUNT;
 				}
 			}

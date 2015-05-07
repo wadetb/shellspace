@@ -67,8 +67,11 @@ struct SVNCGlobe
 	uint 				vertexCount;
 	uint 				indexCount;
 	float 				aspect;
-	float 				fov;
-	float 				scale;
+	float 				latArc;
+	float 				lonArc;
+	float 				depth;
+	float 				xScale;
+	float 				yScale;
 	float 				zOffset;
 	SxVector3 			origin;
 };
@@ -95,8 +98,6 @@ struct SVNCWidget
 	int 				height;
 	sbool 				updatePending;
 
-	float	 			globeCurve;
-	float 				globeScale;
 	float 				globeZPush;
 };
 
@@ -167,9 +168,6 @@ static char *vnc_thread_get_password( rfbClient *client )
 
 void VNCThread_SetGlobeConsts( SVNCWidget *vnc )
 {
-	float 	yExtent;
-	float 	zExtent;
-
 	assert( vnc );
 
 	vnc->globe.vertexCount = ( GLOBE_HORIZONTAL + 1 ) * ( GLOBE_VERTICAL + 1 );
@@ -179,45 +177,21 @@ void VNCThread_SetGlobeConsts( SVNCWidget *vnc )
 		vnc->globe.aspect = (float)vnc->width / vnc->height;
 	else
 		vnc->globe.aspect = 16.0f / 10.0f;
-	
-	vnc->globe.fov = vnc->globeCurve * M_PI / 180.0f;
 
-	// $$$ TODO- handle 0 fov with a special case
-	yExtent = sinf( 0.5f * vnc->globe.fov );
-	zExtent = cosf( 0.5f * vnc->globe.fov ) * cosf( 0.5f * vnc->globe.fov * vnc->globe.aspect );
-
-	vnc->globe.scale = vnc->globeScale / yExtent;
-	vnc->globe.zOffset = vnc->globeZPush + (vnc->globe.scale * zExtent);
+	if ( vnc->globe.lonArc > vnc->globe.latArc * vnc->globe.aspect )
+		vnc->globe.lonArc = vnc->globe.latArc * vnc->globe.aspect;
 }
 
 
 void VNCThread_GetGlobePosition( SVNCWidget *vnc, float u, float v, SxVector3 *result )
 {
-	float 	fov;
-	float 	aspect;
-	float 	scale;
-	float 	zOffset;
-	float 	lat;
-	float 	lon;
-	float 	sinLat;
-	float 	cosLat;
-	float 	sinLon;
-	float 	cosLon;
+	float lon;
 
-	fov = vnc->globe.fov;
-	aspect = vnc->globe.aspect;
-	scale = vnc->globe.scale;
-	zOffset = vnc->globe.zOffset;
+	lon = S_degToRad( (u - 0.5f) * vnc->globe.lonArc ) - S_PI/2;
 
-	lat = fov * (v - 0.5f);
-	lon = fov * (u - 0.5f) * aspect + (1.5f * S_PI);
-
-	S_SinCos( lat, &sinLat, &cosLat );
-	S_SinCos( lon, &sinLon, &cosLon );
-
-	result->x = scale * cosLon * cosLat;
-	result->y = scale * sinLat;
-	result->z = scale * sinLon * cosLat + zOffset;
+	result->x = vnc->globe.depth * cosf( lon );
+	result->y = vnc->globe.depth * (v - 0.5f) * sinf( S_degToRad( vnc->globe.latArc ) );
+	result->z = vnc->globe.depth * sinf( lon ) + vnc->globe.depth + vnc->globeZPush;
 }
 
 
@@ -1160,29 +1134,16 @@ void VNC_GazeCmd( const SMsg *msg, void *context )
 }
 
 
-void VNC_CurveCmd( const SMsg *msg, void *context )
+void VNC_ArcCmd( const SMsg *msg, void *context )
 {
 	SVNCWidget 	*vnc;
 
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	if ( !Msg_SetFloatCmd( msg, &vnc->globeCurve, 1.0f, 180.0f ) )
-		return;
-
-	VNCThread_RebuildGlobe( vnc );
-}
-
-
-void VNC_ScaleCmd( const SMsg *msg, void *context )
-{
-	SVNCWidget 	*vnc;
-
-	vnc = (SVNCWidget *)context;
-	assert( vnc );
-
-	if ( !Msg_SetFloatCmd( msg, &vnc->globeScale, 0.1f, 10.0f ) )
-		return;
+	vnc->globe.latArc = atof( Msg_Argv( msg, 1 ) );
+	vnc->globe.lonArc = atof( Msg_Argv( msg, 2 ) );
+	vnc->globe.depth = atof( Msg_Argv( msg, 3 ) );
 
 	VNCThread_RebuildGlobe( vnc );
 }
@@ -1195,7 +1156,7 @@ void VNC_ZPushCmd( const SMsg *msg, void *context )
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	if ( !Msg_SetFloatCmd( msg, &vnc->globeZPush, -2.0f, 2.0f ) )
+	if ( !Msg_SetFloatCmd( msg, &vnc->globeZPush, -100.0f, 100.0f ) )
 		return;
 
 	VNCThread_RebuildGlobe( vnc );
@@ -1208,8 +1169,7 @@ SMsgCmd s_vncWidgetCmds[] =
 	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <button1> <button2> <button3>" },
 	{ "touch", 			VNC_TouchCmd, 			"touch <up|down|moved> <x> <y>" },
 	{ "gaze", 			VNC_GazeCmd, 			"gaze <x> <y> <z>" },
-	{ "curve",          VNC_CurveCmd,           "curve <value>" },
-	{ "scale",          VNC_ScaleCmd,           "scale <value>" },
+	{ "arc",          	VNC_ArcCmd,             "arc <value>" },
 	{ "zpush",          VNC_ZPushCmd,           "zpush <value>" },
 	{ NULL, NULL, NULL }
 };
@@ -1570,8 +1530,6 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 		return;
 
 	vnc->globeZPush = 0.0f;
-	vnc->globeScale = 1.0f;
-	vnc->globeCurve = 30.0f;
 
 	g_pluginInterface.registerWidget( vnc->id );
 

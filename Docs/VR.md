@@ -25,20 +25,13 @@
 
 # For this release:
 
-+ Track down the memory leak that seems to kill the process after a few minutes of streaming updates.
+Vertical curve separate from horizontal curve (or just axe vcurve)
 
-+ 2D window spanning multiple cells with custom geometry generation.
-  (I kind of did this by letting the thing exceed its cell bounds)
-
-
-+ Tuning system for InQueue variables, possibly via console commands.
++ Fix the autoexec bug - issue is that command.cpp tries to execute the command before the thread creates the widget, so the widget isn't found.
+  Could have a "wait vnc0" command that just cycles command.cpp though frames until vnc0 is created?  Or a way to queue messages for not-yet-created widgets/plugins?
 
 # Shell
 
-+ Add a gutter between cells (5%?) to fix rapid oscillation.
-+ Fix edges not linking up exactly.
-+ Bring text close enough to make it readable.
-+ Custom wraparound geometry for 2D spanning multiple cells.
 + Context specific menus.
 
 # VNC
@@ -55,12 +48,16 @@
 
 # Performance
 
++ Tuning system for InQueue variables, possibly via console commands.
 + Bounds accumulation for Geometry objects, frustum culling
 + Optimize various decoders using NEON.
 + Accelerated CopyRect?
 + 16bit pixel support (runtime option)
 + Server-side scaling support?  Check to see if it actually works.
 + More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
+
++ Add an "inqueue freeze" command to test how updates affect display perf.
+  (See whether reintroducing throttling is important)
 
 + Memory tracking?  (CPU precise and GPU estimate)
   With memory tracking we could force certain operations (InQueue append) to stall until memory is available.  Would be hard to budget for the case of many VNC sessions though.
@@ -111,6 +108,10 @@ https://sites.google.com/site/skiadocs/user-documentation/quick-start-guides/and
 
 http://stackoverflow.com/questions/6342258/using-skia-in-android-ndk
 https://code.google.com/p/skia/wiki/SkCanvas
+
+# Terminal
+
+https://github.com/jackpal/Android-Terminal-Emulator/blob/master/libtermexec/src/main/jni/process.cpp
 
 # Keyboard
 
