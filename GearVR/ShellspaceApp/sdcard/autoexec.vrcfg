@@ -1,0 +1,1 @@
+vnc create vnc0; vnc connect vnc0 10.0.1.40 asdf

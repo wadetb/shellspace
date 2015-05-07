@@ -102,6 +102,9 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height, const void *data )
 {
 	int 	index;
+	// float 	startMs;
+	// float 	endMs;
+	// float 	costMs;
 
 	Prof_Start( PROF_TEXTURE_UPDATE );
 
@@ -109,10 +112,13 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 
 	assert( texture );
 
-	LOG( "Texture_Update: (%d,%d) %d by %d", x, y, width, height );
-
 	index = texture->updateIndex % BUFFER_COUNT;
 	assert( texture->texId[index] );
+
+	assert( x + width <= texture->texWidth[index] );
+	assert( y + height <= texture->texHeight[index] );
+
+	// startMs = 1000.0 * clock() / CLOCKS_PER_SEC;
 
 	glBindTexture( GL_TEXTURE_2D, texture->texId[index] );
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, width );
@@ -121,6 +127,12 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 
 	glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	// endMs = 1000.0 * clock() / CLOCKS_PER_SEC;
+	// costMs = endMs - startMs;
+
+	// LOG( "Texture_Update: (%d,%d) %d by %d (%d pixels) cost %f ms %fms/100kpx", x, y, width, height, 
+	// 	width*height, costMs, 100000.0 * costMs / (width*height));
 
 	GL_CheckErrors( "after Texture_Update" );
 

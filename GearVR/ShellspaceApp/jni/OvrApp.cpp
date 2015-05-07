@@ -127,41 +127,41 @@ void APITest_Init()
 	g_pluginInterface.updateTextureRect( "white", 0, 0, 1, 1, 4, whiteTexels );
 	g_pluginInterface.presentTexture( "white" );
 
-	// SxTrajectory tr;
-	// SxOrientation o;
+	SxTrajectory tr;
+	SxOrientation o;
 
-	// tr.kind = SxTrajectoryKind_Instant;
+	tr.kind = SxTrajectoryKind_Instant;
 
-	// IdentityOrientation( &o );
-	// Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
-	// Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
-	// g_pluginInterface.registerEntity( "left" );
-	// g_pluginInterface.setEntityGeometry( "left", "tet0" );
-	// g_pluginInterface.setEntityTexture( "left", "white" );
-	// g_pluginInterface.orientEntity( "left", &o, &tr );
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
+	Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
+	g_pluginInterface.registerEntity( "left" );
+	g_pluginInterface.setEntityGeometry( "left", "tet0" );
+	g_pluginInterface.setEntityTexture( "left", "white" );
+	g_pluginInterface.orientEntity( "left", &o, &tr );
 
-	// IdentityOrientation( &o );
-	// Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
-	// g_pluginInterface.registerEntity( "left_child" );
-	// g_pluginInterface.setEntityGeometry( "left_child", "tet0" );
-	// g_pluginInterface.setEntityTexture( "left_child", "white" );
-	// g_pluginInterface.orientEntity( "left_child", &o, &tr );
-	// g_pluginInterface.parentEntity( "left_child", "left" );
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	g_pluginInterface.registerEntity( "left_child" );
+	g_pluginInterface.setEntityGeometry( "left_child", "tet0" );
+	g_pluginInterface.setEntityTexture( "left_child", "white" );
+	g_pluginInterface.orientEntity( "left_child", &o, &tr );
+	g_pluginInterface.parentEntity( "left_child", "left" );
 
-	// IdentityOrientation( &o );
-	// Vec3Set( &o.origin, -10.0f, 0.0f, -20.0f );
-	// g_pluginInterface.registerEntity( "right" );
-	// g_pluginInterface.setEntityGeometry( "right", "tet0" );
-	// g_pluginInterface.setEntityTexture( "right", "white" );
-	// g_pluginInterface.orientEntity( "right", &o, &tr );
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, -10.0f, 0.0f, -20.0f );
+	g_pluginInterface.registerEntity( "right" );
+	g_pluginInterface.setEntityGeometry( "right", "tet0" );
+	g_pluginInterface.setEntityTexture( "right", "white" );
+	g_pluginInterface.orientEntity( "right", &o, &tr );
 
-	// IdentityOrientation( &o );
-	// Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
-	// g_pluginInterface.registerEntity( "right_child" );
-	// g_pluginInterface.setEntityGeometry( "right_child", "tet0" );
-	// g_pluginInterface.setEntityTexture( "right_child", "white" );
-	// g_pluginInterface.orientEntity( "right_child", &o, &tr );
-	// g_pluginInterface.parentEntity( "right_child", "right" );
+	IdentityOrientation( &o );
+	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	g_pluginInterface.registerEntity( "right_child" );
+	g_pluginInterface.setEntityGeometry( "right_child", "tet0" );
+	g_pluginInterface.setEntityTexture( "right_child", "white" );
+	g_pluginInterface.orientEntity( "right_child", &o, &tr );
+	g_pluginInterface.parentEntity( "right_child", "right" );
 }
 
 
@@ -229,12 +229,16 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	Scene.Znear = 1.0f;
 	Scene.Zfar = 1000.0f;
 
+	Vec3Set( &s_app.lastGazeDir, 0.0f, 0.0f, -1.0f );
+
 	APITest_Init();
 
 	Shell_InitPlugin();
 	VNC_InitPlugin();
 
 	Keyboard_Init();
+
+	Cmd_AddFile( "/storage/extSdCard/Oculus/Shellspace/autoexec.vrcfg" );
 }
 
 void OvrApp::OneTimeShutdown()
@@ -331,13 +335,17 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 
 Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 {
+	// LOG( "OvrApp::Frame Enter" );
+	
 	Prof_Start( PROF_FRAME );
 
 	Matrix4f centerViewMatrix = Scene.CenterViewMatrix();
 	Vector3f eyeDir = GetViewMatrixForward( centerViewMatrix );
 	Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
 
+	// LOG( "APITest_Frame Enter" );
 	// APITest_Frame();
+	// LOG( "APITest_Frame Leave" );
 
 	InQueue_Frame();
 
@@ -376,6 +384,8 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 	Prof_Stop( PROF_FRAME );
 
 	Prof_Frame();
+
+	// LOG( "OvrApp::Frame Leave" );
 
 	return Scene.CenterViewMatrix();
 }

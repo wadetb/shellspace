@@ -77,8 +77,8 @@ static SKeyboardGlobals s_keyGlob;
 static const char *s_builtinKeyboards[] =
 {
 	"assets/intro.vrkey",
-	"assets/connect.vrkey",
-	"assets/alphanum.vrkey",
+	// "assets/connect.vrkey",
+	// "assets/alphanum.vrkey",
 	// "assets/view.vrkey",
 	NULL
 };
@@ -607,6 +607,9 @@ void Keyboard_LoadKeyboards()
 		{
 			if ( s_keyGlob.keyboardCount == MAX_KEYBOARDS )
 				break;
+
+			if ( !strstr( iter->First.ToCStr(), ".vrkey" ) )
+				continue;
 
 			keyboard = &s_keyGlob.keyboards[s_keyGlob.keyboardCount];
 			if ( Keyboard_LoadKeyboardFromFileSystem( *searchPathIter + iter->First, keyboard ) )

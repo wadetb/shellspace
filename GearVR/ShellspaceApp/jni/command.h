@@ -20,7 +20,9 @@
 #define __COMMAND_H__
     
 void Cmd_Frame();
+
 void Cmd_Add( const char *format, ... );
+void Cmd_AddFile( const char *fileName );
 
 uint Cmd_Argc();
 const char *Cmd_Argv( uint argIndex );

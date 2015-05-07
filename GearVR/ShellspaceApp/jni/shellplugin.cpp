@@ -361,6 +361,8 @@ SCell *Shell_GetActiveCell()
 	targetLat = S_radToDeg( atan2f( s_shell.gazeDir.y, -s_shell.gazeDir.z ) );
 	targetLon = S_radToDeg( atan2f( s_shell.gazeDir.x, -s_shell.gazeDir.z ) );
 
+	Shell_Layout();
+
 	return Shell_Raycast( targetLat, targetLon );
 }
 
@@ -409,8 +411,13 @@ void Shell_CreateRoot()
 
 	IdentityOrientation( &s_shell.rootOrient );
 
+	// Standard 3 row layout.
 	Shell_MakeGrid( &s_shell.root, ROOT_GRID_WIDTH, ROOT_GRID_HEIGHT );
+
+	// Divide the top middle cell.
 	Shell_MakeGrid( Shell_GetGridChild( &s_shell.root, 2, 2 ), 4, 2 );
+
+	Shell_Layout();
 
 	// tr.kind = SxTrajectoryKind_Instant;
 
@@ -521,6 +528,8 @@ void Shell_RegisterCmd( const SMsg *msg, void *context )
 	cell->widget.wid = strdup( wid );
 	cell->widget.eid = strdup( eid );
 
+	LOG( "Register %s with gazeDir %f %f %f", eid, s_shell.gazeDir.x, s_shell.gazeDir.y, s_shell.gazeDir.z );
+
 	Shell_Layout(); // $$$ Can we layout just one entity?  Would have to store lat/lon/arcs in SCell.
 }
 
@@ -601,8 +610,6 @@ void Shell_GazeCmd( const SMsg *msg, void *context )
 	s_shell.gazeDir.x = atof( Msg_Argv( msg, 1 ) );
 	s_shell.gazeDir.y = atof( Msg_Argv( msg, 2 ) );
 	s_shell.gazeDir.z = atof( Msg_Argv( msg, 3 ) );
-
-	Shell_Layout();
 
 	activeCell = Shell_GetActiveCell();
 	if ( activeCell )

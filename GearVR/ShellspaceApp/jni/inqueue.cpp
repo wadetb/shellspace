@@ -24,7 +24,10 @@
 #include "thread.h"
 
 
-#define INQUEUE_SIZE 	1024
+#define INQUEUE_SIZE 			1024
+
+// #define TEXTURE_DATA_LIMIT 		(32 * KB)
+#define TEXTURE_DATA_LIMIT 		(1 * MB)
 
 
 enum EInQueueKind
@@ -145,7 +148,7 @@ void InQueue_CheckAdvance( uint count )
 				assert( texture );
 
 				if ( texture->updateIndex == texture->drawIndex )
-					texture->updateIndex++;
+					texture->updateIndex = (texture->updateIndex + 1) % BUFFER_COUNT;
 			}
 			break;
 
@@ -159,7 +162,7 @@ void InQueue_CheckAdvance( uint count )
 				assert( geometry );
 
 				if ( geometry->updateIndex == geometry->drawIndex )
-					geometry->updateIndex++;
+					geometry->updateIndex = (geometry->updateIndex + 1) % BUFFER_COUNT;
 			}
 			break;
 
@@ -188,32 +191,18 @@ void InQueue_ProcessTextureItem( SItem *in )
 	case INQUEUE_TEXTURE_RESIZE:
 		if ( !(in->texture.updateMask & updateMask) )
 		{
-			if ( texture->updateIndex == texture->drawIndex )
-			{
-				texture->updateIndex++;
-				updateMask = 1 << (texture->updateIndex % BUFFER_COUNT);
-			}
-
 			Texture_Resize( texture, 
 				in->texture.resize.width, 
 				in->texture.resize.height, 
 				static_cast< SxTextureFormat >( in->texture.resize.format ) );
 
 			in->texture.updateMask |= updateMask;				
-			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
-				in->kind = INQUEUE_NOP;
 		}
 		break;
 
 	case INQUEUE_TEXTURE_UPDATE:
 		if ( !(in->texture.updateMask & updateMask) )
 		{
-			if ( texture->updateIndex == texture->drawIndex )
-			{
-				texture->updateIndex++;
-				updateMask = 1 << (texture->updateIndex % BUFFER_COUNT);
-			}
-
 			Texture_Update( texture, 
 				in->texture.update.x, 
 				in->texture.update.y, 
@@ -222,26 +211,19 @@ void InQueue_ProcessTextureItem( SItem *in )
 				in->texture.update.data );
 
 			in->texture.updateMask |= updateMask;
-			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
-			{
-				free( in->texture.update.data );
-				in->kind = INQUEUE_NOP;
-			}
 		}
 		break;
 
 	case INQUEUE_TEXTURE_PRESENT:
 		if ( !(in->texture.updateMask & updateMask) )
 		{
-			assert( texture->updateIndex != texture->drawIndex ); // two presents with no updates
-
-			Texture_Present( texture );
+			if ( texture->updateIndex != texture->drawIndex )
+			{
+				Texture_Present( texture );
+				texture->presentFrame = s_iq.presentFrame;
+			}
 
 			in->texture.updateMask |= updateMask;
-			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
-				in->kind = INQUEUE_NOP;
-
-			texture->presentFrame = s_iq.presentFrame;
 		}
 		break;
 
@@ -274,16 +256,14 @@ void InQueue_ProcessGeometryItem( SItem *in )
 				in->geometry.resize.vertexCount, 
 				in->geometry.resize.indexCount );
 
-			in->geometry.updateMask |= updateMask;				
-			if ( in->geometry.updateMask == ALL_BUFFERS_MASK )
-				in->kind = INQUEUE_NOP;
+			in->geometry.updateMask |= updateMask;
 		}
 		break;
 
 	case INQUEUE_GEOMETRY_UPDATE_INDEX:
 	case INQUEUE_GEOMETRY_UPDATE_POSITION:
-	case INQUEUE_GEOMETRY_UPDATE_COLOR:
 	case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+	case INQUEUE_GEOMETRY_UPDATE_COLOR:
 		if ( !(in->geometry.updateMask & updateMask) )
 		{
 			switch ( in->kind )
@@ -300,14 +280,14 @@ void InQueue_ProcessGeometryItem( SItem *in )
 					in->geometry.update.count, 
 					in->geometry.update.data );
 				break;
-			case INQUEUE_GEOMETRY_UPDATE_COLOR:
-				Geometry_UpdateVertexColors( geometry, 
+			case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+				Geometry_UpdateVertexTexCoords( geometry, 
 					in->geometry.update.first, 
 					in->geometry.update.count, 
 					in->geometry.update.data );
 				break;
-			case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
-				Geometry_UpdateVertexTexCoords( geometry, 
+			case INQUEUE_GEOMETRY_UPDATE_COLOR:
+				Geometry_UpdateVertexColors( geometry, 
 					in->geometry.update.first, 
 					in->geometry.update.count, 
 					in->geometry.update.data );
@@ -318,26 +298,19 @@ void InQueue_ProcessGeometryItem( SItem *in )
 			}
 
 			in->geometry.updateMask |= updateMask;
-			if ( in->geometry.updateMask == ALL_BUFFERS_MASK )
-			{
-				free( in->geometry.update.data );
-				in->kind = INQUEUE_NOP;
-			}
 		}
 		break;
 
 	case INQUEUE_GEOMETRY_PRESENT:
 		if ( !(in->geometry.updateMask & updateMask) )
 		{
-			assert( geometry->updateIndex != geometry->drawIndex ); // two presents with no updates
-
-			Geometry_Present( geometry );
+			if ( geometry->updateIndex != geometry->drawIndex )
+			{
+				Geometry_Present( geometry );
+				geometry->presentFrame = s_iq.presentFrame;
+			}
 
 			in->geometry.updateMask |= updateMask;
-			if ( in->geometry.updateMask == ALL_BUFFERS_MASK )
-				in->kind = INQUEUE_NOP;
-
-			geometry->presentFrame = s_iq.presentFrame;
 		}
 		break;
 
@@ -345,6 +318,61 @@ void InQueue_ProcessGeometryItem( SItem *in )
 		assert( false );
 		break;
 	}
+}
+
+
+void InQueue_AutoPresent( int count )
+{
+	int 		index;
+	SItem 		*in;
+	STexture 	*texture;
+	SGeometry 	*geometry;
+
+	Thread_Lock( MUTEX_INQUEUE );
+
+	for ( index = 0; index < count; index++ )
+	{
+		in = &s_iq.queue[index];
+
+		switch ( in->kind )
+		{
+		case INQUEUE_TEXTURE_RESIZE:
+		case INQUEUE_TEXTURE_UPDATE:
+		case INQUEUE_TEXTURE_PRESENT:
+			texture = Registry_GetTexture( in->texture.ref );
+			assert( texture );
+
+			if ( texture->presentFrame != s_iq.presentFrame &&
+				 texture->updateIndex != texture->drawIndex )
+			{
+				Texture_Present( texture );
+				texture->presentFrame = s_iq.presentFrame;
+			}
+			break;
+
+		case INQUEUE_GEOMETRY_RESIZE:
+		case INQUEUE_GEOMETRY_UPDATE_INDEX:
+		case INQUEUE_GEOMETRY_UPDATE_POSITION:
+		case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+		case INQUEUE_GEOMETRY_UPDATE_COLOR:
+		case INQUEUE_GEOMETRY_PRESENT:
+			geometry = Registry_GetGeometry( in->geometry.ref );
+			assert( geometry );
+
+			if ( geometry->presentFrame != s_iq.presentFrame && 
+				 geometry->updateIndex != geometry->drawIndex )
+			{
+				Geometry_Present( geometry );
+				geometry->presentFrame = s_iq.presentFrame;
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	Thread_Unlock( MUTEX_INQUEUE );
 }
 
 
@@ -361,6 +389,41 @@ void InQueue_Compact()
 	for ( index = 0; index < count; index++ )
 	{
 		in = &s_iq.queue[index];
+
+		switch ( in->kind )
+		{
+		case INQUEUE_TEXTURE_RESIZE:
+		case INQUEUE_TEXTURE_UPDATE:
+		case INQUEUE_TEXTURE_PRESENT:
+			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
+			{
+				if ( in->kind == INQUEUE_GEOMETRY_UPDATE_INDEX )
+					free( in->texture.update.data );
+
+				in->kind = INQUEUE_NOP;
+			}
+			break;
+
+		case INQUEUE_GEOMETRY_RESIZE:
+		case INQUEUE_GEOMETRY_UPDATE_INDEX:
+		case INQUEUE_GEOMETRY_UPDATE_POSITION:
+		case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+		case INQUEUE_GEOMETRY_UPDATE_COLOR:
+		case INQUEUE_GEOMETRY_PRESENT:
+			if ( in->geometry.updateMask == ALL_BUFFERS_MASK )
+			{
+				if ( in->kind >= INQUEUE_GEOMETRY_UPDATE_INDEX &&
+				     in->kind <= INQUEUE_GEOMETRY_UPDATE_COLOR )
+					free( in->geometry.update.data );
+
+				in->kind = INQUEUE_NOP;
+			}
+			break;
+
+		default:
+			break;
+		}
+
 		if ( in->kind != INQUEUE_NOP )
 			break;
 	}
@@ -379,7 +442,9 @@ void InQueue_Frame()
 	int 		count;
 	int 		index;
 	SItem 		*in;
-	double 		startMs;
+	// double 		startMs;
+
+	// LOG( "InQueue_Frame Enter" );
 
 	Prof_Start( PROF_GPU_UPDATE );
 
@@ -395,7 +460,7 @@ void InQueue_Frame()
 
 	InQueue_CheckAdvance( count );
 
-	startMs = Prof_MS();
+	// startMs = Prof_MS();
 
 	for ( index = 0; index < count; index++ )
 	{
@@ -426,8 +491,14 @@ void InQueue_Frame()
 			break;
 		}
 
-		if ( Prof_MS() - startMs > 10.0f )
-			break;
+		// if ( Prof_MS() - startMs > 10.0f )
+		// 	break;
+	}
+
+	if ( count >= INQUEUE_SIZE * 75 / 100 )
+	{
+		LOG( "GPU update queue 75%% full, forcing textures & geometry to present (may flicker)." );
+		InQueue_AutoPresent( index );
 	}
 
 	InQueue_Compact();
@@ -435,6 +506,10 @@ void InQueue_Frame()
 	s_iq.presentFrame++;
 
 	Prof_Stop( PROF_GPU_UPDATE );
+
+	// LOG( "InQueue: count=%d", s_iq.count );
+
+	// LOG( "InQueue_Frame Leave" );
 }
 
 
@@ -479,6 +554,74 @@ void InQueue_ClearRefs( SRef ref )
 }
 
 
+void InQueue_Print()
+{
+	uint 		index;
+	SItem 		*in;
+
+	Thread_Lock( MUTEX_INQUEUE );
+
+	for ( index = 0; index < s_iq.count; index++ )
+	{
+		in = &s_iq.queue[index];
+
+		switch ( in->kind )
+		{
+		case INQUEUE_TEXTURE_UPDATE:
+			LOG( "texture_update %d %x %d,%d %dx%d",
+				in->texture.ref, in->texture.updateMask,
+				in->texture.update.x, in->texture.update.y, 
+				in->texture.update.width, in->texture.update.height );
+			break;
+		case INQUEUE_TEXTURE_RESIZE:
+			LOG( "texture_resize %d %x %dx%d",
+				in->texture.ref, in->texture.updateMask,
+				in->texture.resize.width, in->texture.resize.height );
+			break;
+		case INQUEUE_TEXTURE_PRESENT:
+			LOG( "texture_present %d %x",
+				in->texture.ref, in->texture.updateMask );
+			break;
+
+		case INQUEUE_GEOMETRY_UPDATE_INDEX:
+			LOG( "geometry_update_index %d %x [%d,%d)",
+				in->geometry.ref, in->geometry.updateMask,
+				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
+			break;
+		case INQUEUE_GEOMETRY_UPDATE_POSITION:
+			LOG( "geometry_update_position %d %x [%d,%d)",
+				in->geometry.ref, in->geometry.updateMask,
+				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
+			break;
+		case INQUEUE_GEOMETRY_UPDATE_COLOR:
+			LOG( "geometry_update_color %d %x [%d,%d)",
+				in->geometry.ref, in->geometry.updateMask,
+				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
+			break;
+		case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
+			LOG( "geometry_update_texcoord %d %x [%d,%d)",
+				in->geometry.ref, in->geometry.updateMask,
+				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
+			break;
+		case INQUEUE_GEOMETRY_RESIZE:
+			LOG( "geometry_resize %d %x v%d i%d",
+				in->geometry.ref, in->geometry.updateMask,
+				in->geometry.resize.vertexCount, in->geometry.resize.indexCount );
+			break;
+		case INQUEUE_GEOMETRY_PRESENT:
+			LOG( "geometry_present %d %x",
+				in->geometry.ref, in->geometry.updateMask );
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	Thread_Unlock( MUTEX_INQUEUE );
+}
+
+
 SItem *InQueue_BeginAppend( EInQueueKind kind )
 {
 	SItem 			*in;
@@ -508,6 +651,7 @@ SItem *InQueue_BeginAppend( EInQueueKind kind )
 		if ( !logged )
 		{
 			LOG( "InQueue_BeginAppend: GPU update queue is full, stalling." );
+			InQueue_Print();
 			logged = strue;
 		}
 
@@ -545,6 +689,10 @@ void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint heigh
 	STexture 	*texture;
 	SItem 		*in;
 	uint 		dataSize;
+	uint 		dataOffset;
+	uint 		batchDataSize;
+	uint 		batchY;
+	uint 		batchHeight;
 	void 		*dataCopy;
 
 	assert( width );
@@ -553,22 +701,56 @@ void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint heigh
 	texture = Registry_GetTexture( ref );
 	assert( texture );
 
+	// LOG( "InQueue_UpdateTextureRect: %d,%d %dx%d", x, y, width, height );
+
+	assert( x + width <= texture->width );
+	assert( y + height <= texture->height );
+
 	dataSize = Texture_GetDataSize( width, height, texture->format ); 
 
-	dataCopy = malloc( dataSize );
-	assert( dataCopy );
-	memcpy( dataCopy, data, dataSize );
+	batchY = y;
+	dataOffset = 0;
 
-	in = InQueue_BeginAppend( INQUEUE_TEXTURE_UPDATE );
+	batchHeight = S_Max( 1, height * TEXTURE_DATA_LIMIT / dataSize );
 
-	in->texture.ref = ref;
-	in->texture.update.x = x;
-	in->texture.update.y = y;
-	in->texture.update.width = width;
-	in->texture.update.height = height;
-	in->texture.update.data = dataCopy;
+	// 32 is a naive attempt (tm) to hit some kind of hardware texture tile size
+	// that swizzling code might prefer.
+	// $$$ make this tunable
+	batchHeight += 32 - (batchHeight & 31);
 
-	InQueue_EndAppend();
+	while ( batchY < y + height )
+	{
+		batchHeight = S_Min( batchHeight, y + height - batchY );
+		assert( batchHeight );
+
+		batchDataSize = Texture_GetDataSize( width, batchHeight, texture->format ); 
+
+		dataCopy = malloc( batchDataSize );
+
+		if ( !dataCopy )
+		{
+			LOG( "InQueue_UpdateTextureRect: Unable to allocate %d bytes.", batchDataSize );
+			return;
+		}
+
+		memcpy( dataCopy, (byte *)data + dataOffset, batchDataSize );
+
+		in = InQueue_BeginAppend( INQUEUE_TEXTURE_UPDATE );
+
+		in->texture.ref = ref;
+		in->texture.update.x = x;
+		in->texture.update.y = batchY;
+		in->texture.update.width = width;
+		in->texture.update.height = batchHeight;
+		in->texture.update.data = dataCopy;
+
+		InQueue_EndAppend();
+
+		dataOffset += batchDataSize;
+		batchY += batchHeight;
+	}
+
+	assert( dataOffset == dataSize );
 }
 
 

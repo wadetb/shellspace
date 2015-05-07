@@ -46,6 +46,9 @@ typedef unsigned char  byte;
 typedef unsigned short ushort;
 typedef unsigned int   uint;
 
+#define KB      1024
+#define MB      (1024 * KB)
+
 #define assertindex( v, count ) assert( v < count )
 
 inline unsigned int S_NextPow2(unsigned int v)
@@ -67,7 +70,16 @@ inline int S_Max( int a, int b )
 
 inline int S_Min( int a, int b )
 {
-	return a < b ? a : b;
+    return a < b ? a : b;
+}
+
+inline int S_Clamp( int a, int mn, int mx )
+{
+    if ( a < mn )
+        return mn;
+    if ( a > mx )
+        return mx;
+    return a;
 }
 
 inline float S_Maxf( float a, float b )

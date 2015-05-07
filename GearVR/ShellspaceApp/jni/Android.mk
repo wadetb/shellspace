@@ -23,6 +23,7 @@ COMMON_SRC_FILES := \
 	api.cpp \
 	command.cpp \
 	entity.cpp \
+	file.cpp \
 	gason/gason.cpp \
 	geometry.cpp \
 	inqueue.cpp \

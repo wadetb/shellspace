@@ -317,7 +317,7 @@ void MsgQueue_Put( SMsgQueue *queue, const char *text )
 
 	assert( queue );
 
-	LOG( "MsgQueue_Put: %s", text );
+	// LOG( "MsgQueue_Put: %s", text );
 
 	pthread_mutex_lock( &queue->mutex );
 

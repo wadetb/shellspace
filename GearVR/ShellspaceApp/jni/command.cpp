@@ -18,6 +18,7 @@
 */
 #include "common.h"
 #include "command.h"
+#include "file.h"
 #include "message.h"
 #include "registry.h"
 #include "OvrApp.h"
@@ -267,10 +268,11 @@ void Cmd_Frame()
 		return;
 
 	Prof_Start( PROF_CMD );
+	
+	p = s_cmdGlob.buffer;
 
 	LOG( "> %s", s_cmdGlob.buffer );
 	
-	p = s_cmdGlob.buffer;
 	while ( *p )
 	{
 		if ( !Cmd_Parse( &p ) )
@@ -326,3 +328,15 @@ next_cmd:;
 }
 
 
+void Cmd_AddFile( const char *fileName )
+{
+	char *text;
+
+	LOG( "Executing %s", fileName );
+
+	text = (char *)File_Read( fileName );
+	if ( !text )
+		return;
+
+	Cmd_Add( text );
+}

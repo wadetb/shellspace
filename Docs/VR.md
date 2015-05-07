@@ -23,31 +23,33 @@
 
 # TODO
 
+# For this release:
+
++ Throttle large texture updates in the input queue.
+  Change InQueue_UpdateTextureRect into a loop, handing N rows per iteration up to 32KB (?) per update.
+
++ Gracefully handle as many alloc failures as possible.
+  Specifically allocating copies of blocks to put in the input queue.
+
++ Memory tracking?  (CPU precise and GPU estimate)
+  With memory tracking we could force certain operations (InQueue append) to stall until memory is available.  Would be hard to budget for the case of many VNC sessions though.
+
++ Test performance of double (vs triple) buffer.
+  (This may require stddev profiling info over a long period of time, maybe just do a strict CSV dump mode, could even use a file)
+
++ Show mouse cursor as geometry instead of texture updates.
+
++ 2D window spanning multiple cells with custom geometry generation.
+
++ Tuning system for InQueue variables, possibly via console commands.
+
 # Shell
 
 + Add a gutter between cells (5%?) to fix rapid oscillation.
 + Fix edges not linking up exactly.
-+ Make text readable.
-+ Custom wraparound geometry for 2D.
++ Bring text close enough to make it readable.
++ Custom wraparound geometry for 2D spanning multiple cells.
 + Context specific menus.
-
-The workflow is that the user gazes at an empty cell, taps the touchpad, and a menu appears with various choices like "add/del row, add/del column, spawn vnc widget".  They select "spawn vnc widget" and a command is executed.  (Does the shell pick the widget ID?)  After the widget initializes and creates its first entity, it executes "shell register <wid> <eid>" and that causes the entity to be parented, and the entity and widget to be remembered in the cell.
-
-In the sense of a single cell, it occupies an arc of the globe in latitude and longitude.  Adjacent arcs don't need to be contiguous, in fact raycasting against entity geometry is likely a valuable feature to allow aiming at things in further cell layers, as is the notion of having some padding between cells.
-
-When 2D apps are in focus, like virtual desktops, there is also a desire for apps to span multiple cells and "wrap around" the user.  If the app is just presenting a 2D quad, this wrap around is not possible without dividing the geometry.  Thus we need both the notion of widgets occupying a range of cells (likely leaving filler cells for bookkeeping) but we also want to create custom geometry for 2D applications that implements the curvature of the cell.
-
-Lets think of the cell unwrapped, as a 2D coordinate system of U and V.  The grid is divided into W steps of U and V steps of H, perhaps with some empty padding around the cells within the steps.  U=[0,1] represents a 360 degree horizontal arc with U=0.5 at V=(0,0,-1).  V=[0,1] represents a roughly 120 degree vertical arc.
-
-To position and size an element (like the frame) we assume the element bounds itself naturally in a -1..1 space in X,Y,Z.
-
-(TBD - Are we going to start keeping CPU copies of vertex data for Bounds building?  Seems like a good idea...)
-
-For 3D elements we prefer to scale them uniformly, but for 2D elements we actually want to create custom curved geometry.
-
-(TBD - Runtime grid resizing in X and Y sounds like a useful thing... let's get these basics done so we can move on to the fun stuff!)
-
-Starting with 3D... we take a UV=[a,b] range at constant depth D.  Project both a and b onto the sphere, measure, and take that as the scale factor.  Put the origin at depth.  Rotation is a "look at" matrix aimed at the origin.  (Can we cut use of AnglesToAxis?)
 
 # VNC
 

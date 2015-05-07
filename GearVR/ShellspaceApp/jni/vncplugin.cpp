@@ -180,8 +180,13 @@ static void VNCThread_RebuildGlobe( SVNCWidget *vnc )
 	g_pluginInterface.sizeGeometry( vnc->geometryId, vertexCount, indexCount );
 
 	SxVector3 *positions = (SxVector3 *)malloc( vertexCount * sizeof( SxVector3 ) );
+	assert( positions );
+
 	SxVector2 *texCoords = (SxVector2 *)malloc( vertexCount * sizeof( SxVector2 ) );
+	assert( texCoords );
+	
 	SxColor *colors = (SxColor *)malloc( vertexCount * sizeof( SxColor ) );
+	assert( colors );
 
 	for ( int y = 0; y <= vertical; y++ )
 	{
@@ -219,7 +224,8 @@ static void VNCThread_RebuildGlobe( SVNCWidget *vnc )
 	free( colors );
 
 	ushort *indices = (ushort *)malloc( indexCount * sizeof( ushort ) );
-
+	assert( indices );
+	
 	int index = 0;
 	for ( int x = 0; x < horizontal; x++ )
 	{
@@ -423,10 +429,13 @@ void VNCThread_UpdateTextureRect( SVNCWidget *vnc, int x, int y, int width, int 
 	frameBuffer = client->frameBuffer;
 	frameBufferWidth = client->width;
 
-	// $$$ This should be throttled such that no single block can cost more than ~1ns on the update thread.
-	// (Once throttling is working on the update thread, that is)
 	buffer = (byte *)malloc( width * height * 4 );
-	assert( buffer );
+	if ( !buffer )
+	{
+		LOG( "VNCThread_UpdateTextureRect: Failed to allocated %d bytes; skipping update.", width * height * 4 );
+		Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
+		return;
+	}
 
 	for ( yc = 0; yc < height; yc++ )
 		memcpy( &buffer[(yc * width) * 4], &frameBuffer[((y + yc) * frameBufferWidth + x) * 4], width * 4 );
@@ -714,6 +723,8 @@ static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 	VNCThread_CopyCursor( vnc, COPY_FROM_CURSOR );
 	VNCThread_UpdateCursorTextureRect( vnc );
 
+	// g_pluginInterface.presentTexture( vnc->textureId );
+
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 
 	return TRUE;
@@ -793,6 +804,8 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 	assert( vnc );
 	assert( !vnc->client );
 
+	LOG( "VNCThread_Connect: Connecting to %s...", vnc->server );
+
 	vnc->state = VNCSTATE_CONNECTING;
 
 	client = rfbGetClient( 8, 3, 4 );
@@ -833,6 +846,8 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 		vnc->state = VNCSTATE_DISCONNECTED;
 		return sfalse;
 	}
+
+	LOG( "VNCThread_Connect: Connected to %s.", vnc->server );
 
 	vnc->state = VNCSTATE_CONNECTED;
 
