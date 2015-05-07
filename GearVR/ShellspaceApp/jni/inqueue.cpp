@@ -148,7 +148,10 @@ void InQueue_CheckAdvance( uint count )
 				assert( texture );
 
 				if ( texture->updateIndex == texture->drawIndex )
-					texture->updateIndex = (texture->updateIndex + 1) % BUFFER_COUNT;
+				{
+					if ( !(in->texture.updateMask & (1<<(texture->updateIndex % BUFFER_COUNT)) ) )
+						texture->updateIndex = (texture->updateIndex + 1) % BUFFER_COUNT;
+				}
 			}
 			break;
 
@@ -162,7 +165,10 @@ void InQueue_CheckAdvance( uint count )
 				assert( geometry );
 
 				if ( geometry->updateIndex == geometry->drawIndex )
-					geometry->updateIndex = (geometry->updateIndex + 1) % BUFFER_COUNT;
+				{
+					if ( !(in->geometry.updateMask & (1<<(geometry->updateIndex % BUFFER_COUNT)) ) )
+						geometry->updateIndex = (geometry->updateIndex + 1) % BUFFER_COUNT;
+				}
 			}
 			break;
 
@@ -378,13 +384,15 @@ void InQueue_AutoPresent( int count )
 
 void InQueue_Compact()
 {
-	int 		count;
-	int 		index;
+	uint 		count;
+	uint 		newCount;
+	uint 		index;
 	SItem 		*in;
 
 	Thread_Lock( MUTEX_INQUEUE );
 
 	count = s_iq.count;
+	newCount = 0;
 
 	for ( index = 0; index < count; index++ )
 	{
@@ -425,13 +433,14 @@ void InQueue_Compact()
 		}
 
 		if ( in->kind != INQUEUE_NOP )
-			break;
+		{
+			if ( newCount != index )
+				s_iq.queue[newCount] = *in;
+			newCount++;
+		}
 	}
 
-	count -= index;
-	memmove( &s_iq.queue[0], &s_iq.queue[index], sizeof( SItem ) * count );
-
-	s_iq.count = count;
+	s_iq.count = newCount;
 
 	Thread_Unlock( MUTEX_INQUEUE );
 }
@@ -495,11 +504,11 @@ void InQueue_Frame()
 		// 	break;
 	}
 
-	if ( count >= INQUEUE_SIZE * 75 / 100 )
-	{
-		LOG( "GPU update queue 75%% full, forcing textures & geometry to present (may flicker)." );
-		InQueue_AutoPresent( index );
-	}
+	// if ( count >= INQUEUE_SIZE * 75 / 100 )
+	// {
+	// 	LOG( "GPU update queue 75%% full, forcing textures & geometry to present (may flicker)." );
+	// 	InQueue_AutoPresent( index );
+	// }
 
 	InQueue_Compact();
 
@@ -651,7 +660,7 @@ SItem *InQueue_BeginAppend( EInQueueKind kind )
 		if ( !logged )
 		{
 			LOG( "InQueue_BeginAppend: GPU update queue is full, stalling." );
-			InQueue_Print();
+			// InQueue_Print();
 			logged = strue;
 		}
 

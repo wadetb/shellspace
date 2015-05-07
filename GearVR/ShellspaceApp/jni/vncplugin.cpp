@@ -93,6 +93,7 @@ struct SVNCWidget
 
 	int 				width;
 	int 				height;
+	sbool 				updatePending;
 
 	float	 			globeCurve;
 	float 				globeScale;
@@ -605,6 +606,8 @@ void VNCThread_UpdateTextureRect( SVNCWidget *vnc, int x, int y, int width, int 
 
 	free( buffer );
 
+	vnc->updatePending = strue;
+
 	Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
 }
 
@@ -623,6 +626,9 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 #if USE_OVERLAY
 	VNCThread_SetAlpha( vnc, x, y, w, h );
 #endif // #if USE_OVERLAY
+
+	if ( w == 1 && h == 1 )
+		LOG( "Got weird 1x1 rectangle at %d,%d", x, y );
 
 	VNCThread_UpdateTextureRect( vnc, x, y, w, h );
 
@@ -650,7 +656,11 @@ void vnc_thread_finished_updates( rfbClient *client )
 	vnc = (SVNCWidget *)rfbClientGetClientData( client, &s_vncGlob );
 	assert( vnc );
 
-	g_pluginInterface.presentTexture( vnc->id );
+	if ( vnc->updatePending )
+	{
+		g_pluginInterface.presentTexture( vnc->id );
+		vnc->updatePending = sfalse;
+	}
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_FINISHED_UPDATES );
 }
@@ -1590,7 +1600,7 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	g_pluginInterface.setEntityGeometry( vnc->cursorId, vnc->cursorId );
 
 	IdentityOrientation( &orient );
-	orient.origin.z = 0.01f;
+	orient.origin.z += 0.01f;
 
 	tr.kind = SxTrajectoryKind_Instant;
 
