@@ -281,6 +281,7 @@ void VNCThread_BuildGlobeVertexComponents( SVNCWidget *vnc )
 	if ( !texCoords )
 	{
 		LOG( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxColor ) );
+		free( texCoords );
 		return;
 	}
 
@@ -1589,10 +1590,10 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	g_pluginInterface.setEntityGeometry( vnc->cursorId, vnc->cursorId );
 
 	IdentityOrientation( &orient );
-	orient.origin.z = -0.01f;
+	orient.origin.z = 0.01f;
 
 	tr.kind = SxTrajectoryKind_Instant;
-	
+
 	g_pluginInterface.orientEntity( vnc->cursorId, &orient, &tr );
 
 	VNCThread_BuildCursor( vnc );

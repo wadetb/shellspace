@@ -272,7 +272,7 @@ void Cmd_Frame()
 	p = s_cmdGlob.buffer;
 
 	LOG( "> %s", s_cmdGlob.buffer );
-	
+
 	while ( *p )
 	{
 		if ( !Cmd_Parse( &p ) )
@@ -339,4 +339,6 @@ void Cmd_AddFile( const char *fileName )
 		return;
 
 	Cmd_Add( text );
+
+	free( text );
 }

@@ -397,7 +397,7 @@ void InQueue_Compact()
 		case INQUEUE_TEXTURE_PRESENT:
 			if ( in->texture.updateMask == ALL_BUFFERS_MASK )
 			{
-				if ( in->kind == INQUEUE_GEOMETRY_UPDATE_INDEX )
+				if ( in->kind == INQUEUE_TEXTURE_UPDATE )
 					free( in->texture.update.data );
 
 				in->kind = INQUEUE_NOP;

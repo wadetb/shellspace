@@ -25,15 +25,11 @@
 
 # For this release:
 
-+ Memory tracking?  (CPU precise and GPU estimate)
-  With memory tracking we could force certain operations (InQueue append) to stall until memory is available.  Would be hard to budget for the case of many VNC sessions though.
-
-+ Test performance of double (vs triple) buffer.
-  (This may require stddev profiling info over a long period of time, maybe just do a strict CSV dump mode, could even use a file)
-
-+ Show mouse cursor as geometry instead of texture updates.
++ Track down the memory leak that seems to kill the process after a few minutes of streaming updates.
 
 + 2D window spanning multiple cells with custom geometry generation.
+  (I kind of did this by letting the thing exceed its cell bounds)
+
 
 + Tuning system for InQueue variables, possibly via console commands.
 
@@ -46,6 +42,10 @@
 + Context specific menus.
 
 # VNC
+
++ SRGB encode color values
+
++ Separate tweaks for xCurve and yCurve.
 
 + client->appData.qualityLevel - runtime setting?
 
@@ -61,6 +61,12 @@
 + 16bit pixel support (runtime option)
 + Server-side scaling support?  Check to see if it actually works.
 + More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
+
++ Memory tracking?  (CPU precise and GPU estimate)
+  With memory tracking we could force certain operations (InQueue append) to stall until memory is available.  Would be hard to budget for the case of many VNC sessions though.
+
++ Test performance of double (vs triple) buffer.
+  (This may require stddev profiling info over a long period of time, maybe just do a strict CSV dump mode, could even use a file)
 
 # Files
 
@@ -100,6 +106,11 @@ https://developers.google.com/v8/get_started
 
 Skia (By Google) - Seems like the winner?
 https://skia.org/user/sample/hello
+
+https://sites.google.com/site/skiadocs/user-documentation/quick-start-guides/android
+
+http://stackoverflow.com/questions/6342258/using-skia-in-android-ndk
+https://code.google.com/p/skia/wiki/SkCanvas
 
 # Keyboard
 
