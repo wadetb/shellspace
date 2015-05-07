@@ -98,11 +98,11 @@ void APITest_Init()
 
 	byte colors[] = 
 	{ 
-		255, 128, 255, 255, 
-		255, 128, 255, 255, 
-		255, 128, 255, 255, 
-		255, 128, 255, 255, 
-		255, 128, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
+		255, 255, 255, 255, 
 	};
 
 	byte whiteTexels[] = 
@@ -113,55 +113,63 @@ void APITest_Init()
 	g_pluginInterface.registerPlugin( "apitest", SxPluginKind_Widget );
 	g_pluginInterface.registerWidget( "apitest" );
 
-	g_pluginInterface.registerGeometry( "tet0" );
-	g_pluginInterface.sizeGeometry( "tet0", 5, 18 );
-	g_pluginInterface.updateGeometryIndexRange( "tet0", 0, 18, indices );
-	g_pluginInterface.updateGeometryPositionRange( "tet0", 0, 5, (SxVector3 *)positions );
-	g_pluginInterface.updateGeometryTexCoordRange( "tet0", 0, 5, (SxVector2 *)texCoords );
-	g_pluginInterface.updateGeometryColorRange( "tet0", 0, 5, (SxColor *)colors );
-	g_pluginInterface.presentGeometry( "tet0" );
+	g_pluginInterface.registerGeometry( "tet" );
+	g_pluginInterface.sizeGeometry( "tet", 5, 18 );
+	g_pluginInterface.updateGeometryIndexRange( "tet", 0, 18, indices );
+	g_pluginInterface.updateGeometryPositionRange( "tet", 0, 5, (SxVector3 *)positions );
+	g_pluginInterface.updateGeometryTexCoordRange( "tet", 0, 5, (SxVector2 *)texCoords );
+	g_pluginInterface.updateGeometryColorRange( "tet", 0, 5, (SxColor *)colors );
+	g_pluginInterface.presentGeometry( "tet" );
+
+	g_pluginInterface.registerGeometry( "quad" );
+	g_pluginInterface.sizeGeometry( "quad", 4, 6 );
+	g_pluginInterface.updateGeometryIndexRange( "quad", 0, 6, indices );
+	g_pluginInterface.updateGeometryPositionRange( "quad", 0, 4, (SxVector3 *)positions );
+	g_pluginInterface.updateGeometryTexCoordRange( "quad", 0, 4, (SxVector2 *)texCoords );
+	g_pluginInterface.updateGeometryColorRange( "quad", 0, 4, (SxColor *)colors );
+	g_pluginInterface.presentGeometry( "quad" );
 
 	g_pluginInterface.registerTexture( "white" );
 	g_pluginInterface.sizeTexture( "white", 1, 1 );
-	g_pluginInterface.formatTexture( "white", SxTextureFormat_R8G8B8A8 );
+	g_pluginInterface.formatTexture( "white", SxTextureFormat_R8G8B8X8 );
 	g_pluginInterface.updateTextureRect( "white", 0, 0, 1, 1, 4, whiteTexels );
 	g_pluginInterface.presentTexture( "white" );
 
-	SxTrajectory tr;
-	SxOrientation o;
+	// SxTrajectory tr;
+	// SxOrientation o;
 
-	tr.kind = SxTrajectoryKind_Instant;
+	// tr.kind = SxTrajectoryKind_Instant;
 
-	IdentityOrientation( &o );
-	Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
-	Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
-	g_pluginInterface.registerEntity( "left" );
-	g_pluginInterface.setEntityGeometry( "left", "tet0" );
-	g_pluginInterface.setEntityTexture( "left", "white" );
-	g_pluginInterface.orientEntity( "left", &o, &tr );
+	// IdentityOrientation( &o );
+	// Vec3Set( &o.origin, 10.0f, 0.0f, -20.0f );
+	// Vec3Set( &o.scale, 0.5f, 0.5f, 0.5f );
+	// g_pluginInterface.registerEntity( "left" );
+	// g_pluginInterface.setEntityGeometry( "left", "tet" );
+	// g_pluginInterface.setEntityTexture( "left", "white" );
+	// g_pluginInterface.orientEntity( "left", &o, &tr );
 
-	IdentityOrientation( &o );
-	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
-	g_pluginInterface.registerEntity( "left_child" );
-	g_pluginInterface.setEntityGeometry( "left_child", "tet0" );
-	g_pluginInterface.setEntityTexture( "left_child", "white" );
-	g_pluginInterface.orientEntity( "left_child", &o, &tr );
-	g_pluginInterface.parentEntity( "left_child", "left" );
+	// IdentityOrientation( &o );
+	// Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	// g_pluginInterface.registerEntity( "left_child" );
+	// g_pluginInterface.setEntityGeometry( "left_child", "tet" );
+	// g_pluginInterface.setEntityTexture( "left_child", "white" );
+	// g_pluginInterface.orientEntity( "left_child", &o, &tr );
+	// g_pluginInterface.parentEntity( "left_child", "left" );
 
-	IdentityOrientation( &o );
-	Vec3Set( &o.origin, -10.0f, 0.0f, -20.0f );
-	g_pluginInterface.registerEntity( "right" );
-	g_pluginInterface.setEntityGeometry( "right", "tet0" );
-	g_pluginInterface.setEntityTexture( "right", "white" );
-	g_pluginInterface.orientEntity( "right", &o, &tr );
+	// IdentityOrientation( &o );
+	// Vec3Set( &o.origin, -10.0f, 0.0f, -20.0f );
+	// g_pluginInterface.registerEntity( "right" );
+	// g_pluginInterface.setEntityGeometry( "right", "tet" );
+	// g_pluginInterface.setEntityTexture( "right", "white" );
+	// g_pluginInterface.orientEntity( "right", &o, &tr );
 
-	IdentityOrientation( &o );
-	Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
-	g_pluginInterface.registerEntity( "right_child" );
-	g_pluginInterface.setEntityGeometry( "right_child", "tet0" );
-	g_pluginInterface.setEntityTexture( "right_child", "white" );
-	g_pluginInterface.orientEntity( "right_child", &o, &tr );
-	g_pluginInterface.parentEntity( "right_child", "right" );
+	// IdentityOrientation( &o );
+	// Vec3Set( &o.origin, 0.0f, 10.0f, 0.0f );
+	// g_pluginInterface.registerEntity( "right_child" );
+	// g_pluginInterface.setEntityGeometry( "right_child", "tet" );
+	// g_pluginInterface.setEntityTexture( "right_child", "white" );
+	// g_pluginInterface.orientEntity( "right_child", &o, &tr );
+	// g_pluginInterface.parentEntity( "right_child", "right" );
 }
 
 
@@ -336,7 +344,7 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 {
 	// LOG( "OvrApp::Frame Enter" );
-	
+
 	Prof_Start( PROF_FRAME );
 
 	Matrix4f centerViewMatrix = Scene.CenterViewMatrix();

@@ -131,11 +131,19 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 		{
 			glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
 		}
+
+		if ( texture->format == SxTextureFormat_R8G8B8A8 ||
+			 texture->format == SxTextureFormat_R8G8B8A8_SRGB )
+		{
+			glEnable( GL_BLEND );
+			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		}
 	}
 	else
 	{
 		glBindTexture( GL_TEXTURE_2D, 0 );
 		glUniform4f( s_ent.shader.uColor, 1.0f, 1.0f, 1.0f, 1.0f );
+		glDisable( GL_BLEND );
 	}
 
 	indexOffset = 0;
@@ -161,6 +169,8 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
+	glDisable( GL_BLEND );
+
 	GL_CheckErrors( "after Entity_DrawEntity" );
 
 	Prof_Stop( PROF_DRAW_ENTITY );
@@ -180,19 +190,27 @@ void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef f
 		entity = Registry_GetEntity( ref );
 		assert( entity );
 
-		LOG( "%s", entity->id );
-
 		if ( entity->visibility <= 0.0f )
 			continue;
 
 		OrientationToTransform( entity->orientation, &entityXform );
 		ConcatenateTransforms( xform, entityXform, &childXform );
 
-		// LOG( "childXform:" );
-		// LOG( "%f %f %f", childXform.axes.x.x, childXform.axes.x.y, childXform.axes.x.z );
-		// LOG( "%f %f %f", childXform.axes.y.x, childXform.axes.y.y, childXform.axes.y.z );
-		// LOG( "%f %f %f", childXform.axes.z.x, childXform.axes.z.y, childXform.axes.z.z );
-		// LOG( "%f %f %f", childXform.origin.x, childXform.origin.y, childXform.origin.z );
+		// if ( strstr( entity->id, "vnc" ) )
+		// {		
+		// 	LOG( "entityXform %s:", entity->id );
+		// 	LOG( "xAxis: %f %f %f", entityXform.axes.x.x, entityXform.axes.x.y, entityXform.axes.x.z );
+		// 	LOG( "yAxis: %f %f %f", entityXform.axes.y.x, entityXform.axes.y.y, entityXform.axes.y.z );
+		// 	LOG( "zAxis: %f %f %f", entityXform.axes.z.x, entityXform.axes.z.y, entityXform.axes.z.z );
+		// 	LOG( "origin: %f %f %f", entityXform.origin.x, entityXform.origin.y, entityXform.origin.z );
+		// 	LOG( "scale: %f %f %f", entityXform.scale.x, entityXform.scale.y, entityXform.scale.z );
+		// 	LOG( "childXform %s:", entity->id );
+		// 	LOG( "xAxis: %f %f %f", childXform.axes.x.x, childXform.axes.x.y, childXform.axes.x.z );
+		// 	LOG( "yAxis: %f %f %f", childXform.axes.y.x, childXform.axes.y.y, childXform.axes.y.z );
+		// 	LOG( "zAxis: %f %f %f", childXform.axes.z.x, childXform.axes.z.y, childXform.axes.z.z );
+		// 	LOG( "origin: %f %f %f", childXform.origin.x, childXform.origin.y, childXform.origin.z );
+		// 	LOG( "scale: %f %f %f", childXform.scale.x, childXform.scale.y, childXform.scale.z );
+		// }
 
 		m = Matrix4f( 
 			childXform.axes.x.x * childXform.scale.x, childXform.axes.x.y * childXform.scale.x, childXform.axes.x.z * childXform.scale.x, 0.0f,
@@ -204,7 +222,7 @@ void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef f
 
 		if ( entity->firstChild != S_NULL_REF )
 		{
-			LOG( "%s has children", entity->id );
+			// LOG( "%s has children", entity->id );
 			Entity_DrawChildren( view, childXform, entity->firstChild );
 		}
 	}

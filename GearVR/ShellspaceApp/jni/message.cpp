@@ -133,6 +133,117 @@ sbool MsgCmd_Dispatch( const SMsg *msg, const SMsgCmd *cmdList, void *context )
 }
 
 
+sbool Msg_SetFloatCmd( const SMsg *msg, float *value, float mn, float mx )
+{
+	const char 	*arg;
+	float 	newValue;
+
+	assert( msg );
+	assert( value );
+
+	if ( Msg_Argc( msg ) < 2 )
+	{
+		LOG( "Float value expected" );
+		return sfalse;
+	}
+
+	arg = Msg_Argv( msg, 1 );
+
+	newValue = atof( arg );
+
+	if ( arg[0] == '-' || arg[0] == '+' )
+		newValue += *value;
+
+	if ( newValue < mn )
+	{
+		LOG( "Value is below the minimum %f", mn );
+		return sfalse;
+	}	
+
+	if ( newValue > mx )
+	{
+		LOG( "Value is above the maximum %f", mx );
+		return sfalse;
+	}
+
+	*value = newValue;
+
+	return strue;
+}
+
+
+sbool Msg_SetIntCmd( const SMsg *msg, int *value, int mn, int mx )
+{
+	const char 	*arg;
+	int 		newValue;
+
+	assert( msg );
+	assert( value );
+
+	if ( Msg_Argc( msg ) < 2 )
+	{
+		LOG( "Integer value expected" );
+		return sfalse;
+	}
+
+	arg = Msg_Argv( msg, 1 );
+
+	newValue = atoi( arg );
+
+	if ( arg[0] == '-' || arg[0] == '+' )
+		newValue += *value;
+
+	if ( newValue < mn )
+	{
+		LOG( "Value is below the minimum %i", mn );
+		return sfalse;
+	}	
+
+	if ( newValue > mx )
+	{
+		LOG( "Value is above the maximum %i", mx );
+		return sfalse;
+	}
+
+	*value = newValue;
+
+	return strue;
+}
+
+
+sbool Msg_SetBoolCmd( const SMsg *msg, sbool *value )
+{
+	const char 	*arg;
+
+	assert( msg );
+	assert( value );
+
+	if ( Msg_Argc( msg ) < 2 )
+	{
+		LOG( "Boolean value expected" );
+		return sfalse;
+	}
+
+	arg = Msg_Argv( msg, 1 );
+
+	if ( S_strcmp( arg, "0" ) == 0 || S_strcmp( arg, "false" ) == 0 )
+	{
+		*value = 0;
+		return strue;
+	}
+	else if ( S_strcmp( arg, "1" ) == 0 || S_strcmp( arg, "true" ) == 0 )
+	{
+		*value = 1;
+		return strue;
+	}
+	else
+	{
+		LOG( "Expected 0/1/true/false for boolean value" );
+		return sfalse;
+	}
+}
+
+
 sbool Msg_IsSpace( char ch )
 {
 	if ( ch == ' ' || ch == '\t' )

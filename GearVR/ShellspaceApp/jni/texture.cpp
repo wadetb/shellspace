@@ -25,6 +25,12 @@ GLuint Texture_GetGLFormat( SxTextureFormat format )
 {
 	switch ( format )
 	{
+	case SxTextureFormat_R8G8B8X8:
+		return GL_RGBA8;
+		
+	case SxTextureFormat_R8G8B8X8_SRGB:
+		return GL_SRGB8_ALPHA8;
+
 	case SxTextureFormat_R8G8B8A8:
 		return GL_RGBA8;
 		
@@ -42,6 +48,8 @@ uint Texture_GetDataSize( uint width, uint height, SxTextureFormat format )
 {
 	switch ( format )
 	{
+	case SxTextureFormat_R8G8B8X8:
+	case SxTextureFormat_R8G8B8X8_SRGB:
 	case SxTextureFormat_R8G8B8A8:
 	case SxTextureFormat_R8G8B8A8_SRGB:
 		return width * height * 4;

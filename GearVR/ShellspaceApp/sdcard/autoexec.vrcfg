@@ -1,1 +1,5 @@
-vnc create vnc0; vnc connect vnc0 10.0.1.40 asdf
+vnc create vnc0
+vnc connect vnc0 10.0.1.40 asdf
+vnc0 zpush 1.6
+vnc0 curve 60
+vnc0 scale 1

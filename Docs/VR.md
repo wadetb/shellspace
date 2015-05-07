@@ -25,12 +25,6 @@
 
 # For this release:
 
-+ Throttle large texture updates in the input queue.
-  Change InQueue_UpdateTextureRect into a loop, handing N rows per iteration up to 32KB (?) per update.
-
-+ Gracefully handle as many alloc failures as possible.
-  Specifically allocating copies of blocks to put in the input queue.
-
 + Memory tracking?  (CPU precise and GPU estimate)
   With memory tracking we could force certain operations (InQueue append) to stall until memory is available.  Would be hard to budget for the case of many VNC sessions though.
 
@@ -57,10 +51,11 @@
 
 + When app suspends, the texture input queue fills up and this (currently, thanks to Present semantics) deadlocks the app.  Detect this and stop sending updates, but accumulate a texture dirty rectangle.  When unsuspended, submit the entire dirty rectangle.
 
++ SRGB transform on the VNC thread.
+
 # Performance
 
 + Bounds accumulation for Geometry objects, frustum culling
-+ Subrectangle texture update throttling
 + Optimize various decoders using NEON.
 + Accelerated CopyRect?
 + 16bit pixel support (runtime option)

@@ -41,6 +41,20 @@ struct SxTransform
     SxVector3   scale;
 };
 
+inline void ColorSet( SxColor *out, byte r, byte g, byte b, byte a )
+{
+    out->r = r;
+    out->g = g;
+    out->b = b;
+    out->a = a;
+}
+
+inline void Vec2Set( SxVector2 *out, float x, float y )
+{
+    out->x = x;
+    out->y = y;
+}
+
 inline void Vec3Add( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )
 {
     out->x = a.x + b.x;
@@ -213,7 +227,7 @@ inline void IdentityTransform( SxTransform *out )
 
 inline void ConcatenateTransforms( const SxTransform &a, const SxTransform &b, SxTransform *out )
 {
-    ConcatenateAxes( b.axes, a.axes, &out->axes );
+    ConcatenateAxes( a.axes, b.axes, &out->axes );
     Vec3TransformPoint( b.origin, a, &out->origin );    
     Vec3Mul( b.scale, a.scale, &out->scale );
 }

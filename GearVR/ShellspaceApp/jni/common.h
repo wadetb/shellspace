@@ -94,7 +94,7 @@ inline float S_Minf( float a, float b )
 
 inline sbool S_strempty( const char *s )
 {
-    return s[0] != '\0';
+    return s[0] == '\0';
 }
 
 inline int S_strcmp( const char *a, const char *b )

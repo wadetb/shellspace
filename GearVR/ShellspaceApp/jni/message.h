@@ -63,6 +63,10 @@ void Msg_Format( const SMsg *msg, char *result, uint resultLen );
 
 sbool MsgCmd_Dispatch( const SMsg *msg, const SMsgCmd *cmdList, void *context );
 
+sbool Msg_SetFloatCmd( const SMsg *msg, float *value, float mn, float mx ); 
+sbool Msg_SetIntCmd( const SMsg *msg, int *value, int mn, int mx );
+sbool Msg_SetBoolCmd( const SMsg *msg, sbool *value );
+
 void MsgQueue_Create( SMsgQueue *queue );
 void MsgQueue_Destroy( SMsgQueue *queue );
 

@@ -163,6 +163,8 @@ struct SxVector3
 
 enum SxTextureFormat
 {
+    SxTextureFormat_R8G8B8X8,
+    SxTextureFormat_R8G8B8X8_SRGB,
     SxTextureFormat_R8G8B8A8,
     SxTextureFormat_R8G8B8A8_SRGB,
     SxTextureFormat_Count
