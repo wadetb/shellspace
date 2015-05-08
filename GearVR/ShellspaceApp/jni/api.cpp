@@ -74,11 +74,10 @@ SxResult sxUnregisterPlugin( SxPluginHandle pl )
 
 	MsgQueue_Destroy( &plugin->msgQueue );
 
-	LOG( "Unregistered plugin %s.", plugin->id );
-
-	free( plugin->id );
-
 	Registry_Unregister( PLUGIN_REGISTRY, ref );
+
+	LOG( "Unregistered plugin %s.", plugin->id );
+	free( plugin->id );
 
 	return SX_OK;
 }
@@ -163,9 +162,9 @@ SxResult sxUnregisterWidget( SxWidgetHandle wd )
 	widget = Registry_GetWidget( ref );
 	assert( widget );
 
-	free( widget->id );
-
 	Registry_Unregister( WIDGET_REGISTRY, ref );
+
+	free( widget->id );
 
 	return SX_OK;
 }
@@ -302,9 +301,9 @@ SxResult sxUnregisterGeometry( SxGeometryHandle geo )
 	geometry = Registry_GetGeometry( ref );
 	assert( geometry );
 
-	free( geometry->id );
-
 	Registry_Unregister( GEOMETRY_REGISTRY, ref );
+
+	free( geometry->id );
 
 	return SX_OK;
 }
@@ -508,9 +507,9 @@ SxResult sxUnregisterTexture( SxTextureHandle tex )
 	texture = Registry_GetTexture( ref );
 	assert( texture );
 
-	free( texture->id );
-
 	Registry_Unregister( TEXTURE_REGISTRY, ref );
+
+	free( texture->id );
 
 	return SX_OK;
 }
@@ -712,10 +711,9 @@ SxResult sxUnregisterEntity( SxEntityHandle ent )
 	assert( entity );
 
 	Entity_Unregister( entity );
+	Registry_Unregister( ENTITY_REGISTRY, ref );
 
 	free( entity->id );
-
-	Registry_Unregister( ENTITY_REGISTRY, ref );
 
 	return SX_OK;
 }

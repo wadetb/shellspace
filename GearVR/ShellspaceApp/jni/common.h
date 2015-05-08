@@ -29,8 +29,6 @@
 // #include "coffeecatch/coffeecatch.h"
 // #include "coffeecatch/coffeejni.h"
 
-using namespace OVR;
-
 #define USE_OVERLAY   			0
 #define USE_TEMPORAL 			0
 #define USE_SUPERSAMPLE_2X 		1
@@ -97,6 +95,11 @@ inline sbool S_strempty( const char *s )
     return s[0] == '\0';
 }
 
+inline sbool S_streq( const char *a, const char *b )
+{
+    return strcmp( a, b ) == 0;
+}
+
 inline int S_strcmp( const char *a, const char *b )
 {
     return strcmp( a, b );
@@ -158,7 +161,8 @@ inline float S_radToDeg( float a )
     return a * (180.0f / S_PI);
 }
 
-#define S_NULL_REF  0xffff
+#define S_NULL_REF     0xffff
+#define S_DELETED_REF  0xfffe
 
 typedef ushort SRef;
 

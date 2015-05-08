@@ -9,7 +9,8 @@ APP_ABI := armeabi-v7a
 
 # Statically link the GNU STL. This may not be safe for multi-so libraries but
 # we don't know of any problems yet.
-APP_STL := gnustl_static
+# Wade- Adjusted to match v8.
+APP_STL := stlport_static
 
 # Explicitly use GCC 4.8 as our toolchain. This is the 32-bit default as of
 # r10d but versions as far back as r9d have 4.8. The previous default, 4.6, is
@@ -19,3 +20,4 @@ NDK_TOOLCHAIN_VERSION := 4.8
 # Define the directories for $(import-module, ...) to look in
 ROOT_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 #NDK_MODULE_PATH := $(ROOT_DIR)/3rdParty/breakpad/android$(HOST_DIRSEP)$(ROOT_DIR)/Tools$(HOST_DIRSEP)$(ROOT_DIR)
+NDK_MODULE_PATH := $(ROOT_DIR)/3rdParty/libjpeg-turbo$(HOST_DIRSEP)$(ROOT_DIR)/3rdParty/breakpad/android$(HOST_DIRSEP)$(ROOT_DIR)/Tools$(HOST_DIRSEP)$(ROOT_DIR)

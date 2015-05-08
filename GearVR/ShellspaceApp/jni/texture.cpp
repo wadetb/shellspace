@@ -71,11 +71,11 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 	Prof_Start( PROF_TEXTURE_RESIZE );
 
-	GL_CheckErrors( "before Texture_Resize" );
+	OVR::GL_CheckErrors( "before Texture_Resize" );
 
 	assert( texture );
 
-	LOG( "Texture_Resize: %d by %d", width, height );
+	// LOG( "Texture_Resize: %d by %d", width, height );
 
 	index = texture->updateIndex % BUFFER_COUNT;
 
@@ -101,7 +101,7 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 	texture->texWidth[index] = texWidth;
 	texture->texHeight[index] = texHeight;
 
-	GL_CheckErrors( "after Texture_Resize" );
+	OVR::GL_CheckErrors( "after Texture_Resize" );
 
 	Prof_Stop( PROF_TEXTURE_RESIZE );
 }
@@ -116,7 +116,7 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 
 	Prof_Start( PROF_TEXTURE_UPDATE );
 
-	GL_CheckErrors( "before Texture_Update" );
+	OVR::GL_CheckErrors( "before Texture_Update" );
 
 	assert( texture );
 
@@ -142,7 +142,7 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 	// LOG( "Texture_Update: (%d,%d) %d by %d (%d pixels) cost %f ms %fms/100kpx", x, y, width, height, 
 	// 	width*height, costMs, 100000.0 * costMs / (width*height));
 
-	GL_CheckErrors( "after Texture_Update" );
+	OVR::GL_CheckErrors( "after Texture_Update" );
 
 	Prof_Stop( PROF_TEXTURE_UPDATE );
 }
@@ -154,7 +154,7 @@ void Texture_Present( STexture *texture )
 
 	Prof_Start( PROF_TEXTURE_PRESENT );
 
-	GL_CheckErrors( "before Texture_Present" );
+	OVR::GL_CheckErrors( "before Texture_Present" );
 
 	assert( texture );
 
@@ -174,7 +174,7 @@ void Texture_Present( STexture *texture )
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 
-	GL_CheckErrors( "after Texture_Present" );
+	OVR::GL_CheckErrors( "after Texture_Present" );
 
 	Prof_Stop( PROF_TEXTURE_PRESENT );
 }

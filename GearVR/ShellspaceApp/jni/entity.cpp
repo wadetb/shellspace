@@ -25,8 +25,8 @@
 
 struct SEntityGlobals
 {
-	GlProgram 	shader;
-	SRef 		firstRoot;
+	OVR::GlProgram 	shader;
+	SRef 			firstRoot;
 };
 
 
@@ -35,7 +35,7 @@ SEntityGlobals	s_ent;
 
 void Entity_Init()
 {
-	s_ent.shader = BuildProgram(
+	s_ent.shader = OVR::BuildProgram(
 		"#version 300 es\n"
 		"uniform mediump mat4 Mvpm;\n"
 		"in vec4 Position;\n"
@@ -66,7 +66,7 @@ void Entity_Init()
 }
 
 
-void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
+void Entity_DrawEntity( SEntity *entity, const OVR::Matrix4f &view )
 {
 	STexture 	*texture;
 	SGeometry	*geometry;
@@ -85,7 +85,7 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	assert( entity );
 
-	GL_CheckErrors( "before Entity_DrawEntity" );
+	OVR::GL_CheckErrors( "before Entity_DrawEntity" );
 
 	geometry = Registry_GetGeometry( entity->geometryRef );
 	assert( geometry );
@@ -171,19 +171,19 @@ void Entity_DrawEntity( SEntity *entity, const Matrix4f &view )
 
 	glDisable( GL_BLEND );
 
-	GL_CheckErrors( "after Entity_DrawEntity" );
+	OVR::GL_CheckErrors( "after Entity_DrawEntity" );
 
 	Prof_Stop( PROF_DRAW_ENTITY );
 }
 
 
-void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef first )
+void Entity_DrawChildren( const OVR::Matrix4f &view, const SxTransform& xform, SRef first )
 {
 	SRef  			ref;
 	SEntity 		*entity;
 	SxTransform		entityXform;
 	SxTransform		childXform;
-	Matrix4f 		m;
+	OVR::Matrix4f 	m;
 
 	for ( ref = first; ref != S_NULL_REF; ref = entity->parentLink.next )
 	{
@@ -212,7 +212,7 @@ void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef f
 		// 	LOG( "scale: %f %f %f", childXform.scale.x, childXform.scale.y, childXform.scale.z );
 		// }
 
-		m = Matrix4f( 
+		m = OVR::Matrix4f( 
 			childXform.axes.x.x * childXform.scale.x, childXform.axes.x.y * childXform.scale.x, childXform.axes.x.z * childXform.scale.x, 0.0f,
 			childXform.axes.y.x * childXform.scale.y, childXform.axes.y.y * childXform.scale.y, childXform.axes.y.z * childXform.scale.y, 0.0f,
 			childXform.axes.z.x * childXform.scale.z, childXform.axes.z.y * childXform.scale.z, childXform.axes.z.z * childXform.scale.z, 0.0f,
@@ -229,7 +229,7 @@ void Entity_DrawChildren( const Matrix4f &view, const SxTransform& xform, SRef f
 }
 
 
-void Entity_Draw( const Matrix4f &view )
+void Entity_Draw( const OVR::Matrix4f &view )
 {
 	SxTransform		xform;
 

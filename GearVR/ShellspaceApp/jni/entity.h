@@ -22,7 +22,7 @@
 struct SEntity;
 
 void Entity_Init();
-void Entity_Draw( const Matrix4f &view );
+void Entity_Draw( const OVR::Matrix4f &view );
 
 void Entity_Register( SEntity *entity );
 void Entity_Unregister( SEntity *entity );

@@ -78,7 +78,7 @@ void Registry_InitPool( SPool *pool, uint entrySize, uint limit )
 	uint	 	entryIter;
 	SRefLink	*link;
 
-	assert( limit < S_NULL_REF );
+	assert( limit < S_DELETED_REF );
 
 	entries = malloc( (limit + 1) * entrySize );
 	assert( entries );
@@ -157,12 +157,10 @@ SRef Registry_Get( ERegistry reg, const char *id )
         hashRef = hash[slot];
 
         if ( hashRef == S_NULL_REF )
-        {
-        	LOG( "Registry_Get: %s not found", id );
             return hashRef; // not found
-        }
 
-        if ( S_strcmp( names[hashRef], id ) == 0 )
+        if ( hashRef != S_DELETED_REF && 
+        	 S_strcmp( names[hashRef], id ) == 0 )
             return hashRef;
 
         slot++;
@@ -195,7 +193,7 @@ void Registry_Add( ERegistry reg, const char *id, SRef ref )
     {
         hashRef = hash[slot];
 
-        if ( hashRef == S_NULL_REF )
+        if ( hashRef == S_NULL_REF || hashRef == S_DELETED_REF )
         {
         	names[ref] = id;
         	hash[slot] = ref;
@@ -213,7 +211,41 @@ void Registry_Add( ERegistry reg, const char *id, SRef ref )
 
 void Registry_Remove( ERegistry reg, SRef ref )
 {
-	// $$$ TODO
+	SRegistry 	*r;
+	SRef 		*hash;
+	const char 	**names;
+	uint 		hashSize;
+	const char 	*id;
+	uint 		slot;
+	SRef 		hashRef;
+
+	r = &s_reg[reg];
+
+	names = r->names;
+	hash = r->hash;
+	hashSize = r->hashSize;
+
+	id = names[ref];
+	assert( id );
+
+    slot = S_FNV32( id, 0 ) % hashSize;
+
+    for ( ;; )
+    {
+        hashRef = hash[slot];
+        assert( hashRef != S_NULL_REF );
+
+        if ( hashRef == ref )
+        {
+        	names[hashRef] = NULL;
+        	hash[slot] = S_DELETED_REF;
+        	return;
+        }
+
+        slot++;
+        if ( slot == hashSize )
+        	slot = 0;
+    }
 }
 
 

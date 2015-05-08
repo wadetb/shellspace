@@ -2,9 +2,9 @@
 
 source ../bin/dev.sh
 
-# pushd ../ovr_mobile_sdk_0.4.3.1/VRLib
-# ./build.sh $1
-# pushd
+#pushd ../ovr_mobile_sdk_0.4.3.1/VRLib
+#./build.sh $1
+#pushd
 
 export BUILD_MODULE=Shellspace
 

@@ -19,6 +19,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "thread.h"
 
 #include "vncplugin.h"
+#include "v8plugin.h"
 #include "shellplugin.h"
 
 #include <android/keycodes.h>
@@ -243,6 +244,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	Shell_InitPlugin();
 	VNC_InitPlugin();
+	V8_InitPlugin();
 
 	Keyboard_Init();
 

@@ -349,7 +349,7 @@ typedef SxResult (*SxRenderTextureJpeg)( SxTextureHandle tx, unsigned int x, uns
 //
 // Makes the texture visible, after all prior updates have completed.
 // 
-typedef SxResult (*SxPresentTexture)( SxGeometryHandle geo );
+typedef SxResult (*SxPresentTexture)( SxTextureHandle tx );
 
 //
 // Entities

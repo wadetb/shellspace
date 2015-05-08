@@ -16,16 +16,9 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-#ifndef __KEYBOARD_H__
-#define __KEYBOARD_H__
+#ifndef __V8PLUGIN_H__
+#define __V8PLUGIN_H__
 
-void Keyboard_Init();
-void Keyboard_LoadKeyboards();
-void Keyboard_Frame( uint buttonState, const OVR::Vector3f &eyePos, const OVR::Vector3f &eyeDir );
-void Keyboard_Draw();
-void Keyboard_Show( const char *name );
-void Keyboard_Orient( const SxVector3& eyeDir, float depth );
-void Keyboard_Toggle();
-bool Keyboard_IsVisible();
+void V8_InitPlugin();
 
 #endif

@@ -21,6 +21,11 @@
         Polish
         Battery life & Framerate optimization
 
+# Release checkist
+
++ Enable Crittercism
++ Zip and upload obj directory to Crittercism
+
 # TODO
 
 # For this release:
@@ -28,6 +33,8 @@
 # Shell
 
 + Context specific menus.
+
+Idea: When back button is pressed, shell sends a "menu" message to the active widget.  The widget can respond by broadcasting a "menu xyz" message to the system, which will open and display xyz.vrkey.  The issue is widget-specific things like "vnc disconnect vnc0" where VNC0 is the id of the activating widget.  
 
 # VNC
 
@@ -77,6 +84,11 @@ Idea for file widget- drag a file into a cell, it's represented by a filename an
         shell.cpp
 
 # JavaScript
+
+make i18nsupport=off android_arm.release
+
+remove -lrt from ./tools/gyp/mksnapshot.host.android_arm.release.mk
+
 
 + Install d8 (command line v8) on a Mac:
 https://gist.github.com/kevincennis/0cd2138c78a07412ef21

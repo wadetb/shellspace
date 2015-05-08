@@ -42,7 +42,7 @@ void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 	assert( vertexBuffer );
 	assert( indexBuffer );
 
-	GL_CheckErrors( "before Geometry_MakeVertexArrayObject" );
+	OVR::GL_CheckErrors( "before Geometry_MakeVertexArrayObject" );
 
 	vertexArrayObject = geometry->vertexArrayObjects[index];
 
@@ -90,7 +90,7 @@ void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 
 	geometry->vertexArrayObjects[index] = vertexArrayObject;
 
-	GL_CheckErrors( "after Geometry_MakeVertexArrayObject" );
+	OVR::GL_CheckErrors( "after Geometry_MakeVertexArrayObject" );
 }
 
 
@@ -100,7 +100,7 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 	GLuint 	vertexBuffer;
 	uint 	vertexSize;
 
-	GL_CheckErrors( "before Geometry_ResizeVertexBuffer" );
+	OVR::GL_CheckErrors( "before Geometry_ResizeVertexBuffer" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -118,7 +118,7 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 	geometry->vertexBuffers[index] = vertexBuffer; 
 	geometry->vertexCounts[index] = vertexCount;
 
-	GL_CheckErrors( "after Geometry_ResizeVertexBuffer" );
+	OVR::GL_CheckErrors( "after Geometry_ResizeVertexBuffer" );
 }
 
 
@@ -127,7 +127,7 @@ void Geometry_ResizeIndexBuffer( SGeometry *geometry, uint indexCount )
 	uint 	index;
 	GLuint 	indexBuffer;
 
-	GL_CheckErrors( "before Geometry_ResizeIndexBuffer" );
+	OVR::GL_CheckErrors( "before Geometry_ResizeIndexBuffer" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -143,7 +143,7 @@ void Geometry_ResizeIndexBuffer( SGeometry *geometry, uint indexCount )
 	geometry->indexBuffers[index] = indexBuffer;
 	geometry->indexCounts[index] = indexCount;
 
-	GL_CheckErrors( "after Geometry_ResizeIndexBuffer" );
+	OVR::GL_CheckErrors( "after Geometry_ResizeIndexBuffer" );
 }
 
 
@@ -151,13 +151,13 @@ void Geometry_Resize( SGeometry *geometry, uint vertexCount, uint indexCount )
 {
 	Prof_Start( PROF_GEOMETRY_RESIZE );
 
-	GL_CheckErrors( "before Geometry_Resize" );
+	OVR::GL_CheckErrors( "before Geometry_Resize" );
 
 	Geometry_ResizeVertexBuffer( geometry, vertexCount );
 	Geometry_ResizeIndexBuffer( geometry, indexCount );
 	Geometry_MakeVertexArrayObject( geometry );
 
-	GL_CheckErrors( "after Geometry_Resize" );
+	OVR::GL_CheckErrors( "after Geometry_Resize" );
 
 	Prof_Stop( PROF_GEOMETRY_RESIZE );
 }
@@ -173,7 +173,7 @@ void Geometry_UpdateIndices( SGeometry *geometry, uint firstIndex, uint indexCou
 
 	Prof_Start( PROF_GEOMETRY_UPDATE );
 
-	GL_CheckErrors( "before Geometry_UpdateIndices" );
+	OVR::GL_CheckErrors( "before Geometry_UpdateIndices" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -194,7 +194,7 @@ void Geometry_UpdateIndices( SGeometry *geometry, uint firstIndex, uint indexCou
 
 	glBindVertexArrayOES_( 0 );
 
-	GL_CheckErrors( "after Geometry_UpdateIndices" );
+	OVR::GL_CheckErrors( "after Geometry_UpdateIndices" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
 }
@@ -210,7 +210,7 @@ void Geometry_UpdateVertexPositions( SGeometry *geometry, uint firstVertex, uint
 
 	Prof_Start( PROF_GEOMETRY_UPDATE );
 
-	GL_CheckErrors( "before Geometry_UpdateVertexPositions" );
+	OVR::GL_CheckErrors( "before Geometry_UpdateVertexPositions" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -231,7 +231,7 @@ void Geometry_UpdateVertexPositions( SGeometry *geometry, uint firstVertex, uint
 
 	glBindVertexArrayOES_( 0 );
 
-	GL_CheckErrors( "after Geometry_UpdateVertexPositions" );
+	OVR::GL_CheckErrors( "after Geometry_UpdateVertexPositions" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
 }
@@ -248,7 +248,7 @@ void Geometry_UpdateVertexTexCoords( SGeometry *geometry, uint firstVertex, uint
 
 	Prof_Start( PROF_GEOMETRY_UPDATE );
 
-	GL_CheckErrors( "before Geometry_UpdateVertexTexCoords" );
+	OVR::GL_CheckErrors( "before Geometry_UpdateVertexTexCoords" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -271,7 +271,7 @@ void Geometry_UpdateVertexTexCoords( SGeometry *geometry, uint firstVertex, uint
 
 	glBindVertexArrayOES_( 0 );
 
-	GL_CheckErrors( "after Geometry_UpdateVertexTexCoords" );
+	OVR::GL_CheckErrors( "after Geometry_UpdateVertexTexCoords" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
 }
@@ -288,7 +288,7 @@ void Geometry_UpdateVertexColors( SGeometry *geometry, uint firstVertex, uint ve
 
 	Prof_Start( PROF_GEOMETRY_UPDATE );
 
-	GL_CheckErrors( "before Geometry_UpdateVertexColors" );
+	OVR::GL_CheckErrors( "before Geometry_UpdateVertexColors" );
 
 	index = geometry->updateIndex % BUFFER_COUNT;
 
@@ -311,7 +311,7 @@ void Geometry_UpdateVertexColors( SGeometry *geometry, uint firstVertex, uint ve
 
 	glBindVertexArrayOES_( 0 );
 
-	GL_CheckErrors( "after Geometry_UpdateVertexColors" );
+	OVR::GL_CheckErrors( "after Geometry_UpdateVertexColors" );
 
 	Prof_Stop( PROF_GEOMETRY_UPDATE );
 }

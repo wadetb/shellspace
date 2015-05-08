@@ -741,6 +741,9 @@ static void vnc_thread_got_x_cut_text( rfbClient *client, const char *text, int 
 	vnc = (SVNCWidget *)rfbClientGetClientData( client, &s_vncGlob );
 	assert( vnc );
 
+	while ( isspace( *text ) )
+		text++;
+	
 	if ( strncmp( text, "$$!", 3 ) == 0 )
 	{
 		g_pluginInterface.postMessage( text + 3 );
@@ -1657,7 +1660,7 @@ SMsgCmd s_vncCmds[] =
 };
 
 
-static void *VNC_PluginThread( void *context )
+void *VNC_PluginThread( void *context )
 {
 	char 	msgBuf[MSG_LIMIT];
 	SMsg 	msg;
