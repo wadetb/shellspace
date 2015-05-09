@@ -283,11 +283,19 @@ void V8_UpdateGeometryIndexRangeCallback( const FunctionCallbackInfo<Value>& arg
     Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
     ArrayBuffer::Contents buf = arg3->GetContents();
 
+    uint indexCount = V8_IntArg( args[2] );
+
+    if ( buf.ByteLength() < indexCount * sizeof( ushort ) )
+    {
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for index count" );
+    	return;
+    }
+
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->updateGeometryIndexRange( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
-			V8_IntArg( args[2] ),
+			indexCount,
 			(ushort *)buf.Data() ) );
 }
 
@@ -301,11 +309,19 @@ void V8_UpdateGeometryPositionRangeCallback( const FunctionCallbackInfo<Value>& 
     Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
     ArrayBuffer::Contents buf = arg3->GetContents();
 
+    uint vertexCount = V8_IntArg( args[2] );
+
+    if ( buf.ByteLength() < vertexCount * sizeof( SxVector3 ) )
+    {
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for vertex count" );
+    	return;
+    }
+
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->updateGeometryPositionRange( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
-			V8_IntArg( args[2] ),
+			vertexCount,
 			(SxVector3 *)buf.Data() ) );
 }
 
@@ -319,11 +335,19 @@ void V8_UpdateGeometryTexCoordRangeCallback( const FunctionCallbackInfo<Value>& 
     Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
     ArrayBuffer::Contents buf = arg3->GetContents();
 
+    uint vertexCount = V8_IntArg( args[2] );
+
+    if ( buf.ByteLength() < vertexCount * sizeof( SxVector2 ) )
+    {
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for vertex count" );
+    	return;
+    }
+
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->updateGeometryTexCoordRange( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
-			V8_IntArg( args[2] ),
+			vertexCount,
 			(SxVector2 *)buf.Data() ) );
 }
 
@@ -337,11 +361,19 @@ void V8_UpdateGeometryColorRangeCallback( const FunctionCallbackInfo<Value>& arg
     Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
     ArrayBuffer::Contents buf = arg3->GetContents();
 
+    int vertexCount = V8_IntArg( args[2] );
+
+    if ( buf.ByteLength() < vertexCount * sizeof( SxColor ) )
+    {
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for vertex count" );
+    	return;
+    }
+
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->updateGeometryColorRange( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
-			V8_IntArg( args[2] ),
+			vertexCount,
 			(SxColor *)buf.Data() ) );
 }
 
@@ -418,14 +450,24 @@ void V8_UpdateTextureRectCallback( const FunctionCallbackInfo<Value>& args )
     Local<ArrayBuffer> arg6 = Local<ArrayBuffer>::Cast( args[6] );
     ArrayBuffer::Contents buf = arg6->GetContents();
 
+    uint width = V8_IntArg( args[3] );
+    uint height = V8_IntArg( args[4] );
+    uint pitch = V8_IntArg( args[5] );
+
+    if ( buf.ByteLength() < height * pitch )
+    {
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for given dimensions and pitch" );
+    	return;
+    }
+
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->updateTextureRect( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
 			V8_IntArg( args[2] ),
-			V8_IntArg( args[3] ),
-			V8_IntArg( args[4] ),
-			V8_IntArg( args[5] ),
+			width,
+			height,
+			pitch,
 			buf.Data() ) );
 }
 
@@ -526,6 +568,21 @@ void V8_GetVector3( Isolate *isolate, Handle<Value> &object, SxVector3 *result )
 }
 
 
+void V8_GetAngles( Isolate *isolate, Handle<Value> &object, SxAngles *result )
+{
+ 	Handle<Array> array = Handle<Array>::Cast( object );
+
+ 	Local<Number> yawNumber = array->Get( Integer::New( isolate, 0 ) )->ToNumber();
+ 	result->yaw = yawNumber->Value();
+
+ 	Local<Number> pitchNumber = array->Get( Integer::New( isolate, 1 ) )->ToNumber();
+ 	result->pitch = pitchNumber->Value();
+
+ 	Local<Number> rollNumber = array->Get( Integer::New( isolate, 2 ) )->ToNumber();
+ 	result->roll = rollNumber->Value();
+}
+
+
 void V8_GetOrientation( Isolate *isolate, const Handle<Value>& object, SxOrientation *orient )
 {
 	IdentityOrientation( orient );
@@ -533,7 +590,16 @@ void V8_GetOrientation( Isolate *isolate, const Handle<Value>& object, SxOrienta
 	Handle<Array> array = Handle<Array>::Cast( object );
 
 	Handle<Value> origin = array->Get( String::NewFromUtf8( isolate, "origin" ) );
-	V8_GetVector3( isolate, origin, &orient->origin );
+	if ( !origin->IsUndefined() )
+		V8_GetVector3( isolate, origin, &orient->origin );
+
+	Handle<Value> angles = array->Get( String::NewFromUtf8( isolate, "angles" ) );
+	if ( !angles->IsUndefined() )
+		V8_GetAngles( isolate, angles, &orient->angles );
+
+	Handle<Value> scale = array->Get( String::NewFromUtf8( isolate, "scale" ) );
+	if ( !scale->IsUndefined() )
+		V8_GetVector3( isolate, scale, &orient->scale );
 }
 
 
@@ -824,7 +890,7 @@ void *V8_InstanceThread( void *threadContext )
 
 		    Local<String> fileName = String::NewFromUtf8( v8->isolate, v8->fileName );
 			Local<String> source = String::NewFromUtf8( v8->isolate, v8->source );
-			
+
 			Local<Script> script = Script::Compile( source, fileName );
 
 		    if ( script.IsEmpty() )

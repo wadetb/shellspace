@@ -25,11 +25,11 @@ registerPlugin( PLUGIN, SxPluginKind_Widget );
 registerEntity( ENTITY );
 
 registerTexture( TEXTURE );
-loadTextureJpeg( TEXTURE, ASSETS['safari'] );
+loadTextureJpeg( TEXTURE, ASSETS['terminal'] );
 
 setEntityGeometry( ENTITY, "quad" ); // A builtin unit quad
 setEntityTexture( ENTITY, TEXTURE );
-orientEntity( ENTITY, { origin: [ 0, 0, -5], angles: [0, 0, 0], scale: [1, 1, 1] } );
+orientEntity( ENTITY, { origin: [ 0, 0, -5], angles: [0, 0, 0], scale: [1.6, 1, 1] } );
 
 // Submit our entity to the shell.
 postMessage( "shell register " + WIDGET + " " + ENTITY );
@@ -39,7 +39,7 @@ for ( ;; ) {
 
 	args = msg.split( ' ' );
 
-	// $$$ Need to strip quotes.
+	// $$$ Need to strip quotes or just move messages to JSON.
 	if ( args[0] == ('\"'+PLUGIN+'\"') )
 		args.shift();
 
