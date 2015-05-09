@@ -15,9 +15,12 @@ adb push sdcard/autoexec.vrcfg /storage/extSdCard/Oculus/Shellspace/autoexec.vrc
 # adb push sdcard/connect.vrkey /storage/extSdCard/Oculus/Shellspace/connect.vrkey
 adb push sdcard/shellspace.js /storage/extSdCard/Oculus/Shellspace/shellspace.js
 adb push sdcard/example.js /storage/extSdCard/Oculus/Shellspace/example.js
+adb push sdcard/menu.js /storage/extSdCard/Oculus/Shellspace/menu.js
 
 echo '
 $$!
+menu unload
 shellspace_example unload
 v8 load /storage/extSdCard/Oculus/Shellspace/example.js
+v8 load /storage/extSdCard/Oculus/Shellspace/menu.js
 ' | pbcopy

@@ -19,6 +19,8 @@
 #include "common.h"
 #include "texture.h"
 #include "registry.h"
+
+#include <core/SkCanvas.h>
 #include <turbojpeg.h>
 
 
@@ -250,5 +252,75 @@ sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *widthOu
 	tjDestroy( tjh );
 
 	return strue;
+}
+
+
+sbool Texture_LoadSvg( const char *svg, uint *widthOut, uint *heightOut, SxTextureFormat *formatOut, void **dataOut )
+{
+	SkPaint 	paint;
+	SkBitmap 	bitmap;
+
+	// $$$ This doesn't actually load a SVG :-)
+
+	bitmap.setInfo( SkImageInfo::MakeN32( 400, 300, kOpaque_SkAlphaType ) );
+	bitmap.allocPixels();
+
+	paint.setAntiAlias(true);
+	paint.setTextSize(30);
+
+	SkCanvas 	canvas( bitmap );
+    canvas.drawColor( SK_ColorWHITE );
+
+    paint.setFlags(SkPaint::kAntiAlias_Flag);
+    paint.setColor(SK_ColorBLACK);
+    paint.setTextSize(SkIntToScalar(20));
+
+    static const char message[] = "Hello World!";
+
+    canvas.save();
+    canvas.translate(SkIntToScalar(50), SkIntToScalar(100));
+    canvas.drawText(message, strlen(message), SkIntToScalar(0), SkIntToScalar(0), paint);
+    canvas.restore();
+
+    void *data = malloc( 400 * 300 * 4 );
+
+    canvas.readPixels( SkImageInfo::MakeN32( 400, 300, kOpaque_SkAlphaType ), data, 400 * 4, 0, 0 );
+
+    *widthOut = 400;
+    *heightOut = 300;
+    *formatOut = SxTextureFormat_R8G8B8X8;
+    *dataOut = data;
+
+    return strue;
+}
+
+
+sbool Texture_LoadBitmap( SkBitmap *bitmap, uint *widthOut, uint *heightOut, SxTextureFormat *formatOut, void **dataOut )
+{
+	uint 			width;
+	uint			height;
+	SxTextureFormat format;
+	void 			*data;
+
+	width = bitmap->width();
+	height = bitmap->height();
+
+	if ( bitmap->alphaType() == kOpaque_SkAlphaType )
+		format = SxTextureFormat_R8G8B8X8;
+	else
+		format = SxTextureFormat_R8G8B8A8;
+
+    data = malloc( width * height * 4 );
+    if ( !data )
+    	return sfalse;
+
+    bitmap->readPixels( SkImageInfo::MakeN32( width, height, bitmap->alphaType() ), data, width * 4, 0, 0 );
+
+    *widthOut = width;
+    *heightOut = height;
+    *formatOut = format;
+    *dataOut = data;
+
+    return strue;
 }
 

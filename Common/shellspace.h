@@ -335,7 +335,7 @@ typedef SxResult (*SxUpdateTextureRect)( SxTextureHandle tx, unsigned int x, uns
 //  a string, interpreted by the Skia library.
 // The dimensions and format of the texture are derived from the SVG file.
 // 
-typedef SxResult (*SxLoadTextureSvg)( SxTextureHandle tx, unsigned int x, unsigned int y, const char *svg );
+typedef SxResult (*SxLoadTextureSvg)( SxTextureHandle tx, const char *svg );
 
 //
 // sxLoadTextureJpeg
@@ -344,6 +344,15 @@ typedef SxResult (*SxLoadTextureSvg)( SxTextureHandle tx, unsigned int x, unsign
 // The dimensions and format of the texture are derived from the JPEG header.
 // 
 typedef SxResult (*SxLoadTextureJpeg)( SxTextureHandle tx, const void *jpegData, uint jpegSize );
+
+//
+// sxLoadTextureBitmap
+//
+// Loads a Skia SkBitmap into the texture.
+// The dimensions and format of the texture are derived from the bitmap.
+// 
+class SkBitmap;
+typedef SxResult (*SxLoadTextureBitmap)( SxTextureHandle tx, SkBitmap *bitmap );
 
 //
 // sxPresentTexture
@@ -439,6 +448,7 @@ struct SxPluginInterface
     SxUpdateTextureRect                 updateTextureRect;
     SxLoadTextureSvg                    loadTextureSvg;
     SxLoadTextureJpeg                   loadTextureJpeg;
+    SxLoadTextureBitmap                 loadTextureBitmap;
     SxPresentTexture                    presentTexture;
     SxRegisterEntity                    registerEntity;
     SxUnregisterEntity                  unregisterEntity;

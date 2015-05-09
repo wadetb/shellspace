@@ -29,5 +29,7 @@ void Texture_Present( STexture *texture );
 void Texture_Decommit( STexture *texture );
 
 sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *width, uint *height, SxTextureFormat *format, void **data );
+sbool Texture_LoadSvg( const char *svg, uint *widthOut, uint *heightOut, SxTextureFormat *formatOut, void **dataOut );
+sbool Texture_LoadBitmap( SkBitmap *bitmap, uint *widthOut, uint *heightOut, SxTextureFormat *formatOut, void **dataOut );
 
 #endif

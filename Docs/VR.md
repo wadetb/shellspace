@@ -21,6 +21,7 @@
         Polish
         Battery life & Framerate optimization
 
+
 # Release checkist
 
 + Enable Crittercism
@@ -121,6 +122,13 @@ https://sites.google.com/site/skiadocs/user-documentation/quick-start-guides/and
 http://stackoverflow.com/questions/6342258/using-skia-in-android-ndk
 https://code.google.com/p/skia/wiki/SkCanvas
 
+One possibly easier option would be to bind Skia to the V8 plugin instead of the API runtime.  That would give some Canvas-like drawing abilities without having to construct text SVG data each time, but longer term there is some advantage to sending SVG data over the wire instead of bitmap.
+
+https://github.com/Shouqun/node-skia/tree/master/src
+
+Also a minimal example here:
+https://github.com/google/skia/tree/master/experimental/SkV8Example
+
 # Terminal
 
 https://github.com/jackpal/Android-Terminal-Emulator/blob/master/libtermexec/src/main/jni/process.cpp
@@ -202,6 +210,60 @@ Consider throttling on the VNC thread by not allowing it to contain more than N 
 
 This would be a form of cooperative throttling that might encourage the server to gather more updates together.
 
+# IPC and Network plugins
+
+For network and IPC comms, libuv (used by Node.JS) seems like a good cross platform way to go, just run it on a thread and let it listen and interact with the API.
+
+http://nikhilm.github.io/uvbook/filesystem.html
+
+# Menu
+
+Thinking menus will be represented by JSON objects, a bit like Sublime Text menu files.
+
+    [
+        {
+            "caption": "launch",
+            "id": "launch", 
+            "children": [
+                {
+                    "caption": "vnc 10.0.1.4",
+                    "command": "vnc create vnc_$active_cell; vnc connect vnc_$active_cell 10.0.1.4 asdf"
+                }
+            ]
+        }
+    ]
+
+The menu system will replace certain variables in the command string with special values like the ID of the active cell.
+
+Plugins can "merge" new menus into the menu.  The active widget and the shell can also merge.  Events will be broadcast whenever the menu is opened to give things a chance to populate it.
+
+So, user presses back button and OvrApp broadcasts a "menu open" message.  The menu data structure is initially cleared.  
+
+The menu sends the shell a "menu open" message.  This causes the shell to stop interpreting gaze data.
+
+The shell looks at the active cell and somebody generates some JSON data.  
+
+If there is no cell, the shell puts nothing in the menu.  (Eventually there might be global settings like background color that only come up when there is no active cell)
+
+If it's an empty cell, there is a "launch" menu and a "divide" menu (to make a grid).
+
+If it's a widget, the "menu" message just gets forwarded to the widget, possibly with some initial data to merge in.
+
+Ultimately someone (either the shell or the widget) sends back a "menu populate" message with the JSON for the final menu.  
+
+Then the menu creates entities for the top level, and starts interpreting gaze data.
+When a touch is received, if it hits a menu entity, 
+
+
+
+# Plugin entity registration
+
+To keep things tidy, it might be nice to automatically destroy things that plugins create when the plugin is unloaded.  There are some exceptions to this, but in general it seems reasonable.
+
+To implement it I would add the plugin ID to every register / unregister function.  V8 would do this implictly by registering itself as a plugin when spawning the thread (registerPlugin would no longer be exposed) and implicitly adding the argument.  Would have to come up with something clever for the plugin name like the name of the file without path (example.js).
+
+Possibly need to sanitize the name and/or add some more characters to the allowable set for registry entries.
+
 # App ideas
 
 Post-It
@@ -270,7 +332,18 @@ http://vrjam.challengepost.com/submissions/37014-rex - Real estate
 
 http://vrjam.challengepost.com/submissions/36844-chess-vr - Really?
 
-# Builds
+# Build patch
 
-+ Test1 -
-  https://s3.amazonaws.com/vrjam-submissions/signed/2ad5dd20bc9b/rnpUzvDdRo6w6pkmAUqf_Shellspace-test1.apk
+define cmd-build-shared-library
+$(PRIVATE_CXX) \
+    -Wl,-soname,$(notdir $(LOCAL_BUILT_MODULE)) \
+    -shared \
+    --sysroot=$(call host-path,$(PRIVATE_SYSROOT_LINK)) \
+    -Wl,--start-group \  <----
+    $(PRIVATE_LINKER_OBJECTS_AND_LIBRARIES) \
+    -Wl,--end-group \    <----
+    $(PRIVATE_LDFLAGS) \
+    $(PRIVATE_LDLIBS) \
+    -o $(call host-path,$(LOCAL_BUILT_MODULE))
+endef
+

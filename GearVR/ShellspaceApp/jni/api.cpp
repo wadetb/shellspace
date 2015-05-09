@@ -615,17 +615,41 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 }
 
 
-SxResult sxLoadTextureSvg( SxTextureHandle tex, unsigned int x, unsigned int y, const char *svg )
+SxResult sxLoadTextureSvg( SxTextureHandle tex, const char *svg )
 {
-	SRef 		ref;
+	SRef 			ref;
+	STexture 		*texture;
+	uint 			width;
+	uint 			height;
+	SxTextureFormat format;
+	void 			*data;
+
+	if ( !Texture_LoadSvg( svg, &width, &height, &format, &data ) )
+		return SX_INVALID_PARAMETER;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
 	ref = Registry_GetTextureRef( tex );
 	if ( ref == S_NULL_REF )
+	{
+		free( data );
 		return SX_INVALID_HANDLE;
+	}
 
-	return SX_NOT_IMPLEMENTED;
+	texture = Registry_GetTexture( ref );
+	assert( texture );
+
+	texture->width = width;
+	texture->height = height;
+	texture->format = format;
+
+	InQueue_ResizeTexture( ref, width, height, format );
+	InQueue_UpdateTextureRect( ref, 0, 0, width, height, data );
+	InQueue_PresentTexture( ref );
+
+	free( data );
+
+	return SX_OK;
 }
 
 
@@ -645,7 +669,10 @@ SxResult sxLoadTextureJpeg( SxTextureHandle tex, const void *jpegData, uint jpeg
 
 	ref = Registry_GetTextureRef( tex );
 	if ( ref == S_NULL_REF )
+	{
+		free( data );
 		return SX_INVALID_HANDLE;
+	}
 
 	texture = Registry_GetTexture( ref );
 	assert( texture );
@@ -657,6 +684,46 @@ SxResult sxLoadTextureJpeg( SxTextureHandle tex, const void *jpegData, uint jpeg
 	InQueue_ResizeTexture( ref, width, height, format );
 	InQueue_UpdateTextureRect( ref, 0, 0, width, height, data );
 	InQueue_PresentTexture( ref );
+
+	free( data );
+
+	return SX_OK;
+}
+
+
+SxResult sxLoadTextureBitmap( SxTextureHandle tex, SkBitmap *bitmap )
+{
+	SRef 			ref;
+	STexture 		*texture;
+	uint 			width;
+	uint 			height;
+	SxTextureFormat format;
+	void 			*data;
+
+	if ( !Texture_LoadBitmap( bitmap, &width, &height, &format, &data ) )
+		return SX_INVALID_PARAMETER;
+
+	Thread_ScopeLock lock( MUTEX_API );
+
+	ref = Registry_GetTextureRef( tex );
+	if ( ref == S_NULL_REF )
+	{
+		free( data );
+		return SX_INVALID_HANDLE;
+	}
+
+	texture = Registry_GetTexture( ref );
+	assert( texture );
+
+	texture->width = width;
+	texture->height = height;
+	texture->format = format;
+
+	InQueue_ResizeTexture( ref, width, height, format );
+	InQueue_UpdateTextureRect( ref, 0, 0, width, height, data );
+	InQueue_PresentTexture( ref );
+
+	free( data );
 
 	return SX_OK;
 }
@@ -896,6 +963,7 @@ SxPluginInterface g_pluginInterface =
     sxUpdateTextureRect,                    // updateTextureRect
     sxLoadTextureSvg,                     	// loadTextureSvg
     sxLoadTextureJpeg,                    	// loadTextureJpeg
+    sxLoadTextureBitmap,                    // loadTextureBitmap
     sxPresentTexture,                    	// presentTexture
     sxRegisterEntity,                       // registerEntity
     sxUnregisterEntity,                     // unregisterEntity

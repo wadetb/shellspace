@@ -21,11 +21,13 @@
 #include "command.h"
 #include "file.h"
 #include "message.h"
+
 #include <include/v8.h>
 #include <include/libplatform/libplatform.h>
 
-
 using namespace v8;
+
+#include "v8skia.h"
 
 
 struct SV8Instance
@@ -472,6 +474,20 @@ void V8_UpdateTextureRectCallback( const FunctionCallbackInfo<Value>& args )
 }
 
 
+void V8_LoadTextureSvgCallback( const FunctionCallbackInfo<Value>& args )
+{
+	HandleScope handleScope( args.GetIsolate() );
+
+	String::Utf8Value arg0( args[0] );
+	String::Utf8Value arg1( args[1] );
+
+	V8_CheckResult( args.GetIsolate(), 
+		s_v8.sx->loadTextureSvg( 
+			V8_StringArg( arg0 ),
+			V8_StringArg( arg1 ) ) );
+}
+
+
 void V8_LoadTextureJpegCallback( const FunctionCallbackInfo<Value>& args )
 {
 	HandleScope handleScope( args.GetIsolate() );
@@ -486,6 +502,23 @@ void V8_LoadTextureJpegCallback( const FunctionCallbackInfo<Value>& args )
 			V8_StringArg( arg0 ),
 			buf.Data(), 
 			buf.ByteLength() ) );
+}
+
+
+void V8_LoadTextureBitmapCallback( const FunctionCallbackInfo<Value>& args )
+{
+	HandleScope handleScope( args.GetIsolate() );
+
+	String::Utf8Value arg0( args[0] );
+
+    SkBitmap *bitmap = V8_UnwrapBitmap( args.GetIsolate(), args[1] );
+    if ( !bitmap )
+    	return;
+
+	V8_CheckResult( args.GetIsolate(), 
+		s_v8.sx->loadTextureBitmap( 
+			V8_StringArg( arg0 ),
+			bitmap ) );
 }
 
 
@@ -557,13 +590,13 @@ void V8_GetVector3( Isolate *isolate, Handle<Value> &object, SxVector3 *result )
 {
  	Handle<Array> array = Handle<Array>::Cast( object );
 
- 	Local<Number> xNumber = array->Get( Integer::New( isolate, 0 ) )->ToNumber();
+ 	Local<Number> xNumber = array->Get( 0 )->ToNumber();
  	result->x = xNumber->Value();
 
- 	Local<Number> yNumber = array->Get( Integer::New( isolate, 1 ) )->ToNumber();
+ 	Local<Number> yNumber = array->Get( 1 )->ToNumber();
  	result->y = yNumber->Value();
 
- 	Local<Number> zNumber = array->Get( Integer::New( isolate, 2 ) )->ToNumber();
+ 	Local<Number> zNumber = array->Get( 2 )->ToNumber();
  	result->z = zNumber->Value();
 }
 
@@ -572,13 +605,13 @@ void V8_GetAngles( Isolate *isolate, Handle<Value> &object, SxAngles *result )
 {
  	Handle<Array> array = Handle<Array>::Cast( object );
 
- 	Local<Number> yawNumber = array->Get( Integer::New( isolate, 0 ) )->ToNumber();
+ 	Local<Number> yawNumber = array->Get( 0 )->ToNumber();
  	result->yaw = yawNumber->Value();
 
- 	Local<Number> pitchNumber = array->Get( Integer::New( isolate, 1 ) )->ToNumber();
+ 	Local<Number> pitchNumber = array->Get( 1 )->ToNumber();
  	result->pitch = pitchNumber->Value();
 
- 	Local<Number> rollNumber = array->Get( Integer::New( isolate, 2 ) )->ToNumber();
+ 	Local<Number> rollNumber = array->Get( 2 )->ToNumber();
  	result->roll = rollNumber->Value();
 }
 
@@ -779,8 +812,14 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 	global->Set( String::NewFromUtf8( isolate, "updateTextureRect" ), 
 		         FunctionTemplate::New( isolate, V8_UpdateTextureRectCallback ) );
 
+	global->Set( String::NewFromUtf8( isolate, "loadTextureSvg" ), 
+		         FunctionTemplate::New( isolate, V8_LoadTextureSvgCallback ) );
+
 	global->Set( String::NewFromUtf8( isolate, "loadTextureJpeg" ), 
 		         FunctionTemplate::New( isolate, V8_LoadTextureJpegCallback ) );
+
+	global->Set( String::NewFromUtf8( isolate, "loadTextureBitmap" ), 
+		         FunctionTemplate::New( isolate, V8_LoadTextureBitmapCallback ) );
 
 	global->Set( String::NewFromUtf8( isolate, "presentTexture" ), 
 		         FunctionTemplate::New( isolate, V8_PresentTextureCallback ) );
@@ -807,6 +846,7 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 	global->Set( String::NewFromUtf8( isolate, "parentEntity" ), 
 		         FunctionTemplate::New( isolate, V8_ParentEntityCallback ) );
 
+	V8Skia_Init( isolate, global );
 
 	return Context::New( isolate, NULL, global );
 }

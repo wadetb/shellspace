@@ -1,6 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 # Prebuilt V8
+
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_base
 LOCAL_SRC_FILES := v8/libv8_base.a
@@ -27,6 +28,13 @@ LOCAL_MODULE    := libv8_nosnapshot
 LOCAL_SRC_FILES := v8/libv8_nosnapshot.a
 include $(PREBUILT_STATIC_LIBRARY)
 
+# Prebuilt Skia 
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libskia_android
+LOCAL_SRC_FILES := skia/libskia_android.so
+include $(PREBUILT_SHARED_LIBRARY)
+
 # Shellspace Shared Object
 include $(CLEAR_VARS)
 
@@ -42,10 +50,11 @@ PLUGIN_SRC_FILES := \
 	libvncserver/libvncclient/rfbproto.c \
 	libvncserver/libvncclient/sockets.c \
 	libvncserver/libvncclient/tls_none.c \
-	libvncserver/libvncclient/vncviewer.c \
-	shellplugin.cpp 
+	libvncserver/libvncclient/vncviewer.c 
 
-PLUGIN_SRC_FILES += v8plugin.cpp 
+PLUGIN_SRC_FILES += shellplugin.cpp 
+
+PLUGIN_SRC_FILES += v8plugin.cpp v8skia.cpp
 
 COMMON_SRC_FILES := \
 	api.cpp \
@@ -67,18 +76,29 @@ COMMON_SRC_FILES := \
 #	coffeecatch/coffeejni.c 
 
 LOCAL_ARM_MODE   := arm
+
 # Try this: 
 #LOCAL_ARM_NEON  := true				# compile with neon support enabled
 #LOCAL+CFLAGS += -O3 -funroll-loops -ftree-vectorize -ffast-math -fpermissive
 
+#  LOCAL_SRC_FILES_TARGET_CFLAGS.<filename> contains the list of
+#      target-specific C compiler flags used to compile a given
+#      source file. This is set by the function TARGET-set-cflags
+#      defined in the toolchain's setup.mk script.
+
 LOCAL_STATIC_LIBRARIES	 += libv8_base libv8_nosnapshot libv8_libplatform libv8_libbase
+LOCAL_SHARED_LIBRARIES   += libskia_android
 
 LOCAL_MODULE     := ovrapp
+
 LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(PLUGIN_SRC_FILES)
+
 LOCAL_CFLAGS	 += -Wall -x c++ -std=c++11 
+LOCAL_CFLAGS     += -funwind-tables -Wl,--no-merge-exidx-entries
+
 LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common 
 LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/v8
-LOCAL_CFLAGS     += -funwind-tables -Wl,--no-merge-exidx-entries
-LOCAL_C_INCLUDES += 
+LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/skia/include
+LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/skia/include/config
 
 include $(BUILD_SHARED_LIBRARY)
