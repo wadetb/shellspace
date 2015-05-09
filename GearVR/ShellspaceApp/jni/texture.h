@@ -28,4 +28,6 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 void Texture_Present( STexture *texture );
 void Texture_Decommit( STexture *texture );
 
+sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *width, uint *height, SxTextureFormat *format, void **data );
+
 #endif

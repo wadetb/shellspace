@@ -334,7 +334,7 @@ void Cmd_AddFile( const char *fileName )
 
 	LOG( "Executing %s", fileName );
 
-	text = (char *)File_Read( fileName );
+	text = (char *)File_Read( fileName, NULL );
 	if ( !text )
 		return;
 

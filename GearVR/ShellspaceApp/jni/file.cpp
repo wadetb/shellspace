@@ -2,14 +2,18 @@
 #include "file.h"
 
 
-byte *File_Read( const char *fileName )
+// $$$ This needs to locate the file via search paths.
+byte *File_Read( const char *fileName, uint *bytesRead )
 {
 	FILE 	*in;
 	size_t 	length;
 	byte 	*buffer;
 	size_t 	read;
 
-	in = fopen( fileName, "r" );
+	if ( bytesRead )
+		*bytesRead = 0;
+
+	in = fopen( fileName, "rb" );
 	if ( !in )
 	{
 		LOG( "Failed to load %s", fileName );
@@ -38,6 +42,9 @@ byte *File_Read( const char *fileName )
 	}
 	
 	buffer[length] = 0;
+
+	if ( bytesRead )
+		*bytesRead = length;
 
 	fclose( in );
 

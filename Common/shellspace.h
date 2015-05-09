@@ -29,6 +29,7 @@ enum SxResult
     SX_INVALID_HANDLE,                      // Handle was invalid or already unregistered
     SX_ALREADY_REGISTERED,                  // Handle was already registered
     SX_OUT_OF_RANGE,                        // Argument was out of range
+    SX_INVALID_PARAMETER,                   // Invalid data value(s) given
 };
 
 //
@@ -328,21 +329,21 @@ typedef SxResult (*SxClearTexture)( SxTextureHandle tex, SxColor color );
 typedef SxResult (*SxUpdateTextureRect)( SxTextureHandle tx, unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const void *data );
 
 //
-// sxRenderTextureSvg
+// sxLoadTextureSvg
 //
-// Renders 2D vector graphics into the texture from XML SVG commands passed via
+// Loads 2D vector graphics into the texture from XML SVG commands passed via
 //  a string, interpreted by the Skia library.
-// The dimensions of the area rendered are derived from the SVG file.
+// The dimensions and format of the texture are derived from the SVG file.
 // 
-typedef SxResult (*SxRenderTextureSvg)( SxTextureHandle tx, unsigned int x, unsigned int y, const char *svg );
+typedef SxResult (*SxLoadTextureSvg)( SxTextureHandle tx, unsigned int x, unsigned int y, const char *svg );
 
 //
-// sxRenderTextureJpeg
+// sxLoadTextureJpeg
 //
-// Renders JPEG image data into the texture.
-// The dimensions of the area rendered are derived from the JPEG header.
+// Loads JPEG image data into the texture.
+// The dimensions and format of the texture are derived from the JPEG header.
 // 
-typedef SxResult (*SxRenderTextureJpeg)( SxTextureHandle tx, unsigned int x, unsigned int y, const void *jpeg );
+typedef SxResult (*SxLoadTextureJpeg)( SxTextureHandle tx, const void *jpegData, uint jpegSize );
 
 //
 // sxPresentTexture
@@ -436,8 +437,8 @@ struct SxPluginInterface
     SxSizeTexture                       sizeTexture;
     SxClearTexture                      clearTexture;
     SxUpdateTextureRect                 updateTextureRect;
-    SxRenderTextureSvg                  renderTextureSvg;
-    SxRenderTextureJpeg                 renderTextureJpeg;
+    SxLoadTextureSvg                    loadTextureSvg;
+    SxLoadTextureJpeg                   loadTextureJpeg;
     SxPresentTexture                    presentTexture;
     SxRegisterEntity                    registerEntity;
     SxUnregisterEntity                  unregisterEntity;

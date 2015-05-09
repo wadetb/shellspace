@@ -125,6 +125,15 @@ https://code.google.com/p/skia/wiki/SkCanvas
 
 https://github.com/jackpal/Android-Terminal-Emulator/blob/master/libtermexec/src/main/jni/process.cpp
 
+http://www.freedesktop.org/wiki/Software/kmscon/libtsm/
+http://cgit.freedesktop.org/~dvdhrm/wlterm/tree/src
+
+https://bitbucket.org/caveadventure/tiletel/overview
+
+# Browser
+
+http://www.netsurf-browser.org/about/
+
 # Keyboard
 
 + Bind a "console" hotkey with an editor for arbitrary console commands.

@@ -21,6 +21,7 @@
 #include "entity.h"
 #include "inqueue.h"
 #include "registry.h"
+#include "texture.h"
 #include "thread.h"
 
 
@@ -614,7 +615,7 @@ SxResult sxUpdateTextureRect( SxTextureHandle tex, unsigned int x, unsigned int 
 }
 
 
-SxResult sxRenderTextureSvg( SxTextureHandle tex, unsigned int x, unsigned int y, const char *svg )
+SxResult sxLoadTextureSvg( SxTextureHandle tex, unsigned int x, unsigned int y, const char *svg )
 {
 	SRef 		ref;
 
@@ -628,9 +629,17 @@ SxResult sxRenderTextureSvg( SxTextureHandle tex, unsigned int x, unsigned int y
 }
 
 
-SxResult sxRenderTextureJpeg( SxTextureHandle tex, unsigned int x, unsigned int y, const void *jpeg )
+SxResult sxLoadTextureJpeg( SxTextureHandle tex, const void *jpegData, uint jpegSize )
 {
-	SRef 		ref;
+	SRef 			ref;
+	STexture 		*texture;
+	uint 			width;
+	uint 			height;
+	SxTextureFormat format;
+	void 			*data;
+
+	if ( !Texture_DecompressJpeg( jpegData, jpegSize, &width, &height, &format, &data ) )
+		return SX_INVALID_PARAMETER;
 
 	Thread_ScopeLock lock( MUTEX_API );
 
@@ -638,7 +647,18 @@ SxResult sxRenderTextureJpeg( SxTextureHandle tex, unsigned int x, unsigned int 
 	if ( ref == S_NULL_REF )
 		return SX_INVALID_HANDLE;
 
-	return SX_NOT_IMPLEMENTED;
+	texture = Registry_GetTexture( ref );
+	assert( texture );
+
+	texture->width = width;
+	texture->height = height;
+	texture->format = format;
+
+	InQueue_ResizeTexture( ref, width, height, format );
+	InQueue_UpdateTextureRect( ref, 0, 0, width, height, data );
+	InQueue_PresentTexture( ref );
+
+	return SX_OK;
 }
 
 
@@ -874,8 +894,8 @@ SxPluginInterface g_pluginInterface =
     sxSizeTexture,                          // sizeTexture
     sxClearTexture,                         // clearTexture
     sxUpdateTextureRect,                    // updateTextureRect
-    sxRenderTextureSvg,                     // renderTextureSvg
-    sxRenderTextureJpeg,                    // renderTextureJpeg
+    sxLoadTextureSvg,                     	// loadTextureSvg
+    sxLoadTextureJpeg,                    	// loadTextureJpeg
     sxPresentTexture,                    	// presentTexture
     sxRegisterEntity,                       // registerEntity
     sxUnregisterEntity,                     // unregisterEntity

@@ -420,6 +420,19 @@ sbool App_Command()
 		return strue;
 	}
 
+	if ( strcasecmp( Cmd_Argv( 0 ), "log" ) == 0 )
+	{
+		if ( Cmd_Argc() != 2 )
+		{
+			LOG( "Usage: log <msg>" );
+			return strue;
+		}
+
+		LOG( Cmd_Argv( 1 ) );
+
+		return strue;
+	}
+
 	if ( strcasecmp( Cmd_Argv( 0 ), "notify" ) == 0 )
 	{
 		if ( Cmd_Argc() != 2 )

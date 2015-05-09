@@ -430,6 +430,23 @@ void V8_UpdateTextureRectCallback( const FunctionCallbackInfo<Value>& args )
 }
 
 
+void V8_LoadTextureJpegCallback( const FunctionCallbackInfo<Value>& args )
+{
+	HandleScope handleScope( args.GetIsolate() );
+
+	String::Utf8Value arg0( args[0] );
+
+    Local<ArrayBuffer> arg1 = Local<ArrayBuffer>::Cast( args[1] );
+    ArrayBuffer::Contents buf = arg1->GetContents();
+
+	V8_CheckResult( args.GetIsolate(), 
+		s_v8.sx->loadTextureJpeg( 
+			V8_StringArg( arg0 ),
+			buf.Data(), 
+			buf.ByteLength() ) );
+}
+
+
 void V8_PresentTextureCallback( const FunctionCallbackInfo<Value>& args )
 {
 	HandleScope handleScope( args.GetIsolate() );
@@ -575,26 +592,48 @@ void V8_ParentEntityCallback( const FunctionCallbackInfo<Value>& args )
 
 void IncludeCallback( const FunctionCallbackInfo<Value>& args ) 
 {
-    for ( int i = 0; i < args.Length(); i++ )
-    {
-    	String::Utf8Value fileNameStr( args[i] );
+	HandleScope handleScope( args.GetIsolate() );
 
-        char *text = (char *)File_Read( *fileNameStr );
-        if ( !text )
-		{
-			V8_Throw( args.GetIsolate(), "Unable to open %s", *fileNameStr );
-		    return;
-		}
+	String::Utf8Value fileNameStr( args[0] );
 
-        Handle<String> source = String::NewFromUtf8( args.GetIsolate(), text );
-        free( text );
+    char *text = (char *)File_Read( *fileNameStr, NULL );
+    if ( !text )
+	{
+		V8_Throw( args.GetIsolate(), "Unable to open %s", *fileNameStr );
+	    return;
+	}
 
-        Handle<Script> script = Script::Compile( source );
+    Handle<String> source = String::NewFromUtf8( args.GetIsolate(), text );
+    free( text );
 
-        Handle<Value> result = script->Run();
+    Handle<Script> script = Script::Compile( source );
 
-	 	args.GetReturnValue().Set( result );
-    }
+    Handle<Value> result = script->Run();
+
+ 	args.GetReturnValue().Set( result );
+}
+
+
+void AssetCallback( const FunctionCallbackInfo<Value>& args ) 
+{
+	uint 	dataSize;
+
+	HandleScope handleScope( args.GetIsolate() );
+
+	String::Utf8Value fileNameStr( args[0] );
+
+    char *data = (char *)File_Read( *fileNameStr, &dataSize );
+    if ( !data )
+	{
+		V8_Throw( args.GetIsolate(), "Unable to open %s", *fileNameStr );
+	    return;
+	}
+
+    Handle<ArrayBuffer> buf = ArrayBuffer::New( args.GetIsolate(), 
+    	data, dataSize, 
+    	ArrayBufferCreationMode::kInternalized );
+
+ 	args.GetReturnValue().Set( buf );
 }
 
 
@@ -604,6 +643,10 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 
 	global->Set( String::NewFromUtf8( isolate, "include" ), 
 		         FunctionTemplate::New( isolate, IncludeCallback ) );
+
+	global->Set( String::NewFromUtf8( isolate, "asset" ), 
+		         FunctionTemplate::New( isolate, AssetCallback ) );
+
 
 	global->Set( String::NewFromUtf8( isolate, "registerPlugin" ), 
 		         FunctionTemplate::New( isolate, V8_RegisterPluginCallback ) );
@@ -670,6 +713,9 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 	global->Set( String::NewFromUtf8( isolate, "updateTextureRect" ), 
 		         FunctionTemplate::New( isolate, V8_UpdateTextureRectCallback ) );
 
+	global->Set( String::NewFromUtf8( isolate, "loadTextureJpeg" ), 
+		         FunctionTemplate::New( isolate, V8_LoadTextureJpegCallback ) );
+
 	global->Set( String::NewFromUtf8( isolate, "presentTexture" ), 
 		         FunctionTemplate::New( isolate, V8_PresentTextureCallback ) );
 
@@ -700,12 +746,68 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 }
 
 
+void V8_ReportException( Isolate* isolate, TryCatch* tryCatch ) 
+{
+	char 		underLine[1024];
+
+    HandleScope handleScope( isolate );
+
+    String::Utf8Value exception( tryCatch->Exception() );
+    const char* exceptionString = V8_StringArg( exception );
+
+    Handle<Message> message = tryCatch->Message();
+    if (message.IsEmpty()) 
+    {
+        // V8 didn't provide any extra information about this error; just
+        // print the exception.
+        LOG( exceptionString );
+        return;
+    }
+
+    // Print (filename):(line number): (message).
+    String::Utf8Value filename( message->GetScriptResourceName() );
+    const char* filenameString = V8_StringArg(filename);
+
+    int lineNumber = message->GetLineNumber();
+
+    LOG( "%s:%i: %s", filenameString, lineNumber, exceptionString );
+
+    // Print line of source code.
+    String::Utf8Value sourceLine( message->GetSourceLine() );
+    const char* sourceLineString = V8_StringArg( sourceLine );
+    LOG( sourceLineString );
+
+    // Print wavy underline (GetUnderline is deprecated).
+    uint start = message->GetStartColumn();
+    uint end = message->GetEndColumn();
+
+    uint i;
+    for ( i = 0; i < end; i++ )
+    {
+    	if ( i >= sizeof( underLine ) - 1 )
+    		break;
+    	underLine[i] = i < start ? ' ' : '^';
+    }
+    underLine[i] = '\0';
+    LOG( underLine );
+
+    String::Utf8Value stackTrace( tryCatch->StackTrace() );
+    if ( stackTrace.length() > 0 ) 
+    {
+        const char* stackTraceString = V8_StringArg( stackTrace );
+        LOG( stackTraceString );
+    }
+}
+
+
 void *V8_InstanceThread( void *threadContext )
 {
 	SV8Instance	*v8;
 
 	v8 = (SV8Instance *)threadContext;
 	assert( v8 );
+
+	LOG( "V8 instance %s (%p) starting up...", v8->fileName, threadContext );
 
 	v8->isolate = Isolate::New();
 
@@ -718,20 +820,30 @@ void *V8_InstanceThread( void *threadContext )
 		{
 			Context::Scope contextScope( context );
 
+			TryCatch tryCatch( v8->isolate );
+
+		    Local<String> fileName = String::NewFromUtf8( v8->isolate, v8->fileName );
 			Local<String> source = String::NewFromUtf8( v8->isolate, v8->source );
-			Local<Script> script = Script::Compile( source );
+			
+			Local<Script> script = Script::Compile( source, fileName );
 
-			TryCatch trycatch( v8->isolate );
-
-			Local<Value> result = script->Run();
-
-			if ( result.IsEmpty() )
+		    if ( script.IsEmpty() )
 			{
-				Local<Value> exception = trycatch.Exception();
-				LOG( "Exception in %s:\n%s", v8->fileName, *String::Utf8Value( exception ) );
+				V8_ReportException( v8->isolate, &tryCatch );
+			}
+			else
+			{
+				script->Run();
+
+				if ( tryCatch.HasCaught() )
+				{
+					V8_ReportException( v8->isolate, &tryCatch );
+				}
 			}
 		}
 	}
+
+	LOG( "V8 instance %s (%p) shutting down...", v8->fileName, threadContext );
 
 	v8->isolate->Dispose();
 
@@ -754,7 +866,7 @@ void V8_LoadCmd( const SMsg *msg, void *context )
 
 	fileName = Msg_Argv( msg, 1 );
 
-	source = (char *)File_Read( fileName );
+	source = (char *)File_Read( fileName, NULL );
 	if ( !source )
 		return;
 

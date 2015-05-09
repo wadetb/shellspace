@@ -19,6 +19,7 @@
 #include "common.h"
 #include "texture.h"
 #include "registry.h"
+#include <turbojpeg.h>
 
 
 GLuint Texture_GetGLFormat( SxTextureFormat format )
@@ -199,3 +200,55 @@ void Texture_Decommit( STexture *texture )
 		}
 	}
 }
+
+
+sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *widthOut, uint *heightOut, SxTextureFormat *formatOut, void **dataOut )
+{
+	tjhandle 	tjh;
+	int 		tjerr;
+	int 		width;
+	int 		height;
+	void 		*data;
+
+	tjh = tjInitDecompress();
+	if ( !tjh )
+	{
+		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		return sfalse;
+	}
+
+	tjerr = tjDecompressHeader( tjh, (byte *)jpegData, jpegSize, &width, &height );
+	if ( tjerr < 0 )
+	{
+		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		tjDestroy( tjh );
+		return sfalse;
+	}
+
+	data = malloc( width * height * 4 );
+	if ( !data )
+	{
+		LOG( "Texture_DecompressJpeg: Unable to allocate %d bytes", width * height * 4 );
+		tjDestroy( tjh );
+		return sfalse;
+	}
+
+	tjerr = tjDecompress2( tjh, (byte *)jpegData, jpegSize, (byte *)data, width, width * 4, height, TJPF_RGBX, 0 );
+	if ( tjerr < 0 )
+	{
+		free( data );
+		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		tjDestroy( tjh );
+		return sfalse;
+	}
+
+	*widthOut = width;
+	*heightOut = height;
+	*formatOut = SxTextureFormat_R8G8B8X8;
+	*dataOut = data;
+
+	tjDestroy( tjh );
+
+	return strue;
+}
+

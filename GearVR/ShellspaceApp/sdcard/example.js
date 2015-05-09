@@ -1,19 +1,38 @@
 //
 // Shellspace Example script
 //
+include( '/storage/extSdCard/Oculus/Shellspace/shellspace.js' );
 
 // All IDs in Shellspace are global, so entity and widget names need to be
 //  tagged with the plugin so as not to conflict.
-PLUGIN = 'shellspace_example'
-WIDGET = PLUGIN + '_w0'
-ENTITY = PLUGIN + '_e0'
+PLUGIN  = 'shellspace_example'
+WIDGET  = PLUGIN + '_widget'
+ENTITY  = PLUGIN + '_ent'
+TEXTURE = PLUGIN + '_tex'
 
-registerPlugin( PLUGIN, 0 );
+// Clean up from any prior plugin loads.
+try { unregisterTexture( TEXTURE ); } catch (e) {}
+try { unregisterEntity( ENTITY ); } catch (e) {}
+try { unregisterWidget( WIDGET ); } catch (e) {}
+try { unregisterPlugin( PLUGIN ); } catch (e) {}
+
+ASSETS = {
+	'safari':   asset( '/storage/extSdCard/Oculus/Shellspace/safari.jpg' ),
+	'terminal': asset( '/storage/extSdCard/Oculus/Shellspace/terminal.jpg' )
+};
+
+registerPlugin( PLUGIN, SxPluginKind_Widget );
 registerEntity( ENTITY );
 
-setEntityGeometry( ENTITY, "quad" ); // An internal quad.
-setEntityTexture( ENTITY, "white" );
-orientEntity( ENTITY, { origin: [ 0, 0, -10], angles: [0, 0, 0], scale: [1, 1, 1] } );
+registerTexture( TEXTURE );
+loadTextureJpeg( TEXTURE, ASSETS['safari'] );
+
+setEntityGeometry( ENTITY, "quad" ); // A builtin unit quad
+setEntityTexture( ENTITY, TEXTURE );
+orientEntity( ENTITY, { origin: [ 0, 0, -5], angles: [0, 0, 0], scale: [1, 1, 1] } );
+
+// Submit our entity to the shell.
+postMessage( "shell register " + WIDGET + " " + ENTITY );
 
 for ( ;; ) {
 	var msg = receivePluginMessage( PLUGIN, 0 );
