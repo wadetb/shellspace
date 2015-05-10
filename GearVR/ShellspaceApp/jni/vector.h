@@ -113,9 +113,9 @@ inline float Vec3LengthSqr( const SxVector3 &a )
 
 inline void Vec3Mad( const SxVector3 &a, float b, const SxVector3 &c, SxVector3 *out )
 {
-    out->x = a.x * b * c.x;
-    out->y = a.y * b * c.y;
-    out->z = a.z * b * c.z;
+    out->x = a.x + b * c.x;
+    out->y = a.y + b * c.y;
+    out->z = a.z + b * c.z;
 }
 
 inline void Vec3Mul( const SxVector3 &a, const SxVector3 &b, SxVector3 *out )

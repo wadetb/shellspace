@@ -14,7 +14,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "command.h"
 #include "entity.h"
 #include "inqueue.h"
-#include "keyboard.h"
+// #include "keyboard.h"
 #include "registry.h"
 #include "thread.h"
 
@@ -246,7 +246,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	VNC_InitPlugin();
 	V8_InitPlugin();
 
-	Keyboard_Init();
+	// Keyboard_Init();
 
 	Cmd_AddFile( "/storage/extSdCard/Oculus/Shellspace/autoexec.vrcfg" );
 }
@@ -271,8 +271,9 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 	{
 		if ( eventType == KeyState::KEY_EVENT_SHORT_PRESS )
 		{
-			Keyboard_Orient( s_app.lastGazeDir, 20.0f );
-			Keyboard_Toggle();
+			// Keyboard_Orient( s_app.lastGazeDir, 20.0f );
+			// Keyboard_Toggle();
+			Cmd_Add( "shell menu open" );
 		}
 
 		return true;
@@ -282,7 +283,7 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 		 eventType == KeyState::KEY_EVENT_UP )
 	{
 		isDown = (eventType == KeyState::KEY_EVENT_DOWN);
-		Cmd_Add( "shell key %d %d", keyCode, isDown );
+		Cmd_Add( "shell key %d %s", keyCode, isDown ? "down" : "up" );
 		return true;
 	}
 
@@ -334,7 +335,7 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 
 	Entity_Draw( view );
 
-	Keyboard_Draw();
+	// Keyboard_Draw();
 
 	GL_CheckErrors( "draw" );
 
@@ -351,7 +352,7 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 
 	Matrix4f centerViewMatrix = Scene.CenterViewMatrix();
 	Vector3f eyeDir = GetViewMatrixForward( centerViewMatrix );
-	Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
+	// Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
 
 	// LOG( "APITest_Frame Enter" );
 	// APITest_Frame();
@@ -359,12 +360,7 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 
 	InQueue_Frame();
 
-	Keyboard_Frame( vrFrame.Input.buttonState, eyePos, eyeDir );
-
-	if ( !Keyboard_IsVisible() )
-	{
-		// Cmd_Add( "vnc0 touch %d", (vrFrame.Input.buttonState & BUTTON_TOUCH) != 0 );
-	}
+	// Keyboard_Frame( vrFrame.Input.buttonState, eyePos, eyeDir );
 
 	SxVector3 gazeDir;
 	Vec3Set( &gazeDir, eyeDir.x, eyeDir.y, eyeDir.z );
@@ -374,6 +370,20 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 		Vec3Copy( gazeDir, &s_app.lastGazeDir );
 		Cmd_Add( "shell gaze %f %f %f", gazeDir.x, gazeDir.y, gazeDir.z );
 	}
+
+	if ( vrFrame.Input.buttonState & BUTTON_SWIPE_UP )
+		Cmd_Add( "shell swipe up" );
+	if ( vrFrame.Input.buttonState & BUTTON_SWIPE_DOWN )
+		Cmd_Add( "shell swipe down" );
+	if ( vrFrame.Input.buttonState & BUTTON_SWIPE_FORWARD )
+		Cmd_Add( "shell swipe forward" );
+	if ( vrFrame.Input.buttonState & BUTTON_SWIPE_BACK )
+		Cmd_Add( "shell swipe back" );
+
+	if ( vrFrame.Input.buttonState & BUTTON_TOUCH_SINGLE )
+		Cmd_Add( "shell tap single" );
+	if ( vrFrame.Input.buttonState & BUTTON_TOUCH_DOUBLE )
+		Cmd_Add( "shell tap double" );
 
 	Cmd_Frame();
 

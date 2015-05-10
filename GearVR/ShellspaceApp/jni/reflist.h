@@ -81,12 +81,15 @@ template <typename T>
 void RefList_Remove( T* t, uint linkOffset, SRef *head )
 {
 	SRefLink	*link;
+	SRef 		prevRef;
 	SEntity 	*next;
 	SEntity 	*prev;
 	SRefLink	*nextLink;
 	SRefLink	*prevLink;
 
 	link = RefList_GetLink( t, linkOffset );
+	
+	prevRef = link->prev;
 
 	if ( link->prev != S_NULL_REF )
 	{
@@ -106,7 +109,7 @@ void RefList_Remove( T* t, uint linkOffset, SRef *head )
 	{
 		next = RefList_Get<T>( link->next );
 		nextLink = RefList_GetLink( next, linkOffset );
-		nextLink->prev = link->prev;
+		nextLink->prev = prevRef;
 
 		link->next = S_NULL_REF;
 	}

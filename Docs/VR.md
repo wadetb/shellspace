@@ -26,10 +26,10 @@
 
 + Enable Crittercism
 + Zip and upload obj directory to Crittercism
++ Remove personal .sig
++ Run the release checker (ignore LAUNCHER msg)
 
 # TODO
-
-# For this release:
 
 # Shell
 
@@ -39,15 +39,13 @@ Idea: When back button is pressed, shell sends a "menu" message to the active wi
 
 # VNC
 
-+ SRGB encode color values
-
-+ Separate tweaks for xCurve and yCurve.
++ SRGB encode color values?  Not sure what space they come from the server in.
 
 + client->appData.qualityLevel - runtime setting?
 
-+ When app suspends, the texture input queue fills up and this (currently, thanks to Present semantics) deadlocks the app.  Detect this and stop sending updates, but accumulate a texture dirty rectangle.  When unsuspended, submit the entire dirty rectangle.
++ When app suspends, detect this and stop sending updates, but accumulate a texture dirty rectangle.  When unsuspended, submit the entire dirty rectangle.
 
-+ SRGB transform on the VNC thread.
++ Use a Skia filter to darken and draw "disconnected" when the connection is lost.
 
 # Performance
 
@@ -84,15 +82,17 @@ Idea for file widget- drag a file into a cell, it's represented by a filename an
         Android.mk
         shell.cpp
 
+# Thread safety
+
++ Entity_Draw needs to be protected against threads modifying entities & resources while drawing takes place.  
+ 
+It could hold the API mutex, though this starts to act more like a global mutex and there could start to be bottlenecks there.
+
 # JavaScript
 
 make i18nsupport=off android_arm.release
 
 remove -lrt from ./tools/gyp/mksnapshot.host.android_arm.release.mk
-
-
-+ Install d8 (command line v8) on a Mac:
-https://gist.github.com/kevincennis/0cd2138c78a07412ef21
 
 + About embedding native modules into JNI apps:
 
@@ -102,32 +102,17 @@ http://stackoverflow.com/questions/15719149/how-to-integrate-native-runtime-libr
 
     APK builder will pick up all .so files it finds in libs/armeabi-v7a and the installer will unpack them into /data/data/<your.package>/lib directory.
 
-+ Guide to integrating V8, apparently this works on Android:
++ Expose API via a global "sx" object instead of global namespace functions.
 
-https://developers.google.com/v8/get_started
++ Wrap handles in JavaScript classes (via shellspace.js) with methods, such that ```foo = new Entity( 'foo' )``` translates to ```sx.registerEntity( 'foo' )``` and ```foo.orient( ... )``` translates to ```sx.orientEntity( 'foo' )```.
+
+# Misc
 
 + Allow binding swipe axes to different features, with keyboard control.
   For example swipe in could be "get closer to the image, in the direction I'm looking"
 
 + Multiple sessions (window manager)
 + What is Comfort Mode?
-
-# SVG drawing
-
-Skia (By Google) - Seems like the winner?
-https://skia.org/user/sample/hello
-
-https://sites.google.com/site/skiadocs/user-documentation/quick-start-guides/android
-
-http://stackoverflow.com/questions/6342258/using-skia-in-android-ndk
-https://code.google.com/p/skia/wiki/SkCanvas
-
-One possibly easier option would be to bind Skia to the V8 plugin instead of the API runtime.  That would give some Canvas-like drawing abilities without having to construct text SVG data each time, but longer term there is some advantage to sending SVG data over the wire instead of bitmap.
-
-https://github.com/Shouqun/node-skia/tree/master/src
-
-Also a minimal example here:
-https://github.com/google/skia/tree/master/experimental/SkV8Example
 
 # Terminal
 
@@ -216,6 +201,20 @@ For network and IPC comms, libuv (used by Node.JS) seems like a good cross platf
 
 http://nikhilm.github.io/uvbook/filesystem.html
 
+# Message queue design
+
+This ties into plugins vs widgets and whether plugins are an explicit concept or something that's transparently managed by the core.
+
+Right now there are two kinds of message loops; widget and plugin.  This is fine for a threaded plugin that creates a new message loop thread for each widget.  (And note, we could adopt this model fully by exposing the ability to spawn() or the like in javascript, though thread safety issues there get dicey)
+
+Most things now adopt the plugin centric model, where they just watch for plugin messages and the plugin is essentially a widget singleton.
+
+But if there were a plugin that was intended to spawn many widgets, there is currently no way to poll on an array of queues (and the syntax for that might become quite cumbersome if there were 100s?). 
+
+One option would be to eliminate widget queues and just direct widget messages to the plugin.  This seems ideal for JavaScript, but for VNC and other network connection-based widgets where there is a thread-per-widget it adds extra synchronization that could affect the performance of the core plugin thread.
+
+Need to keep thinking about it in the context of plugins vs widgets.  
+
 # Menu
 
 Thinking menus will be represented by JSON objects, a bit like Sublime Text menu files.
@@ -239,22 +238,29 @@ Plugins can "merge" new menus into the menu.  The active widget and the shell ca
 
 So, user presses back button and OvrApp broadcasts a "menu open" message.  The menu data structure is initially cleared.  
 
-The menu sends the shell a "menu open" message.  This causes the shell to stop interpreting gaze data.
+The menu sends the shell a "shell menu opened" message.  This causes the shell to stop interpreting gaze data until it receives a "shell menu closed" message.
 
-The shell looks at the active cell and somebody generates some JSON data.  
+The shell checks the active cell.  
 
-If there is no cell, the shell puts nothing in the menu.  (Eventually there might be global settings like background color that only come up when there is no active cell)
+If there is no cell, the shell puts nothing in the menu.  (Eventually there might be global settings like background color that only come up when there is no active cell, that would be up to the shell.)
 
-If it's an empty cell, there is a "launch" menu and a "divide" menu (to make a grid).
+If it's an empty cell, the shell sends a "launch" menu and a "divide" menu (to make a grid).
 
 If it's a widget, the "menu" message just gets forwarded to the widget, possibly with some initial data to merge in.
 
-Ultimately someone (either the shell or the widget) sends back a "menu populate" message with the JSON for the final menu.  
+Ultimately someone (the shell and/or the widget) sends a "menu contents" message with the JSON for the final menu.  All the "menu contents" messages are merged together.  
 
 Then the menu creates entities for the top level, and starts interpreting gaze data.
-When a touch is received, if it hits a menu entity, 
 
+When a touch is received, if it hits a menu entity, the corresponding command is posted and the menu closes.
 
+# TEST
+
++ Radial menu?  Or a tree?
++ Rounded menu rectangles
++ Blue active highlight
+
+# Hm. something like PackageControl?
 
 # Plugin entity registration
 

@@ -47,14 +47,15 @@ struct SCell
 
 struct SShellGlobals
 {
+	pthread_t 		pluginThread;
+
 	SCell 			root;
 	SxOrientation	rootOrient;
 
 	SxVector3 		gazeDir;
-
-	pthread_t 		pluginThread;
-
 	SxWidgetHandle 	active;
+
+	sbool 			menuOpened;
 };
 
 
@@ -623,44 +624,69 @@ void Shell_MoveCmd( const SMsg *msg, void *context )
 }
 
 
+void Shell_PostToMenu( const SMsg *msg )
+{
+	SMsg 	menuMsg;
+	char 	msgBuf[MSG_LIMIT];
+
+	menuMsg = *msg;
+
+	if ( !S_streq( Msg_Argv( &menuMsg, 0 ), "menu" ) )
+		Msg_Unshift( &menuMsg, "menu" );
+
+	Msg_Format( &menuMsg, msgBuf, MSG_LIMIT );
+
+	g_pluginInterface.postMessage( msgBuf );
+}
+
+
+void Shell_PostToActiveWidget( const SMsg *msg )
+{
+	SCell 	*cell;
+	char 	msgBuf[MSG_LIMIT];
+
+	cell = Shell_GetActiveCell();
+
+	if ( !cell || cell->kind == CELL_EMPTY )
+		return;
+
+	assert( cell->kind == CELL_WIDGET );
+
+	Msg_Format( msg, msgBuf, MSG_LIMIT );
+
+	g_pluginInterface.sendMessage( cell->widget.wid, msgBuf );
+}
+
+
 void Shell_KeyCmd( const SMsg *msg, void *context )
 {
 	// uint 	code;
 	// uint 	down;
-	SCell 	*cell;
-	char 	msgBuf[MSG_LIMIT];
 
-	// $$$ should key event include modifier state?  probably....
+	if ( s_shell.menuOpened )
+	{
+		Shell_PostToMenu( msg );
+		return;
+	}
 
+	// $$$ Should key event include modifier state?  probably....
+	// $$$ Handle shell hotkey and return here.
 	// code = atoi( Msg_Argv( msg, 1 ) );
-	// down = atoi( Msg_Argv( msg, 1 ) );
+	// down = S_streq( Msg_Argv( msg, 2 ), "down" );
 
-	cell = Shell_GetActiveCell();
-	if ( !cell )
-		return;
-
-	if ( cell->kind == CELL_EMPTY )
-	{
-		// Keyboard_Show( "launcher.vrkey" );
-		// $$$ orient launcher to cell?
-		return;
-	}
-	else
-	{
-		assert( cell->kind == CELL_WIDGET );
-		
-		Msg_Format( msg, msgBuf, MSG_LIMIT );
-
-		LOG( "%s <- %s", cell->widget.wid, msgBuf );
-
-		g_pluginInterface.sendMessage( cell->widget.wid, msgBuf );
-	}
+	Shell_PostToActiveWidget( msg );
 }
 
 
 void Shell_GazeCmd( const SMsg *msg, void *context )
 {
 	SCell *activeCell;
+
+	if ( s_shell.menuOpened )
+	{
+		Shell_PostToMenu( msg );
+		return;
+	}
 
 	s_shell.gazeDir.x = atof( Msg_Argv( msg, 1 ) );
 	s_shell.gazeDir.y = atof( Msg_Argv( msg, 2 ) );
@@ -669,6 +695,54 @@ void Shell_GazeCmd( const SMsg *msg, void *context )
 	activeCell = Shell_GetActiveCell();
 	if ( activeCell )
 		Shell_OrientSquareToCell( activeCell, "square" );
+
+	Shell_PostToActiveWidget( msg );
+}
+
+
+void Shell_SwipeCmd( const SMsg *msg, void *context )
+{
+	if ( s_shell.menuOpened )
+	{
+		Shell_PostToMenu( msg );
+		return;
+	}
+
+	Shell_PostToActiveWidget( msg );
+}
+
+
+void Shell_TapCmd( const SMsg *msg, void *context )
+{
+	if ( s_shell.menuOpened )
+	{
+		Shell_PostToMenu( msg );
+		return;
+	}
+
+	Shell_PostToActiveWidget( msg );
+}
+
+
+void Shell_MenuCmd( const SMsg *msg, void *context )
+{
+	if ( S_streq( Msg_Argv( msg, 1 ), "open" ) )
+	{
+		if ( s_shell.menuOpened )
+		{
+			g_pluginInterface.postMessage( "menu close" );
+		}
+		else
+		{
+			s_shell.menuOpened = strue;
+
+			Shell_PostToMenu( msg );
+			Shell_PostToActiveWidget( msg );
+		}
+	}
+
+	if ( S_streq( Msg_Argv( msg, 1 ), "closed" ) )
+		s_shell.menuOpened = sfalse;
 }
 
 
@@ -679,6 +753,9 @@ SMsgCmd s_shellCmds[] =
 	{ "move", 			Shell_MoveCmd, 				"move <wid> <cell>" },
 	{ "key", 			Shell_KeyCmd, 				"key <code> <down>" },
 	{ "gaze", 			Shell_GazeCmd, 				"gaze <x> <y> <z>" },
+	{ "swipe", 			Shell_SwipeCmd, 			"swipe <up|down|left|right>" },
+	{ "tap", 			Shell_TapCmd, 				"tap <single|touble>" },
+	{ "menu", 			Shell_MenuCmd, 				"menu <opened|closed>" },
 	{ NULL, NULL, NULL }
 };
 

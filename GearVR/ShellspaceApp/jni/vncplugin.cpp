@@ -1002,7 +1002,7 @@ void VNC_KeyCmd( const SMsg *msg, void *context )
 	assert( vnc );
 
 	code = atoi( Msg_Argv( msg, 1 ) );
-	down = atoi( Msg_Argv( msg, 2 ) );
+	down = S_streq( Msg_Argv( msg, 2 ), "down" );
 
 	LOG( "VNC_KeyCmd: %d %d", code, down );
 

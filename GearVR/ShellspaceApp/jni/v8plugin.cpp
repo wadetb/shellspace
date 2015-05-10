@@ -736,6 +736,31 @@ void AssetCallback( const FunctionCallbackInfo<Value>& args )
 }
 
 
+void LogCallback( const FunctionCallbackInfo<Value>& args ) 
+{
+	HandleScope handleScope( args.GetIsolate() );
+
+	String::Utf8Value messageStr( args[0] );
+
+	LOG( *messageStr );
+}
+
+
+void AssertCallback( const FunctionCallbackInfo<Value>& args ) 
+{
+	HandleScope handleScope( args.GetIsolate() );
+
+	bool result = args[0]->BooleanValue();
+
+	if ( !result )
+	{
+		String::Utf8Value messageStr( args[1] );
+
+		V8_Throw( args.GetIsolate(), V8_StringArg( messageStr ) );
+	}
+}
+
+
 Handle<Context> V8_CreateShellContext( Isolate* isolate )
 {
 	Handle<ObjectTemplate> global = ObjectTemplate::New( isolate );
@@ -746,6 +771,11 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 	global->Set( String::NewFromUtf8( isolate, "asset" ), 
 		         FunctionTemplate::New( isolate, AssetCallback ) );
 
+	global->Set( String::NewFromUtf8( isolate, "log" ), 
+		         FunctionTemplate::New( isolate, LogCallback ) );
+
+	global->Set( String::NewFromUtf8( isolate, "assert" ), 
+		         FunctionTemplate::New( isolate, AssertCallback ) );
 
 	global->Set( String::NewFromUtf8( isolate, "registerPlugin" ), 
 		         FunctionTemplate::New( isolate, V8_RegisterPluginCallback ) );

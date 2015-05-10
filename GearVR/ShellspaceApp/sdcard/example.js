@@ -65,6 +65,7 @@ canvas.restore();
 loadTextureBitmap( TEXTURE2, bitmap );
 
 // Register and position the entities.
+// $$$ Position is temporary until shell registration works (need paths)
 registerEntity( ENTITY0 );
 setEntityGeometry( ENTITY0, "quad" ); // A builtin unit quad
 setEntityTexture( ENTITY0, TEXTURE0 );
@@ -78,7 +79,7 @@ orientEntity( ENTITY1, { origin: [-5, 0, -5], angles: [0, 0, 0], scale: [1.6, 1,
 registerEntity( ENTITY2 );
 setEntityGeometry( ENTITY2, "quad" );
 setEntityTexture( ENTITY2, TEXTURE2 );
-orientEntity( ENTITY2, { origin: [0, 0, -5], angles: [0, 0, 0], scale: [1.6, 1, 1] } );
+orientEntity( ENTITY2, { origin: [0, -5, -5], angles: [0, 0, 0], scale: [1.6, 1, 1] } );
 
 // Submit our entities to the shell.
 postMessage( "shell register " + WIDGET + " " + ENTITY0 );

@@ -61,7 +61,7 @@ void Msg_Shift( SMsg *msg, uint count )
 }
 
 
-void Msg_Unshift( SMsg *msg, char *text )
+void Msg_Unshift( SMsg *msg, const char *text )
 {
 	uint argIndex;
 
@@ -73,7 +73,7 @@ void Msg_Unshift( SMsg *msg, char *text )
 
 	msg->args[0] = msg->buffer + msg->bufferUsed;
 
-	S_sprintfPos( msg->buffer, MSG_LIMIT, &msg->bufferUsed, "\"%s\"", text );
+	S_sprintfPos( msg->buffer, MSG_LIMIT, &msg->bufferUsed, "%s", text );
 	msg->bufferUsed++;
 
 	msg->argCount++;
