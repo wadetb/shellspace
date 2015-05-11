@@ -135,17 +135,10 @@ function hitMenu( menu ) {
 function openMenu( args ) {
 	// $$$ Testing
 	rootMenu.children = [
-		{ id: 'scene', caption: 'scene', children: [
-			{ id: 'resolution', caption: 'resolution', children: [
-				{ id: 'res1024', caption: '1x', command: 'scene resolution 1024' },
-				{ id: 'res1024', caption: '1.5x', command: 'scene resolution 1536' },
-				{ id: 'res1024', caption: '2x', command: 'scene resolution 2048' },
-			] },
-		] },
-		{ id: 'test3', caption: 'when!', command: 'yo' },
-		{ id: 'test4', caption: 'will!', command: 'yo' },
-		{ id: 'test5', caption: 'we!', command: 'yo' },
-		{ id: 'test6', caption: 'hit!', command: 'yo' }
+		{ id: 'test0', caption: 'vnc', command: 'vnc create vnc0; vnc connect vnc0 10.0.1.40 asdf; shell register vnc0 vnc0; vnc zpush 10' },
+		{ id: 'test1', caption: 'chrome', command: 'example spawn chrome' },
+		{ id: 'test2', caption: 'terminal', command: 'example spawn terminal' },
+		// { id: 'test3', caption: 'hello', command: 'example spawn hello' },
 	];
 
 	menuStack = [ rootMenu ];

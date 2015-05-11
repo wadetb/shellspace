@@ -29,7 +29,8 @@
         android:name="oculus.ShellspaceApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name" >
+        android:label="@string/app_name" 
+        android:debuggable="false" >
         
         <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only"/>
 
@@ -42,7 +43,8 @@
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
-            android:configChanges="orientation|keyboardHidden|keyboard"> 
+            android:configChanges="orientation|keyboardHidden|keyboard"
+            android:excludeFromRecents="true"> 
             
             <!-- this filter lets the apk show up as a launchable icon -->
             <intent-filter>

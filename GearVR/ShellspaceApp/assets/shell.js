@@ -33,6 +33,29 @@ function getChild( cell, x, y ) {
 	return cell.children[x + y*cell.width];
 }
 
+function dump_r( cell, depth ) {
+	log( 'kind:' + cell.kind + ' lat:' + cell.lat + ' lon:' + cell.lon + ' latArc:' + cell.latArc + ' lonArc:' + cell.lonArc );
+
+	if ( cell.kind == 'grid' ) {
+		for ( var y = 0; y < cell.height; y++ ) {
+			for ( var x = 0; x < cell.width; x++ ) {
+				var s = '';
+				for ( var i = 0; i < depth; i++ )
+					s += ' ';
+				s += ' x:' + x + ' y:' + y;
+				log( s );
+
+				var child = getChild( cell, x, y );
+				dump_r( child, depth + 1 );
+			}
+		}
+	}
+}
+
+function dump() {
+	return dump_r( rootCell, 1 );
+}
+
 function makeGrid( cell, width, height ) {
 	cell.kind = 'grid';
 	cell.width = width;
@@ -59,7 +82,7 @@ function orientEntityToCell( cell, entity ) {
 
 	orientEntity( entity, {
 		origin: [ origin[0], origin[1], origin[2] ],
-		angles: [ -cell.lon, cell.lat, 0 ],
+		angles: [ cell.lat, -cell.lon, 0 ],
 		scale:  [ 1, 1, 1 ]
 	} );
 }
@@ -93,7 +116,9 @@ function layoutWidget( cell ) {
 
 	// log( 'sendMessage ' + cell.widget + ' ' + cell.entity );
 
-	var message = 'lat ' + cell.latArc + ' ' + cell.lonArc + ' ' + rootDepth;
+	var message = 'arc ' + cell.latArc + ' ' + cell.lonArc + ' ' + rootDepth;
+
+	log( cell.widget + ' ' + message );
 
 	try { sendMessage( cell.widget, message ); } catch ( e ) {}
 }
@@ -115,8 +140,7 @@ function layoutWidgets() {
 	layoutWidgets_r( rootCell );
 }
 
-function layoutCells_r( cell, lat, lon, latArc, lonArc )
-{
+function layoutCells_r( cell, lat, lon, latArc, lonArc ) {
 	cell.lat = lat;
 	cell.lon = lon;
 	cell.latArc = latArc - rootGutter;
@@ -222,21 +246,21 @@ function makeSquare() {
 		 1.0, -1.0, 0.0,
 		-1.0,  1.0, 0.0, 
 		 1.0,  1.0, 0.0, 
-		-0.9, -0.9, 0.0, 
-		 0.9, -0.9, 0.0,
-		-0.9,  0.9, 0.0, 
-		 0.9,  0.9, 0.0, 
+		-0.975, -0.975, 0.0, 
+		 0.975, -0.975, 0.0,
+		-0.975,  0.975, 0.0, 
+		 0.975,  0.975, 0.0, 
 	] );
 
 	var texCoords = new Float32Array( [
-		-1.0, -1.0, 
-		 1.0, -1.0,
-		-1.0,  1.0, 
-		 1.0,  1.0, 
-		-0.9, -0.9, 
-		 0.9, -0.9,
-		-0.9,  0.9, 
-		 0.9,  0.9, 
+		0, 0, 
+		0, 0,
+		0, 0, 
+		0, 0, 
+		0, 0, 
+		0, 0,
+		0, 0, 
+		0, 0, 
 	] );
 
 	var colors = new Uint8Array( [
@@ -286,7 +310,9 @@ function registerCmd( args ) {
 		return;
 	}	
 
-	parentEntity( eid, 'root' );
+	// parentEntity( eid, 'root' );
+
+	log( 'registerCmd: wid:' + wid + ' eid:' + eid );
 
 	cell.kind = 'widget';
 	cell.widget = wid;
@@ -304,7 +330,7 @@ function unregisterCmd( args ) {
 		return;
 	} 
 
-	parentEntity( eid, '' );
+	// parentEntity( eid, '' );
 
 	cell.kind = 'empty';
 }
@@ -347,6 +373,9 @@ registerEntity( 'root' );
 
 makeGrid( rootCell, 5, 3 );
 makeGrid( getChild( rootCell, 2, 2 ), 4, 2 );
+
+layoutCells();
+dump();
 
 for ( ;; ) {
 	var msg = receivePluginMessage( PLUGIN, 0 );
