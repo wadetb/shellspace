@@ -8,12 +8,8 @@ scene background 0 0 0
 
 entity shaders entity_v.glsl entity_f.glsl
 
-exec user.cfg
-
 v8 load shell.js
 v8 load menu.js
 v8 load example.js
 
-vnc create vnc0
-vnc connect vnc0 10.0.1.40 asdf
-vnc0 zpush 10.0
+exec user.cfg

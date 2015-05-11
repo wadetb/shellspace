@@ -91,7 +91,7 @@ function orientSquareToCell( cell, entity ) {
 function layoutWidget( cell ) {
 	orientEntityToCell( cell, cell.entity );
 
-	log( 'sendMessage ' + cell.widget + ' ' + cell.entity );
+	// log( 'sendMessage ' + cell.widget + ' ' + cell.entity );
 
 	var message = 'lat ' + cell.latArc + ' ' + cell.lonArc + ' ' + rootDepth;
 
@@ -145,7 +145,6 @@ function layoutCells_r( cell, lat, lon, latArc, lonArc )
 }
 
 function layoutCells() {
-	log( 'layoutCells' );
 	layoutCells_r( rootCell, 0, 0, 120, 360 );
 }
 
