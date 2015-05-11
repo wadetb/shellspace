@@ -175,5 +175,5 @@ struct SRefLink
 #include "../../../Common/shellspace.h"
 #include "profile.h"
 #include "vector.h"
-                    
+
 #endif

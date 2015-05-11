@@ -1,7 +1,7 @@
 //
 // Shellspace Example script
 //
-include( '/storage/extSdCard/Oculus/Shellspace/shellspace.js' );
+include( 'shellspace.js' );
 
 // All IDs in Shellspace are global, so entity and widget names need to be
 //  tagged with the plugin name so as not to conflict.
@@ -27,8 +27,8 @@ try { unregisterPlugin( PLUGIN ); } catch (e) {}
 
 // Asset files- asset() returns an ArrayBuffer.
 ASSETS = {
-	'safari':   asset( '/storage/extSdCard/Oculus/Shellspace/safari.jpg' ),
-	'terminal': asset( '/storage/extSdCard/Oculus/Shellspace/terminal.jpg' )
+	'safari':   asset( 'safari.jpg' ),
+	'terminal': asset( 'terminal.jpg' )
 };
 
 // Register the plugin (will be done automatically later)

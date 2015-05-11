@@ -37,8 +37,9 @@ public:
 };
 
 extern JNIEnv 		*g_jni;
+extern jobject 		g_activityObject;
+
 extern OvrApp 		*g_app;
-extern SVNCWidget 	*vnc;
 
 sbool App_Command();
 

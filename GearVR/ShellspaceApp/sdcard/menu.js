@@ -2,8 +2,8 @@
 // Shellspace menu
 // Author: Wade Brainerd <wadeb@wadeb.com>
 //
-include( '/storage/extSdCard/Oculus/Shellspace/shellspace.js' );
-include( '/storage/extSdCard/Oculus/Shellspace/vector.js' );
+include( 'shellspace.js' );
+include( 'vector.js' );
 
 PLUGIN   = 'menu'
 

@@ -13,6 +13,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 
 #include "command.h"
 #include "entity.h"
+#include "file.h"
 #include "inqueue.h"
 // #include "keyboard.h"
 #include "registry.h"
@@ -46,6 +47,8 @@ struct SAppGlobals
 static SAppGlobals s_app;
 
 JNIEnv *g_jni;
+jobject g_activityObject;
+
 OvrApp *g_app;
 
 OvrApp::OvrApp()
@@ -196,12 +199,14 @@ void APITest_Frame()
 void OvrApp::OneTimeInit( const char * launchIntent )
 {
 	g_jni = app->GetVrJni();
+	g_activityObject = app->GetJavaObject();
 
 	s_app.clearColor[0] = 0.0f;
 	s_app.clearColor[1] = 0.0f;
 	s_app.clearColor[2] = 0.0f;
 
 	Thread_Init();
+	File_Init();
 	Registry_Init();
 	Entity_Init();
 
@@ -248,7 +253,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	// Keyboard_Init();
 
-	Cmd_AddFile( "/storage/extSdCard/Oculus/Shellspace/autoexec.vrcfg" );
+	Cmd_AddFile( "autoexec.vrcfg" );
 }
 
 void OvrApp::OneTimeShutdown()
@@ -257,6 +262,7 @@ void OvrApp::OneTimeShutdown()
 
 	Registry_Shutdown();
 	Thread_Shutdown();
+	File_Shutdown();
 }
 
 void OvrApp::Command( const char * msg )
