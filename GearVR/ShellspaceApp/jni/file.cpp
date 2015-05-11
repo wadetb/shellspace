@@ -1,5 +1,6 @@
 #include "common.h"
 #include "file.h"
+#include "command.h"
 #include "OvrApp.h"
 
 #include <PackageFiles.h>
@@ -28,6 +29,7 @@ struct SFileGlobals
 
 	sbool 	httpEnabled;
 	char 	httpHost[MAX_PATH];
+	int  	httpPort;
 	char 	httpRoot[MAX_PATH];
 };
 
@@ -71,6 +73,7 @@ void File_Init()
 	}
 
 	strcpy( s_file.httpHost, "wadeb.com" ); // $$$ shellspace.org!
+	s_file.httpPort = 80;
 	strcpy( s_file.httpRoot, "/shellspace/" );
 
 	s_file.httpEnabled = !S_strempty( s_file.cacheDir ) ;
@@ -119,8 +122,6 @@ sbool File_Find( const char *fileName, char fullPath[MAX_PATH] )
 	uint 	pathIter;
 	char 	*path;
 
-	LOG( "File_Find: %s", fileName );
-
 	for ( pathIter = 0; pathIter < s_file.pathCount; pathIter++ )
 	{
 		path = s_file.paths[pathIter];
@@ -138,6 +139,7 @@ sbool File_Find( const char *fileName, char fullPath[MAX_PATH] )
 void File_DownloadToCache( const char *fileName )
 {
 	int 				result;
+	char 				httpPort[8];
 	struct addrinfo 	hints;
 	struct addrinfo 	*addr;
 	struct addrinfo 	*a;
@@ -159,7 +161,9 @@ void File_DownloadToCache( const char *fileName )
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
 
-	result = getaddrinfo( s_file.httpHost, "80", &hints, &addr );
+	snprintf( httpPort, sizeof( httpPort ), "%d", s_file.httpPort );
+
+	result = getaddrinfo( s_file.httpHost, httpPort, &hints, &addr );
 	if ( result )
 	{
     	LOG( "File_DownloadToCache: Unable to resolve %s: %s", s_file.httpHost, gai_strerror( result ) );
@@ -196,6 +200,7 @@ void File_DownloadToCache( const char *fileName )
     send( sockFd, buffer, strlen( buffer ), 0 );
 
     inBody = sfalse;
+    strcpy( fullPath, "" );
     out = NULL;
 
     header = NULL;
@@ -236,7 +241,7 @@ void File_DownloadToCache( const char *fileName )
 
 				if ( httpStatus != 200 )
 				{
-					LOG( "File_DownloadToCache: Unexpected HTTP status %d: %s.", httpStatus, header );
+					LOG( "File_DownloadToCache: Unexpected HTTP status %d: %s", httpStatus, header );
 					unlink( fullPath );
 					break;
 				}
@@ -244,7 +249,7 @@ void File_DownloadToCache( const char *fileName )
 				out = fopen( fullPath, "wb" );
 				if ( !out )
 				{
-					LOG( "File_DownloadToCache: Unable to open cache file %s for write.", fullPath );
+					LOG( "File_DownloadToCache: Unable to open cache file %s for write", fullPath );
 					unlink( fullPath );
 					break;
 				}
@@ -267,7 +272,10 @@ void File_DownloadToCache( const char *fileName )
     }
 
     if ( inBody )
+    {
     	fclose( out );
+		LOG( "File_DownloadToCache: Saved %s", fullPath );
+	}
 
 	free( header );
 
@@ -365,4 +373,81 @@ byte *File_Read( const char *fileName, uint *bytesRead )
 	fclose( in );
 
 	return buffer;
+}
+
+
+sbool File_Command()
+{
+	if ( strcasecmp( Cmd_Argv( 0 ), "file" ) == 0 )
+	{
+		if ( strcasecmp( Cmd_Argv( 1 ), "http" ) == 0 )
+		{
+			if ( strcasecmp( Cmd_Argv( 2 ), "enabled" ) == 0 )
+			{
+				if ( Cmd_Argc() != 3 )
+				{
+					LOG( "Usage: file http enable" );
+					return strue;
+				}
+
+				s_file.httpEnabled = strue;
+
+				return strue;
+			}
+
+			if ( strcasecmp( Cmd_Argv( 2 ), "disable" ) == 0 )
+			{
+				if ( Cmd_Argc() != 3 )
+				{
+					LOG( "Usage: file http disable" );
+					return strue;
+				}
+
+				s_file.httpEnabled = sfalse;
+
+				return strue;
+			}
+
+			if ( strcasecmp( Cmd_Argv( 2 ), "host" ) == 0 )
+			{
+				if ( Cmd_Argc() != 4 )
+				{
+					LOG( "Usage: file http host <host>" );
+					return strue;
+				}
+
+				S_strcpy( s_file.httpHost, MAX_PATH, Cmd_Argv( 3 ) );
+
+				return strue;
+			}
+
+			if ( strcasecmp( Cmd_Argv( 2 ), "port" ) == 0 )
+			{
+				if ( Cmd_Argc() != 4 )
+				{
+					LOG( "Usage: file http port <port>" );
+					return strue;
+				}
+
+				s_file.httpPort = atoi( Cmd_Argv( 3 ) );
+
+				return strue;
+			}
+
+			if ( strcasecmp( Cmd_Argv( 2 ), "root" ) == 0 )
+			{
+				if ( Cmd_Argc() != 4 )
+				{
+					LOG( "Usage: file http root <host>" );
+					return strue;
+				}
+
+				S_strcpy( s_file.httpRoot, MAX_PATH, Cmd_Argv( 3 ) );
+
+				return strue;
+			}
+		}
+	}
+
+	return sfalse;
 }

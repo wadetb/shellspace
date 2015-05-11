@@ -31,8 +31,6 @@
 
 #define USE_OVERLAY   			0
 #define USE_TEMPORAL 			0
-#define USE_SUPERSAMPLE_2X 		1
-#define USE_SUPERSAMPLE_1_5X 	0
 #define USE_SRGB 				1
 #define USE_SPLIT_DRAW 			0
 
@@ -103,6 +101,11 @@ inline sbool S_streq( const char *a, const char *b )
 inline int S_strcmp( const char *a, const char *b )
 {
     return strcmp( a, b );
+}
+
+inline void S_strcpy( char *a, uint size, const char *b )
+{
+    snprintf( a, size, "%s", b );
 }
 
 inline int S_stricmp( const char *a, const char *b )

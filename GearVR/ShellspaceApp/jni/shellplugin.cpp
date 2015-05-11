@@ -212,7 +212,7 @@ void Shell_OrientEntityToCell( SCell *cell, SxEntityHandle eid )
 	IdentityOrientation( &orient );
 
 	Shell_GetCellPoint( cell->lat, cell->lon, ROOT_DEPTH, &orient.origin );
-
+	
 	// $$$ Grrrh, these are reversed.
 	orient.angles.pitch = -cell->lon;
 	orient.angles.yaw = cell->lat;

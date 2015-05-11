@@ -8,4 +8,6 @@ void File_AddPath( const char *path );
 
 byte *File_Read( const char *fileName, uint *bytesRead );
 
+sbool File_Command();
+
 #endif

@@ -254,6 +254,10 @@ Then the menu creates entities for the top level, and starts interpreting gaze d
 
 When a touch is received, if it hits a menu entity, the corresponding command is posted and the menu closes.
 
+# Canvas API
+
+Seems like the canvas commands are becoming more and more core to doing anything useful at all.  If they become central to the API, I should consider merging aspects of Skia's API into the core API.  One way to do it would be to automatically create a SkCanvas and SkBitmap for every STexture, and expose a decent subset of the canvas APIs as Texture methods.  That would allow quite casually registering and drawing to textures, which would be natural for many of the apps I have in mind.
+
 # TEST
 
 + Radial menu?  Or a tree?

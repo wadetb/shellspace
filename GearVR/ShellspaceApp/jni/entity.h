@@ -29,4 +29,6 @@ void Entity_Unregister( SEntity *entity );
 
 void Entity_SetParent( SEntity *entity, SRef parentRef );
 
+sbool Entity_Command();
+
 #endif

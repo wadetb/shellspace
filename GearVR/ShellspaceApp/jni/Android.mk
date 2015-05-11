@@ -52,7 +52,7 @@ PLUGIN_SRC_FILES := \
 	libvncserver/libvncclient/tls_none.c \
 	libvncserver/libvncclient/vncviewer.c 
 
-PLUGIN_SRC_FILES += shellplugin.cpp 
+# PLUGIN_SRC_FILES += shellplugin.cpp 
 
 PLUGIN_SRC_FILES += v8plugin.cpp v8skia.cpp
 
@@ -64,13 +64,14 @@ COMMON_SRC_FILES := \
 	gason/gason.cpp \
 	geometry.cpp \
 	inqueue.cpp \
-	keyboard.cpp \
 	message.cpp \
 	OvrApp.cpp \
 	profile.cpp \
 	registry.cpp \
 	texture.cpp \
 	thread.cpp 
+
+#   keyboard.cpp 
 
 #	coffeecatch/coffeecatch.c 
 #	coffeecatch/coffeejni.c 

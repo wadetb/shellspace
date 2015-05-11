@@ -1,3 +1,16 @@
+file http enabled
+file http host wadeb.com
+file http port 80
+file http root /shellspace/
+
+scene resolution 2048
+scene background 0 0 0
+
+entity shaders entity_v.glsl entity_f.glsl
+
+exec user.cfg
+
+v8 load shell.js
 v8 load menu.js
 v8 load example.js
 

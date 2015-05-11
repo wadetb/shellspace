@@ -21,7 +21,7 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 
 #include "vncplugin.h"
 #include "v8plugin.h"
-#include "shellplugin.h"
+// #include "shellplugin.h"
 
 #include <android/keycodes.h>
 #include <jni.h>
@@ -42,6 +42,7 @@ struct SAppGlobals
 {
 	SxVector3 	lastGazeDir;
 	float 		clearColor[3];
+	uint 		resolution;
 };
 
 static SAppGlobals s_app;
@@ -205,19 +206,15 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	s_app.clearColor[1] = 0.0f;
 	s_app.clearColor[2] = 0.0f;
 
+	s_app.resolution = 2048;
+
 	Thread_Init();
 	File_Init();
 	Registry_Init();
 	Entity_Init();
 
 	EyeParms &vrParms = app->GetVrParms();
-#if USE_SUPERSAMPLE_2X
-	vrParms.resolution = 2048;
-#elif USE_SUPERSAMPLE_1_5X
-	vrParms.resolution = 1536;
-#else
-	vrParms.resolution = 1024;
-#endif
+	vrParms.resolution = s_app.resolution;
 	vrParms.multisamples = 1;
 	vrParms.colorFormat = COLOR_8888;
 	vrParms.depthFormat = DEPTH_16;
@@ -247,7 +244,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	APITest_Init();
 
-	Shell_InitPlugin();
+	// Shell_InitPlugin();
 	VNC_InitPlugin();
 	V8_InitPlugin();
 
@@ -400,7 +397,9 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 	Scene.Frame( app->GetVrViewParms(), vrFrameWithoutMove, app->GetSwapParms().ExternalVelocity );
 	Prof_Stop( PROF_SCENE );
 
-	app->GetVrParms().colorFormat = COLOR_8888;
+	EyeParms &vrParms = app->GetVrParms();
+	vrParms.colorFormat = COLOR_8888;
+	vrParms.resolution = s_app.resolution;
 
 	// $$$ This sometimes spikes to 60ms, I have no idea why yet- need to instrument Oculus code.
 	Prof_Start( PROF_DRAW );
@@ -417,25 +416,45 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 }
 
 
-sbool App_Command()
+sbool Scene_Command()
 {
-	if ( strcasecmp( Cmd_Argv( 0 ), "clearcolor" ) == 0 )
+	if ( strcasecmp( Cmd_Argv( 0 ), "scene" ) == 0 )
 	{
-		if ( Cmd_Argc() != 4 )
+		if ( strcasecmp( Cmd_Argv( 1 ), "background" ) == 0 )
 		{
-			LOG( "Usage: clearcolor <r> <g> <b>" );
+			if ( Cmd_Argc() != 5 )
+			{
+				LOG( "Usage: scene background <r> <g> <b>" );
+				return strue;
+			}
+
+			s_app.clearColor[0] = atoi( Cmd_Argv( 2 ) ) / 255.0f;
+			s_app.clearColor[1] = atoi( Cmd_Argv( 3 ) ) / 255.0f;
+			s_app.clearColor[2] = atoi( Cmd_Argv( 4 ) ) / 255.0f;
+
 			return strue;
 		}
 
-		s_app.clearColor[0] = atoi( Cmd_Argv( 1 ) ) / 255.0f;
-		s_app.clearColor[1] = atoi( Cmd_Argv( 2 ) ) / 255.0f;
-		s_app.clearColor[2] = atoi( Cmd_Argv( 3 ) ) / 255.0f;
+		if ( strcasecmp( Cmd_Argv( 1 ), "resolution" ) == 0 )
+		{
+			if ( Cmd_Argc() != 3 )
+			{
+				LOG( "Usage: scene resolution <pixels>" );
+				return strue;
+			}
 
-		LOG( "clear color is %f %f %f", s_app.clearColor[0], s_app.clearColor[1], s_app.clearColor[2] );
+			s_app.resolution = atoi( Cmd_Argv( 2 ) );
 
-		return strue;
+			return strue;
+		}
 	}
 
+	return sfalse;
+}
+
+
+sbool App_Command()
+{
 	if ( strcasecmp( Cmd_Argv( 0 ), "log" ) == 0 )
 	{
 		if ( Cmd_Argc() != 2 )
@@ -462,6 +481,28 @@ sbool App_Command()
 		return strue;
 	}
 
+	if ( strcasecmp( Cmd_Argv( 0 ), "exec" ) == 0 )
+	{
+		if ( Cmd_Argc() != 2 )
+		{
+			LOG( "Usage: exec <file>" );
+			return strue;
+		}
+
+		Cmd_AddFile( Cmd_Argv( 1 ) );
+
+		return strue;
+	}
+
+	if ( Entity_Command() )
+		return strue;
+	
+	if ( File_Command() )
+		return strue;
+	
+	if ( Scene_Command() )
+		return strue;
+	
 	return sfalse;
 }
 

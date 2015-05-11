@@ -13,6 +13,8 @@ registerPlugin( PLUGIN, SxPluginKind_Widget );
 
 var rootMenu = { id: 'root', children: [] };
 
+var menuStack = [];
+
 var gazeDir = Vec3.create( 0, 0, -1 );
 
 var menuOrigin = Vec3.create( 0, 0, -5 );
@@ -20,92 +22,24 @@ var menuDir = Vec3.create( 0, 0, 1 );
 var menuUp = Vec3.create( 0, 1, 0 );
 var menuRight = Vec3.create( 1, 0, 0 );
 
-function renderCaption( texture, text ) {
+function renderCaption( texture, text, hilite ) {
 	var bitmap = new Bitmap();
 	bitmap.setInfo( { width: 200, height: 40 } );
 	bitmap.allocPixels();
 
+	var canvas = new Canvas( bitmap );
+
+	canvas.drawColor( hilite ? 0xff8080ff : 0xffffffff );
+
 	var paint = new Paint();
 	paint.setAntiAlias( true );
-	paint.setColor( 0x00000000 );
+	paint.setColor( 0xffffffff );
 	paint.setTextSize( 30 );
 
-	var canvas = new Canvas( bitmap );
-	canvas.drawColor( 0xffffffff );
 	canvas.translate( 5, 35 );
 	canvas.drawText( text , 0, 0, paint);
 
 	loadTextureBitmap( texture, bitmap );
-}
-
-function buildMenu() {
-	var stack = [ rootMenu ];
-	var row = 0;
-
-	while ( stack.length ) {
-		var m = stack.pop();
-
-		m.row = row;
-
-		if ( m.caption ) {
-			if ( m.texture == undefined ) {
-				m.texture = m.id + "_tex";
-				try { registerTexture( m.texture ); } catch (e) {}
-
-				renderCaption( m.texture, m.caption );
-			}
-
-			if ( m.entity == undefined ) {
-				m.entity = m.id + "_ent";
-				try { registerEntity( m.entity ); } catch (e) {}
-
-				setEntityGeometry( m.entity, "quad" );
-				setEntityTexture( m.entity, m.texture );
-
-				var origin = Vec3.create( menuOrigin );
-				Vec3.mad( origin, 1 + row * -0.4, menuUp, origin );
-
-				m.origin = [0, 1 + row * -0.4, -5];
-				m.scale = [1, 0.2, 1];
-
-				orientEntity( m.entity, { origin: m.origin, scale: m.scale } );
-			}
-		}
-
-		if ( m.children ) {
-			for ( var i = m.children.length - 1; i >= 0; i-- ) {
-				stack.push( m.children[i] );
-			}
-		}
-
-		row++;
-	}
-}
-
-function clearMenu() {
-	// Destroy existing contents.
-	var stack = [ rootMenu ];
-
-	while ( stack.length ) {
-		var m = stack.pop();
-
-		if ( m.entity ) {
-			unregisterEntity( m.entity );
-		}
-
-		if ( m.texture ) {
-			unregisterTexture( m.texture );
-		}
-
-		if ( m.children ) {
-			for ( var i = 0; i < m.children.length; i++ ) {
-				stack.push( m.children[i] );
-			}
-		}
-	}
-
-	// Reset to empty root.
-	rootMenu = { id: 'root', children: [] };
 }
 
 function mergeMenuContents( contents ) {
@@ -114,36 +48,85 @@ function mergeMenuContents( contents ) {
 	rootMenu.children = rootMenu.children.concat( contents );
 }
 
-function getActiveItem() {
-	var stack = [ rootMenu ];
+function showItem( m ) {
+	m.texture = m.id + "_tex";
+	try { registerTexture( m.texture ); } catch (e) {}
 
-	if ( Math.abs( gazeDir.z ) < 0.001 )
-		return null;
+	renderCaption( m.texture, m.caption, false );
 
-	while ( stack.length ) {
-		var m = stack.pop();
+	m.hiliteTexture = m.id + "_hltex";
+	try { registerTexture( m.hiliteTexture ); } catch (e) {}
 
-		if ( m.entity ) {
-			// $$$ Assumes the menu is always facing down +Z, but in
-			//     practice it needs to auto-orient when opened.
-			//     To fix gazeDir needs to be projected along the
-			//     menu normal.
-			var zratio = m.origin[2] / gazeDir[2];
-			var px = gazeDir[0] * zratio;
-			var py = gazeDir[1] * zratio;
+	renderCaption( m.hiliteTexture, m.caption, true );
 
-			var dx = Math.abs( px - m.origin[0] );
-			var dy = Math.abs( py - m.origin[1] );
-			
-			if ( dx <= m.scale[0] && dy <= m.scale[1] )
-				return m;
-		}
+	m.entity = m.id + "_ent";
+	try { registerEntity( m.entity ); } catch (e) {}
 
-		if ( m.children ) {
-			for ( var i = 0; i < m.children.length; i++ ) {
-				stack.push( m.children[i] );
-			}
-		}
+	setEntityGeometry( m.entity, "quad" );
+	setEntityTexture( m.entity, m.texture );
+}
+
+function hideItem( m ) {
+	unregisterEntity( m.entity );
+	unregisterTexture( m.texture );
+	unregisterTexture( m.hiliteTexture );
+}
+
+function showItems( menu ) {
+	var row = 0;
+
+	for ( var i = 0; i < menu.children.length; i++ ) {
+		var m = menu.children[i];
+
+		showItem( m );
+
+		var origin = Vec3.create( 0, 0, -5 );
+		Vec3.mad( origin, 1 + row * -0.4, menuUp, origin );
+
+		m.origin = [0, 1 + row * -0.4, -5];
+		m.scale = [1, 0.19, 1];
+
+		orientEntity( m.entity, { origin: m.origin, scale: m.scale } );
+
+		row++;
+	}
+}
+
+function hideItems( menu ) {
+	for ( var i = 0; i < menu.children.length; i++ ) {
+		var m = menu.children[i];
+
+		hideItem( m );
+	}
+}
+
+function hitItem( m ) {
+	if ( Math.abs( gazeDir[2] ) < 0.001 )
+		return false;
+
+	// $$$ Assumes the menu is always facing down +Z, but in
+	//     practice it needs to auto-orient when opened.
+	//     To fix gazeDir needs to be projected along the
+	//     menu normal.
+	var zratio = m.origin[2] / gazeDir[2];
+	var px = gazeDir[0] * zratio;
+	var py = gazeDir[1] * zratio;
+
+	var dx = Math.abs( px - m.origin[0] );
+	var dy = Math.abs( py - m.origin[1] );
+	
+	if ( dx <= m.scale[0] && dy <= m.scale[1] )
+		return true;
+
+	return false;
+}
+
+function hitMenu( menu ) {
+	for ( var i = 0; i < menu.children.length; i++ ) {
+		var m = menu.children[i];
+
+		if ( hitItem( m ) )
+			return m;
 	}
 
 	return null;
@@ -151,15 +134,22 @@ function getActiveItem() {
 
 function openMenu( args ) {
 	// $$$ Testing
-	mergeMenuContents( [
-		{ id: 'test1', caption: 'hello!', command: 'yo' },
-		{ id: 'test2', caption: 'world!', command: 'yo' },
+	rootMenu.children = [
+		{ id: 'scene', caption: 'scene', children: [
+			{ id: 'resolution', caption: 'resolution', children: [
+				{ id: 'res1024', caption: '1x', command: 'scene resolution 1024' },
+				{ id: 'res1024', caption: '1.5x', command: 'scene resolution 1536' },
+				{ id: 'res1024', caption: '2x', command: 'scene resolution 2048' },
+			] },
+		] },
 		{ id: 'test3', caption: 'when!', command: 'yo' },
 		{ id: 'test4', caption: 'will!', command: 'yo' },
 		{ id: 'test5', caption: 'we!', command: 'yo' },
 		{ id: 'test6', caption: 'hit!', command: 'yo' }
-	] );
-	buildMenu();
+	];
+
+	menuStack = [ rootMenu ];
+	showItems( menuStack[0] );
 
 	// Capture the gaze direction to use as the menu location.
 	Vec3.scale( gazeDir, 5.0, menuOrigin );
@@ -172,39 +162,98 @@ function openMenu( args ) {
 	Vec3.cross( menuUp, menuDir, menuRight );
 	Vec3.normalize( menuRight, menuRight );
 
+	// Hilite any initially active item.
+	var active = hitMenu( menuStack[0] );
+	if ( active && active.entity ) {
+		setEntityTexture( active.entity, active.hiliteTexture );
+	}
+
 	// Notify the shell.
 	postMessage( 'shell menu opened' );
 }
 
 function closeMenu( args ) {
-	// Teardown the entities and data.
-	clearMenu();
+	if ( menuStack.length ) {
+		hideItems( menuStack[0] );
+
+		// Reset to empty root.
+		rootMenu = { id: 'root', children: [] };
+		menuStack = [];
+	}
 
 	// Notify the shell.
 	postMessage( 'shell menu closed' );
 }
 
-function onTap() {
-	var m = getActiveItem();
-	if ( !m ) {
-		log( "onTap: No active widget" );
+function onGaze( args ) {
+	if ( !menuStack.length )
 		return;
-	}
-	if ( !m.command ) {
-		log( "onTap: Active widget has no command" );
-		return;
-	}
 
-	postMessage( m.command );
+	var oldActive = hitMenu( menuStack[0] );
+
+	gazeDir = Vec3.create( +(args[0]), +(args[1]), +(args[2]) );
+
+	var active = hitMenu( menuStack[0] );
+
+	if ( oldActive != active ) {
+		if ( oldActive && oldActive.entity ) {
+			setEntityTexture( oldActive.entity, oldActive.texture );
+		}
+
+		if ( active && active.entity ) {
+			setEntityTexture( active.entity, active.hiliteTexture );
+		}
+	}
 }
 
-clearMenu();
+function onTap() {
+	if ( !menuStack.length )
+		return;
+
+	var m = hitMenu( menuStack[0] );
+	if ( !m ) {
+		log( "onTap: No active item" );
+		return;
+	}
+
+	// Tap ancestor of active menu.
+	for ( var i = 1; i < menuStack.length; i++ ) {
+		if ( m == menuStack[i] ) {
+			hideItems( menuStack[0] );
+			while ( m != menuStack[0] )
+				menuStack.shift();
+			showItems( menuStack[0] );
+			return;
+		}
+	}
+	
+	// Tap a menu with children.
+	// $$$ Careful if we allow direct tapping descendents, might
+	//     need to push an intermediate menu.
+	if ( m.children ) {
+		hideItems( menuStack[0] );
+		menuStack.unshift( m );
+		showItems( menuStack[0] );
+		return;
+	}
+
+	if ( !m.command ) {
+		log( "onTap: Active item has no command" );
+		return;
+	}
+
+	log( 'Item ' + m.id + ' activated: ' + m.command );
+
+	postMessage( m.command );
+
+	closeMenu();
+}
 
 for ( ;; ) {
 	var msg = receivePluginMessage( PLUGIN, 0 );
-	args = decodeMessage( msg );
+	var args = decodeMessage( msg );
 
-	log( 'menu.js: ' + args.join( ' ' ) );
+	// log( 'menu.js: ' + args.join( ' ' ) );
 
 	if ( args[0] == PLUGIN )
 		args.shift();
@@ -222,18 +271,12 @@ for ( ;; ) {
 		closeMenu();
 	}
 	else if ( command == 'gaze' ) {
-		gazeDir = Vec3.create( +(args[0]), +(args[1]), +(args[2]) );
+		onGaze( args );
 	}
 	else if ( command == 'tap' ) {
 		onTap();
 	}
 	else if ( command == 'contents' ) {
 		mergeMenuContents( eval( args[1] ) );
-		// $$$ It would be nice to not destroy everything; it could be done
-		//     by only creating entities that are not already created, and 
-		//     dividing buildMenu into build and layout steps, so that a
-		//     global layoutMenu could be run after new items are merged in.
-		clearMenu();
-		buildMenu();
 	}
 }

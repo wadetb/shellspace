@@ -399,17 +399,19 @@ void MsgQueue_Create( SMsgQueue *queue )
 
 void MsgQueue_Destroy( SMsgQueue *queue )
 {
-	uint msgIter;
+	uint 	msgIter;
+	uint 	index;
 
 	assert( queue );
 
 	pthread_mutex_lock( &queue->mutex );
 
-	for ( msgIter = queue->get; msgIter != queue->put; msgIter = (msgIter + 1) % MSG_QUEUE_LIMIT )
+	for ( msgIter = queue->get; msgIter != queue->put; msgIter++ )
 	{
-		assert( queue->text[msgIter] );
-		free( queue->text[msgIter] );
-		queue->text[msgIter] = NULL;
+		index = msgIter % MSG_QUEUE_LIMIT;
+		assert( queue->text[index] );
+		free( queue->text[index] );
+		queue->text[index] = NULL;
 	}
 
 	queue->get = 0;
@@ -424,7 +426,7 @@ void MsgQueue_Destroy( SMsgQueue *queue )
 
 void MsgQueue_Put( SMsgQueue *queue, const char *text )
 {
-	int 	index;
+	uint 	index;
 
 	assert( queue );
 
@@ -455,6 +457,7 @@ char *MsgQueue_Get( SMsgQueue *queue, uint waitMs )
 {
 	char 			*result;
 	struct timespec tim;
+	uint 			index;
 
 	assert( queue );
 
@@ -481,8 +484,10 @@ char *MsgQueue_Get( SMsgQueue *queue, uint waitMs )
 		}
 	}
 
-	result = queue->text[queue->get];
-	queue->text[queue->get] = NULL;
+	index = queue->get;
+
+	result = queue->text[index];
+	queue->text[index] = NULL;
 	queue->get++;
 
 	if ( queue->get >= MSG_QUEUE_LIMIT )

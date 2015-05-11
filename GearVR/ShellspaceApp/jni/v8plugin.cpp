@@ -282,14 +282,14 @@ void V8_UpdateGeometryIndexRangeCallback( const FunctionCallbackInfo<Value>& arg
 
 	String::Utf8Value arg0( args[0] );
 
-    Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
-    ArrayBuffer::Contents buf = arg3->GetContents();
+    Local<ArrayBufferView> arg3 = Local<ArrayBufferView>::Cast( args[3] );
+    ArrayBuffer::Contents buf = arg3->Buffer()->GetContents();
 
     uint indexCount = V8_IntArg( args[2] );
 
     if ( buf.ByteLength() < indexCount * sizeof( ushort ) )
     {
-    	V8_Throw( args.GetIsolate(), "ArrayBuffer is too small for index count" );
+    	V8_Throw( args.GetIsolate(), "ArrayBuffer is %d bytes; too small for index count %d", buf.ByteLength(), indexCount );
     	return;
     }
 
@@ -308,8 +308,8 @@ void V8_UpdateGeometryPositionRangeCallback( const FunctionCallbackInfo<Value>& 
 
 	String::Utf8Value arg0( args[0] );
 
-    Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
-    ArrayBuffer::Contents buf = arg3->GetContents();
+    Local<ArrayBufferView> arg3 = Local<ArrayBufferView>::Cast( args[3] );
+    ArrayBuffer::Contents buf = arg3->Buffer()->GetContents();
 
     uint vertexCount = V8_IntArg( args[2] );
 
@@ -334,8 +334,8 @@ void V8_UpdateGeometryTexCoordRangeCallback( const FunctionCallbackInfo<Value>& 
 
 	String::Utf8Value arg0( args[0] );
 
-    Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
-    ArrayBuffer::Contents buf = arg3->GetContents();
+    Local<ArrayBufferView> arg3 = Local<ArrayBufferView>::Cast( args[3] );
+    ArrayBuffer::Contents buf = arg3->Buffer()->GetContents();
 
     uint vertexCount = V8_IntArg( args[2] );
 
@@ -360,8 +360,8 @@ void V8_UpdateGeometryColorRangeCallback( const FunctionCallbackInfo<Value>& arg
 
 	String::Utf8Value arg0( args[0] );
 
-    Local<ArrayBuffer> arg3 = Local<ArrayBuffer>::Cast( args[3] );
-    ArrayBuffer::Contents buf = arg3->GetContents();
+    Local<ArrayBufferView> arg3 = Local<ArrayBufferView>::Cast( args[3] );
+    ArrayBuffer::Contents buf = arg3->Buffer()->GetContents();
 
     int vertexCount = V8_IntArg( args[2] );
 

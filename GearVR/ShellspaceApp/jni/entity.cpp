@@ -18,6 +18,8 @@
 */
 #include "common.h"
 #include "entity.h"
+#include "command.h"
+#include "file.h"
 #include "reflist.h"
 #include "registry.h"
 #include <GlProgram.h>
@@ -35,34 +37,26 @@ SEntityGlobals	s_ent;
 
 void Entity_Init()
 {
-	s_ent.shader = OVR::BuildProgram(
-		"#version 300 es\n"
-		"uniform mediump mat4 Mvpm;\n"
-		"in vec4 Position;\n"
-		"in vec4 VertexColor;\n"
-		"in vec2 TexCoord;\n"
-		"uniform mediump vec4 UniformColor;\n"
-		"out  lowp vec4 oColor;\n"
-		"out highp vec2 oTexCoord;\n"
-		"void main()\n"
-		"{\n"
-		"   gl_Position = Mvpm * Position;\n"
-		"	oTexCoord = TexCoord * UniformColor.xy;\n"
-		"   oColor = VertexColor;\n"
-		"}\n"
-		,
-		"#version 300 es\n"
-		"uniform sampler2D Texture0;\n"
-		"in  highp   vec2 oTexCoord;\n"
-		"in  lowp    vec4 oColor;\n"
-		"out mediump vec4 fragColor;\n"
-		"void main()\n"
-		"{\n"
-		"	fragColor = oColor * texture( Texture0, oTexCoord );\n"
-		"}\n"
-		);
-
 	s_ent.firstRoot = S_NULL_REF;
+}
+
+
+void Entity_LoadShaders( const char *vertexName, const char *fragmentName )
+{
+	char	*vertexText;
+	char	*fragmentText;
+
+	vertexText = (char *)File_Read( vertexName, NULL );
+	fragmentText = (char *)File_Read( fragmentName, NULL );
+
+	if ( vertexText && fragmentText )
+		s_ent.shader = OVR::BuildProgram( vertexText, fragmentText );
+
+	if ( vertexText )
+		free( vertexText );
+
+	if ( fragmentText )
+		free( fragmentText );
 }
 
 
@@ -291,4 +285,28 @@ void Entity_SetParent( SEntity *entity, SRef parentRef )
 		RefList_Insert( entity, offsetof( SEntity, parentLink ), &s_ent.firstRoot );
 	}
 }
+
+
+sbool Entity_Command()
+{
+	if ( strcasecmp( Cmd_Argv( 0 ), "entity" ) == 0 )
+	{
+		if ( strcasecmp( Cmd_Argv( 1 ), "shaders" ) == 0 )
+		{
+			if ( Cmd_Argc() != 4 )
+			{
+				LOG( "Usage: entity shaders <vertex> <pixel>" );
+				return strue;
+			}
+
+			Entity_LoadShaders( Cmd_Argv( 2 ), Cmd_Argv( 3 ) );
+
+			return strue;
+		}
+	}
+
+	return sfalse;
+}
+
+
 
