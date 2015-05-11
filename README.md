@@ -2,7 +2,7 @@
 
 This is the source code repository for Shellspace, my entry into the Oculus VR Jam 2015.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qarIS7jAKys" frameborder="0" allowfullscreen></iframe>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=_mL8QvhKvOA" target="_blank"><img src="http://img.youtube.com/vi/_mL8QvhKvOA/0.jpg" alt="YouTube" width="560" height="315" border="10" /></a>
 
 It's a prototypical VR desktop environment, starting with a VNC client and growing from there.
 
