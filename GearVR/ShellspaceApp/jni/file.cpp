@@ -287,11 +287,14 @@ byte *File_ReadFromPackage( const char *fileName, uint *bytesRead )
 {
 	int 	length;
 	void 	*buffer;
+	char 	packagePath[MAX_PATH];
 
 	if ( bytesRead )
 		*bytesRead = 0;
 
-	OVR::ovr_ReadFileFromApplicationPackage( fileName, length, buffer );
+	snprintf( packagePath, MAX_PATH, "assets/%s", fileName );
+
+	OVR::ovr_ReadFileFromApplicationPackage( packagePath, length, buffer );
 
 	if ( !buffer )
 		return NULL;
