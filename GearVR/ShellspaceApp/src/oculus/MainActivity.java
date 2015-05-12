@@ -16,8 +16,8 @@ import android.util.Log;
 
 import com.oculusvr.vrlib.VrActivity;
 
-// import com.crittercism.app.Crittercism;
-// import com.crittercism.app.CrittercismConfig;
+import com.crittercism.app.Crittercism;
+import com.crittercism.app.CrittercismConfig;
 
 public class MainActivity extends VrActivity {
     public static final String TAG = "Shellspace";
@@ -36,9 +36,9 @@ public class MainActivity extends VrActivity {
         super.onCreate(savedInstanceState);
         appPtr = nativeSetAppInterface( this );
 
-        // CrittercismConfig config = new CrittercismConfig();
-        // config.setNdkCrashReportingEnabled( true );
-        // Crittercism.initialize( getApplicationContext(), "5543097b7365f84f7d3d707b", config );
+        CrittercismConfig config = new CrittercismConfig();
+        config.setNdkCrashReportingEnabled( true );
+        Crittercism.initialize( getApplicationContext(), "5543097b7365f84f7d3d707b", config );
 
         // int c = a / b;
     }
