@@ -12,6 +12,7 @@ echo "========================== Reloading scripts ==========================="
 # adb push sdcard/terminal.jpg /storage/extSdCard/Oculus/Shellspace/terminal.jpg
 
 adb push assets/autoexec.vrcfg /storage/extSdCard/Oculus/Shellspace/autoexec.vrcfg
+adb push assets/reset.cfg /storage/extSdCard/Oculus/Shellspace/reset.cfg
 adb push assets/shellspace.js /storage/extSdCard/Oculus/Shellspace/shellspace.js
 adb push assets/example.js /storage/extSdCard/Oculus/Shellspace/example.js
 adb push assets/shell.js /storage/extSdCard/Oculus/Shellspace/shell.js
@@ -22,13 +23,4 @@ adb push assets/entity_v.glsl /storage/extSdCard/Oculus/Shellspace/entity_v.glsl
 
 adb push sdcard/user.cfg /storage/extSdCard/Oculus/Shellspace/user.cfg
 
-echo '
-$$!
-file http disable
-shell unload
-menu unload
-example unload
-v8 load shell.js
-v8 load menu.js
-v8 load example.js
-' | pbcopy
+echo '$$!exec reset.cfg' | pbcopy

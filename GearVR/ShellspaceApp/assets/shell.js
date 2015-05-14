@@ -11,14 +11,15 @@ try { unregisterPlugin( PLUGIN ); } catch (e) {}
 
 registerPlugin( PLUGIN, SxPluginKind_Shell );
 
-rootCell = { kind: 'empty' };
-rootDepth = 40.0;
-rootGutter = 5.0;
+var rootCell = { kind: 'empty' };
+var rootDepth = 40.0;
+var rootGutter = 5.0;
 
-menuOpened = false;
-activeCell = null;
+var menuOpened = false;
+var activeId = 'none';
+var squareCell = null;
 
-gazeDir = Vec3.create( 0, 0, -1 );
+var gazeDir = Vec3.create( 0, 0, -1 );
 
 function radToDeg( v ) {
 	return v * 180.0 / Math.PI;
@@ -49,6 +50,8 @@ function dump_r( cell, depth ) {
 				dump_r( child, depth + 1 );
 			}
 		}
+	} else if ( cell.kind == 'widget' ) {
+		log( 'widget:' + cell.widget + ' entity:' + cell.entity );
 	}
 }
 
@@ -80,11 +83,14 @@ function getCellPoint( lat, lon, depth ) {
 function orientEntityToCell( cell, entity ) {
 	var origin = getCellPoint( cell.lat, cell.lon, rootDepth );
 
-	orientEntity( entity, {
-		origin: [ origin[0], origin[1], origin[2] ],
-		angles: [ cell.lat, -cell.lon, 0 ],
-		scale:  [ 1, 1, 1 ]
-	} );
+	try {
+		orientEntity( entity, {
+			origin: [ origin[0], origin[1], origin[2] ],
+			angles: [ cell.lat, -cell.lon, 0 ],
+			scale:  [ 1, 1, 1 ]
+		} );
+	} catch ( e ) {
+	}
 }
 
 function orientSquareToCell( cell, entity ) {
@@ -211,26 +217,28 @@ function getActiveCell() {
 	return rayCast( targetLat, targetLon );
 }
 
-function findCellByEntity_r( cell, eid ) {
+function findCellByWidget_r( cell, wid ) {
 	if ( cell.kind == 'grid' ) {
 		for ( var y = 0; y < cell.height; y++ ) {
 			for ( var x = 0; x < cell.width; x++ ) {
 				var child = getChild( cell, x, y );
-				var result = findCellByEntity_r( child, eid );
+
+				var result = findCellByWidget_r( child, wid );
 				if ( result )
 					return result;
 			}
 		}
 	} else if ( cell.kind == 'widget' ) {
-		if ( cell.entity == eid )
+		if ( cell.widget == wid ) {
 			return cell;
+		}
 	}
 
 	return null;
 }
 
-function findCellByEntity() {
-	return findCellByEntity_r( rootCell );
+function findCellByWidget( wid ) {
+	return findCellByWidget_r( rootCell, wid );
 }
 
 function makeSquare() {
@@ -294,21 +302,21 @@ function registerCmd( args ) {
 	var wid = args[1];
 	var eid = args[2];
 
-	if ( findCellByEntity( eid ) ) {
-		log( 'Entity ' + eid + ' already registered' );
+	if ( findCellByWidget( wid ) ) {
+		log( 'Widget ' + wid + ' already registered' );
 		return;
 	}
 
 	var cell = getActiveCell();
 	if ( !cell ) {
-		log( 'No active cell to place ' + eid + ' in' );
+		log( 'No active cell to place ' + wid + ' in' );
 		return;
 	}
 
 	if ( cell.kind != 'empty' ) {
-		log( 'Active cell is already full; can\'t place ' + eid );
+		log( 'Active cell is already full; can\'t place ' + wid );
 		return;
-	}	
+	}
 
 	// parentEntity( eid, 'root' );
 
@@ -319,20 +327,43 @@ function registerCmd( args ) {
 	cell.entity = eid;
 
 	layoutWidgets();
+
+	refreshActiveCell();
+
+	// $$$ VNC hack to alter defaults after the widget spawns.
+	if ( wid.match( /vnc/ ) ) {
+		sendMessage( wid, wid + ' zpush 8' );
+	}
 }
 
 function unregisterCmd( args ) {
-	var eid = args[1];
+	var wid = args[1];
 
-	var cell = findCellByEntity( eid );
+	log( 'unregisterCmd: wid:' + wid );
+
+	// $$$ VNC hack to deal w/the bug where the VNC thread exit
+	// is never detected by VNC_Destroy, so the VNC plugin thread freezes.
+	// Instead, just unregister the entity and pretend it's working.
+	if ( wid.match( /vnc/ ) ) {
+		log( 'VNC shutdown hack on ' + wid );
+		try { unregisterWidget( wid ); } catch ( e ) {}
+		try { unregisterEntity( wid ); } catch ( e ) {}
+		try { unregisterTexture( wid ); } catch ( e ) {}
+		try { unregisterGeometry( wid ); } catch ( e ) {}
+	}
+
+	var cell = findCellByWidget( wid );
 	if ( !cell ) {
-		log( 'Unable to find a cell containing entity ' + eid );
+		log( 'Unable to find a cell containing widget ' + wid );
+		dump();
 		return;
-	} 
+	}
 
 	// parentEntity( eid, '' );
 
 	cell.kind = 'empty';
+
+	refreshActiveCell();
 }
 
 function postToActiveWidget( args ) {
@@ -340,6 +371,8 @@ function postToActiveWidget( args ) {
 
 	if ( !cell || cell.kind == 'empty' )
 		return;
+
+	// log( 'postToActiveWidget: ' + cell.widget + ' < ' + args.join( ' ' ) );
 
 	assert( cell.kind == 'widget' );
 	try { sendMessage( cell.widget, args.join( ' ' ) );	} catch ( e ) {}
@@ -352,17 +385,41 @@ function postToMenu( args ) {
 	postMessage( args.join( ' ' ) );
 }
 
+function refreshActiveCell() {
+	cell = getActiveCell();
+
+	if ( cell && cell != squareCell ) {
+		squareCell = cell;
+		orientSquareToCell( squareCell, 'square' );
+	}
+
+	// $$$ To make this more useful to the menu, it might be desireable to register the
+	//     plugin name in addition to the widget name?  For now the menu just has
+	//     hardcoded entity string matching.  Alternately we could enforce that 
+	//     entity ID include widget and plugin ID as prefix tokens.
+	var newActiveId;
+	if ( cell && cell.kind == 'empty' ) 
+		newActiveId = 'empty';
+	else if ( cell && cell.kind == 'widget' ) 
+		newActiveId = cell.widget;
+	else
+		newActiveId = 'none';
+
+	if ( newActiveId != activeId ) {
+		activeId = newActiveId;
+		postMessage( 'menu activate ' + activeId );
+	}
+}
+
 function gazeCmd( args ) {
 	if ( menuOpened ) {
 		postToMenu( args );
 	} else {
 		gazeDir = Vec3.create( +(args[1]), +(args[2]), +(args[3]) );
 
-		cell = getActiveCell();
-		if ( cell )
-			orientSquareToCell( cell, 'square' );
-
 		postToActiveWidget( args );
+
+		refreshActiveCell();
 	}
 }
 
@@ -375,11 +432,21 @@ makeGrid( rootCell, 5, 3 );
 makeGrid( getChild( rootCell, 2, 2 ), 4, 2 );
 
 layoutCells();
-dump();
+// dump();
+
+refreshActiveCell();
 
 for ( ;; ) {
 	var msg = receivePluginMessage( PLUGIN, 0 );
+
+	if ( !msg ) // $$$ Not sure why this is happening.
+		break;
+
 	var args = decodeMessage( msg );
+
+	if ( !msg.match( /gaze/ ) ) {
+		log( 'shell.js: ' + args.join( ' ' ) );
+	}
 
 	if ( args[0] == PLUGIN )
 		args.shift();

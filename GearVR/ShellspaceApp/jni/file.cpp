@@ -170,8 +170,8 @@ void File_DownloadToCache( const char *fileName )
     	return;
 	}
 
-   for ( a = addr; a; a = a->ai_next )
-   {
+	for ( a = addr; a; a = a->ai_next )
+	{
         sockFd = socket( a->ai_family, a->ai_socktype, a->ai_protocol );
         if ( sockFd == -1 )
         {

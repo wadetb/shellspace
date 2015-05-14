@@ -31,13 +31,25 @@
 
 # TODO
 
++ Hook into the Oculus console system to allow sending console commands w/o VNC.
+
++ Make a chain of event handlers like in the DOM, such that something can be added to intercept "key" events to make a watchdog script that resets things but never has to unload.
+
 # Shell
+
++ A Ctrl-Alt-Delete-like hotkey that exects 'reset.cfg' to recover from scripting errors that break the shell.
 
 + Context specific menus.
 
 Idea: When back button is pressed, shell sends a "menu" message to the active widget.  The widget can respond by broadcasting a "menu xyz" message to the system, which will open and display xyz.vrkey.  The issue is widget-specific things like "vnc disconnect vnc0" where VNC0 is the id of the activating widget.  
 
 # VNC
+
++ When the connection is closed, we stop accepting messages and the queue fills up with Gaze events.  Probably need to make the connection status separate from the thread status and spawn widget-per-thread.
+
++ Did toasts disappear somehow?
+
++ Also the "already connected to %s" thing prints NULL if the connection is closed after being initiated, likely because "thread" is not cleared.
 
 + SRGB encode color values?  Not sure what space they come from the server in.
 
@@ -49,6 +61,8 @@ Idea: When back button is pressed, shell sends a "menu" message to the active wi
 
 # Performance
 
++ Textures should start initially cleared to 0 or something, NOT uninitialized.  Same goes for geometry.  Currently if a texture is created and never updated, it will hold garbage memory.
+ 
 + Tuning system for InQueue variables, possibly via console commands.
 + Bounds accumulation for Geometry objects, frustum culling
 + Optimize various decoders using NEON.

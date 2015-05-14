@@ -13,6 +13,9 @@ registerPlugin( PLUGIN, SxPluginKind_Widget );
 
 var rootMenu = { id: 'root', children: [] };
 
+var activeId = 'none';
+var nextId = 0;
+
 var menuStack = [];
 
 var gazeDir = Vec3.create( 0, 0, -1 );
@@ -133,13 +136,39 @@ function hitMenu( menu ) {
 }
 
 function openMenu( args ) {
-	// $$$ Testing
-	rootMenu.children = [
-		{ id: 'test0', caption: 'vnc', command: 'vnc create vnc0; vnc connect vnc0 10.0.1.40 asdf; shell register vnc0 vnc0; vnc zpush 10' },
-		{ id: 'test1', caption: 'chrome', command: 'example spawn chrome' },
-		{ id: 'test2', caption: 'terminal', command: 'example spawn terminal' },
-		// { id: 'test3', caption: 'hello', command: 'example spawn hello' },
-	];
+	if ( activeId == 'none' ) {
+		rootMenu.children = [
+			{ id: 'reset', caption: 'reset', command: 'exec reset.cfg' },
+		];
+	} else if ( activeId == 'empty' ) {
+		rootMenu.children = [ { 
+				id: 'vnc', 
+				caption: 'vnc', 
+				command: 'vnc create vnc$newId;' +
+				         'vnc connect vnc$newId 10.0.1.40 asdf;'
+			},
+			{ id: 'test1', caption: 'chrome', command: 'example spawn chrome' },
+			{ id: 'test2', caption: 'terminal', command: 'example spawn terminal' },
+			// { id: 'test3', caption: 'hello', command: 'example spawn hello' },
+		];
+	} else {
+		// Context sensitive options
+		if ( activeId.match( /vnc/ ) ) {
+			rootMenu.children = [ 
+				{ id: 'zpushneg', caption: 'zpush-', command: '$activeId zpush -1;' },
+				{ id: 'zpushpos', caption: 'zpush+', command: '$activeId zpush +1;' },
+				// { id: 'close', caption: 'close', command: 'shell unregister $activeId;' },
+				{ id: 'close', caption: 'close', command: 'vnc destroy $activeId;' },
+			];
+		} else if ( activeId.match( /example/ ) ) {
+			rootMenu.children = [ { 
+					id: 'close', 
+					caption: 'close', 
+					command: 'vnc destroy $activeId;'
+				},
+			];
+		}
+	}
 
 	menuStack = [ rootMenu ];
 	showItems( menuStack[0] );
@@ -235,9 +264,18 @@ function onTap() {
 		return;
 	}
 
-	log( 'Item ' + m.id + ' activated: ' + m.command );
+	var cmd = '' + m.command;
 
-	postMessage( m.command );
+	if ( cmd.match( /\$newId/ ) ) {
+		cmd = cmd.replace( /\$newId/g, '' + nextId );
+		nextId++;
+	}
+
+	cmd = cmd.replace( /\$activeId/g, activeId );
+
+	log( 'Item ' + m.id + ' activated: ' + cmd );
+
+	postMessage( cmd );
 
 	closeMenu();
 }
@@ -246,7 +284,9 @@ for ( ;; ) {
 	var msg = receivePluginMessage( PLUGIN, 0 );
 	var args = decodeMessage( msg );
 
-	// log( 'menu.js: ' + args.join( ' ' ) );
+	if ( !msg.match( /gaze/ ) ) {
+		log( 'menu.js: ' + args.join( ' ' ) );
+	}
 
 	if ( args[0] == PLUGIN )
 		args.shift();
@@ -268,6 +308,9 @@ for ( ;; ) {
 	}
 	else if ( command == 'tap' ) {
 		onTap();
+	}
+	else if ( command == 'activate' ) {
+		activeId = args[0];
 	}
 	else if ( command == 'contents' ) {
 		mergeMenuContents( eval( args[1] ) );

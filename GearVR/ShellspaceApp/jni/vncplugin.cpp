@@ -37,9 +37,9 @@
 
 enum EVNCState
 {
+	VNCSTATE_DISCONNECTED,
 	VNCSTATE_CONNECTING,
-	VNCSTATE_CONNECTED,
-	VNCSTATE_DISCONNECTED
+	VNCSTATE_CONNECTED
 };
 
 
@@ -89,7 +89,7 @@ struct SVNCWidget
 	char 				*server;
 	char 				*password;
 
-	EVNCState			state;
+	volatile EVNCState	state;
 
 	SVNCCursor			cursor;
 	SVNCGlobe 			globe;
@@ -766,8 +766,6 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 
 	LOG( "VNCThread_Connect: Connecting to %s...", vnc->server );
 
-	vnc->state = VNCSTATE_CONNECTING;
-
 	client = rfbGetClient( 8, 3, 4 );
 	if ( !client )
 		FAIL( "Failed to create VNC client." );
@@ -800,10 +798,7 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 	argv[1] = vnc->server;
 
 	if ( !rfbInitClient( client, &argc, const_cast< char ** >( argv ) ) ) 
-	{
-		vnc->state = VNCSTATE_DISCONNECTED;
 		return sfalse;
-	}
 
 	LOG( "VNCThread_Connect: Connected to %s.", vnc->server );
 
@@ -1222,7 +1217,7 @@ static void VNCThread_Cleanup( SVNCWidget *vnc )
 	assert( vnc );
 	assert( vnc->client );
 
-	vnc->state = VNCSTATE_DISCONNECTED;
+	LOG( "VNCThread_Cleanup: Disconnected from %s; cleaning up.", vnc->server );
 
 	rfbClientCleanup( vnc->client );
 	vnc->client = NULL;
@@ -1232,6 +1227,8 @@ static void VNCThread_Cleanup( SVNCWidget *vnc )
 
 	free( vnc->password );
 	vnc->password = NULL;
+
+	vnc->state = VNCSTATE_DISCONNECTED;
 }
 
 
@@ -1244,10 +1241,10 @@ static void *VNCThread( void *context )
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	if ( !VNCThread_Connect( vnc ) )
-		return 0;
-
-	VNCThread_Loop( vnc );
+	if ( VNCThread_Connect( vnc ) )
+	{
+		VNCThread_Loop( vnc );
+	}
 
 	VNCThread_Cleanup( vnc );
 
@@ -1261,7 +1258,7 @@ void VNC_Connect( SVNCWidget *vnc, const char *server, const char *password )
 
 	assert( vnc );
 
-	if ( vnc->thread )
+	if ( vnc->state != VNCSTATE_DISCONNECTED )
 	{
 		LOG( "VNC_Connect: Already connected to %s.", vnc->server );
 		return;
@@ -1274,6 +1271,8 @@ void VNC_Connect( SVNCWidget *vnc, const char *server, const char *password )
 	vnc->server = strdup( server );
 	vnc->password = strdup( password );
 
+	vnc->state = VNCSTATE_CONNECTING;
+
 	err = pthread_create( &vnc->thread, NULL, VNCThread, vnc );
 	if ( err != 0 )
 		FAIL( "VNC_Connect: pthread_create returned %i", err );
@@ -1284,7 +1283,7 @@ void VNC_Disconnect( SVNCWidget *vnc )
 {
 	assert( vnc );
 
-	if ( !vnc->thread )
+	if ( vnc->state == VNCSTATE_DISCONNECTED )
 	{
 		LOG( "VNC_Disconnect: Not connected." );
 		return;
@@ -1292,8 +1291,10 @@ void VNC_Disconnect( SVNCWidget *vnc )
 
 	vnc->disconnect = strue;
 
-	while ( vnc->thread )
+	while ( vnc->state != VNCSTATE_DISCONNECTED )
 		Thread_Sleep( 3 );
+
+	LOG( "VNC_Disconnect: Finished disconnecting." );
 
 	vnc->disconnect = sfalse;
 }
@@ -1579,7 +1580,8 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 void VNC_DestroyCmd( const SMsg *msg, void *context )
 {
 	SxWidgetHandle 	id;
-	SVNCWidget 	*vnc;
+	SVNCWidget 		*vnc;
+	char 			msgBuf[MSG_LIMIT];
 
 	id = Msg_Argv( msg, 1 );
 	
@@ -1590,7 +1592,7 @@ void VNC_DestroyCmd( const SMsg *msg, void *context )
 		return;
 	}
 
-	if ( vnc->thread )
+	if ( vnc->state != VNCSTATE_DISCONNECTED )
 		VNC_Disconnect( vnc );
 
 	g_pluginInterface.unregisterWidget( vnc->id );
@@ -1604,6 +1606,9 @@ void VNC_DestroyCmd( const SMsg *msg, void *context )
 	g_pluginInterface.unregisterGeometry( vnc->cursorId );
 
 	free( (char *)vnc->cursorId );
+
+	snprintf( msgBuf, MSG_LIMIT, "shell unregister %s", vnc->id );
+	g_pluginInterface.postMessage( msgBuf );
 
 	VNC_FreeWidget( vnc );
 }
