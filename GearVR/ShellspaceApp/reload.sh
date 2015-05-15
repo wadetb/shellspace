@@ -18,8 +18,10 @@ adb push assets/example.js /storage/extSdCard/Oculus/Shellspace/example.js
 adb push assets/shell.js /storage/extSdCard/Oculus/Shellspace/shell.js
 adb push assets/menu.js /storage/extSdCard/Oculus/Shellspace/menu.js
 adb push assets/vector.js /storage/extSdCard/Oculus/Shellspace/vector.js
+adb push assets/sprintf.js /storage/extSdCard/Oculus/Shellspace/sprintf.js
 adb push assets/entity_f.glsl /storage/extSdCard/Oculus/Shellspace/entity_f.glsl
 adb push assets/entity_v.glsl /storage/extSdCard/Oculus/Shellspace/entity_v.glsl
+adb push assets/start.menu /storage/extSdCard/Oculus/Shellspace/start.menu
 
 adb push sdcard/user.cfg /storage/extSdCard/Oculus/Shellspace/user.cfg
 

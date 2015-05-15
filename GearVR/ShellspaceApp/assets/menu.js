@@ -15,6 +15,7 @@ var rootMenu = { id: 'root', children: [] };
 
 var activeId = 'none';
 var nextId = 0;
+var nextMenuId = 0;
 
 var menuStack = [];
 
@@ -52,6 +53,11 @@ function mergeMenuContents( contents ) {
 }
 
 function showItem( m ) {
+	if ( !m.id ) {
+		m.id = 'menu' + nextMenuId;
+		nextMenuId++;
+	}
+
 	m.texture = m.id + "_tex";
 	try { registerTexture( m.texture ); } catch (e) {}
 
@@ -138,34 +144,22 @@ function hitMenu( menu ) {
 function openMenu( args ) {
 	if ( activeId == 'none' ) {
 		rootMenu.children = [
-			{ id: 'reset', caption: 'reset', command: 'exec reset.cfg' },
+			{ caption: 'reset', command: 'exec reset.cfg' },
 		];
 	} else if ( activeId == 'empty' ) {
-		rootMenu.children = [ { 
-				id: 'vnc', 
-				caption: 'vnc', 
-				command: 'vnc create vnc$newId;' +
-				         'vnc connect vnc$newId 10.0.1.40 asdf;'
-			},
-			{ id: 'test1', caption: 'chrome', command: 'example spawn chrome' },
-			{ id: 'test2', caption: 'terminal', command: 'example spawn terminal' },
-			// { id: 'test3', caption: 'hello', command: 'example spawn hello' },
-		];
+		rootMenu.children = include( 'start.menu' );
 	} else {
 		// Context sensitive options
 		if ( activeId.match( /vnc/ ) ) {
 			rootMenu.children = [ 
-				{ id: 'zpushneg', caption: 'zpush-', command: '$activeId zpush -1;' },
-				{ id: 'zpushpos', caption: 'zpush+', command: '$activeId zpush +1;' },
+				{ caption: 'zpush-', command: 'vnc $activeId zpush -1;', closeMenu: false },
+				{ caption: 'zpush+', command: 'vnc $activeId zpush +1;', closeMenu: false },
 				// { id: 'close', caption: 'close', command: 'shell unregister $activeId;' },
-				{ id: 'close', caption: 'close', command: 'vnc destroy $activeId;' },
+				{ caption: 'close', command: 'vnc destroy $activeId;' },
 			];
 		} else if ( activeId.match( /example/ ) ) {
-			rootMenu.children = [ { 
-					id: 'close', 
-					caption: 'close', 
-					command: 'vnc destroy $activeId;'
-				},
+			rootMenu.children = [ 
+				{ caption: 'close', command: 'example destroy $activeId;' },
 			];
 		}
 	}
@@ -264,24 +258,26 @@ function onTap() {
 		return;
 	}
 
-	var cmd = '' + m.command;
+	var command = m.command;
 
-	if ( cmd.match( /\$newId/ ) ) {
-		cmd = cmd.replace( /\$newId/g, '' + nextId );
+	if ( command.match( /\$newId/ ) ) {
+		command = command.replace( /\$newId/g, '' + nextId );
 		nextId++;
 	}
 
-	cmd = cmd.replace( /\$activeId/g, activeId );
+	command = command.replace( /\$activeId/g, activeId );
 
-	log( 'Item ' + m.id + ' activated: ' + cmd );
+	log( 'Item ' + m.id + ' activated: ' + command );
 
-	postMessage( cmd );
+	postMessage( command );
 
-	closeMenu();
+	if ( m.closeMenu !== false ) {
+		closeMenu();
+	}
 }
 
 for ( ;; ) {
-	var msg = receivePluginMessage( PLUGIN, 0 );
+	var msg = receiveMessage( PLUGIN, 0 );
 	var args = decodeMessage( msg );
 
 	if ( !msg.match( /gaze/ ) ) {

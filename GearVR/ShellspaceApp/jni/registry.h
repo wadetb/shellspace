@@ -52,8 +52,6 @@ struct SWidget
 	SRefLink		poolLink;
 
 	char			*id;
-
-	SMsgQueue		msgQueue;
 };
 
 struct SGeometry

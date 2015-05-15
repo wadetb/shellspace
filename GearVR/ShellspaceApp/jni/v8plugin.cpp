@@ -152,7 +152,7 @@ void V8_UnregisterPluginCallback( const FunctionCallbackInfo<Value>& args )
 }
 
 
-void V8_ReceivePluginMessageCallback( const FunctionCallbackInfo<Value>& args )
+void V8_ReceiveMessageCallback( const FunctionCallbackInfo<Value>& args )
 {
 	char 	msgBuf[MSG_LIMIT];
 
@@ -161,7 +161,7 @@ void V8_ReceivePluginMessageCallback( const FunctionCallbackInfo<Value>& args )
 	String::Utf8Value arg0( args[0] );
 
 	V8_CheckResult( args.GetIsolate(), 
-		s_v8.sx->receivePluginMessage( 
+		s_v8.sx->receiveMessage( 
 			V8_StringArg( arg0 ),
 			V8_IntArg( args[1] ),
 			msgBuf, MSG_LIMIT ) );
@@ -203,38 +203,6 @@ void V8_PostMessageCallback( const FunctionCallbackInfo<Value>& args )
 	V8_CheckResult( args.GetIsolate(), 
 		s_v8.sx->postMessage( 
 			V8_StringArg( arg0 ) ) );
-}
-
-
-void V8_SendMessageCallback( const FunctionCallbackInfo<Value>& args )
-{
-	HandleScope handleScope( args.GetIsolate() );
-
-	String::Utf8Value arg0( args[0] );
-	String::Utf8Value arg1( args[1] );
-
-	V8_CheckResult( args.GetIsolate(), 
-		s_v8.sx->sendMessage( 
-			V8_StringArg( arg0 ),
-			V8_StringArg( arg1 ) ) );
-}
-
-
-void V8_ReceiveWidgetMessageCallback( const FunctionCallbackInfo<Value>& args )
-{
-	char 	msgBuf[MSG_LIMIT];
-
-	HandleScope handleScope( args.GetIsolate() );
-
-	String::Utf8Value arg0( args[0] );
-
-	V8_CheckResult( args.GetIsolate(), 
-		s_v8.sx->receiveWidgetMessage( 
-			V8_StringArg( arg0 ),
-			V8_IntArg( args[1] ),
-			msgBuf, MSG_LIMIT ) );
-
-	args.GetReturnValue().Set( String::NewFromUtf8( args.GetIsolate(), msgBuf ) );
 }
 
 
@@ -783,8 +751,8 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 	global->Set( String::NewFromUtf8( isolate, "unregisterPlugin" ), 
 		         FunctionTemplate::New( isolate, V8_UnregisterPluginCallback ) );
 
-	global->Set( String::NewFromUtf8( isolate, "receivePluginMessage" ), 
-		         FunctionTemplate::New( isolate, V8_ReceivePluginMessageCallback ) );
+	global->Set( String::NewFromUtf8( isolate, "receiveMessage" ), 
+		         FunctionTemplate::New( isolate, V8_ReceiveMessageCallback ) );
 
 	global->Set( String::NewFromUtf8( isolate, "registerWidget" ), 
 		         FunctionTemplate::New( isolate, V8_RegisterWidgetCallback ) );
@@ -794,12 +762,6 @@ Handle<Context> V8_CreateShellContext( Isolate* isolate )
 
 	global->Set( String::NewFromUtf8( isolate, "postMessage" ), 
 		         FunctionTemplate::New( isolate, V8_PostMessageCallback ) );
-
-	global->Set( String::NewFromUtf8( isolate, "sendMessage" ), 
-		         FunctionTemplate::New( isolate, V8_SendMessageCallback ) );
-
-	global->Set( String::NewFromUtf8( isolate, "receiveWidgetMessage" ), 
-		         FunctionTemplate::New( isolate, V8_ReceiveWidgetMessageCallback ) );
 
 
 	global->Set( String::NewFromUtf8( isolate, "registerGeometry" ), 
@@ -1045,7 +1007,7 @@ void *V8_PluginThread( void *context )
 
 	for ( ;; )
 	{
-		g_pluginInterface.receivePluginMessage( "v8", SX_WAIT_INFINITE, msgBuf, MSG_LIMIT );
+		g_pluginInterface.receiveMessage( "v8", SX_WAIT_INFINITE, msgBuf, MSG_LIMIT );
 
 		Msg_ParseString( &msg, msgBuf );
 		if ( Msg_Empty( &msg ) )

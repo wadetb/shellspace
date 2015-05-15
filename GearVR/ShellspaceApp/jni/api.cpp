@@ -84,7 +84,7 @@ SxResult sxUnregisterPlugin( SxPluginHandle pl )
 }
 
 
-SxResult sxReceivePluginMessage( SxPluginHandle pl, uint waitMs, char *result, uint resultLen )
+SxResult sxReceiveMessage( SxPluginHandle pl, uint waitMs, char *result, uint resultLen )
 {
 	SRef 		ref;
 	SPlugin 	*plugin;
@@ -178,82 +178,6 @@ SxResult sxPostMessage( const char *message )
 	Cmd_Add( message );
 
 	return SX_OK;
-}
-
-
-SxResult sxSendMessage( SxWidgetHandle wd, const char *message )
-{
-	SRef 		ref;
-	SWidget 	*widget;
-
-	Thread_ScopeLock lock( MUTEX_API );
-
-	ref = Registry_GetWidgetRef( wd );
-	if ( ref == S_NULL_REF )
-	{
-		LOG( "sxSendMessage: Invalid widget %s", wd );
-		return SX_INVALID_HANDLE;
-	}
-
-	widget = Registry_GetWidget( ref );
-	assert( widget );
-
-	MsgQueue_Put( &widget->msgQueue, message );
-
-	return SX_OK;
-}
-
-
-SxResult sxReceiveWidgetMessage( SxWidgetHandle wd, uint waitMs, char *result, unsigned int resultLen )
-{
-	SRef 		ref;
-	SWidget 	*widget;
-	char 		*text;
-
-	Thread_Lock( MUTEX_API );
-
-	ref = Registry_GetWidgetRef( wd );
-	if ( ref == S_NULL_REF )
-	{
-		Thread_Unlock( MUTEX_API );
-		return SX_INVALID_HANDLE;
-	}
-
-	widget = Registry_GetWidget( ref );
-	assert( widget );
-
-	Thread_Unlock( MUTEX_API );
-
-	// $$$ If widget is destroyed, crash here.  But can't hold the global API lock while waiting.
-	text = MsgQueue_Get( &widget->msgQueue, waitMs );
-
-	if ( text )
-	{
-		snprintf( result, resultLen, "%s", text );
-		free( text );
-	}
-	else
-	{
-		strcpy( result, "" );
-	}
-
-	return SX_OK;
-}
-
-
-SxResult sxRegisterMessageListener( SxWidgetHandle wd, const char *messages )
-{
-	Thread_ScopeLock lock( MUTEX_API );
-
-	return SX_NOT_IMPLEMENTED;
-}
-
-
-SxResult sxUnregisterMessageListener( SxWidgetHandle wd, const char *messages )
-{
-	Thread_ScopeLock lock( MUTEX_API );
-
-	return SX_NOT_IMPLEMENTED;
 }
 
 
@@ -939,14 +863,10 @@ SxPluginInterface g_pluginInterface =
     SX_PLUGIN_INTERFACE_VERSION,			// version
     sxRegisterPlugin,                       // registerPlugin
     sxUnregisterPlugin,                     // unregisterPlugin
-    sxReceivePluginMessage,					// receivePluginMessage
+    sxReceiveMessage,						// receiveMessage
     sxRegisterWidget,                       // registerWidget
     sxUnregisterWidget,                     // unregisterWidget
     sxPostMessage,                    		// postMessage
-    sxSendMessage,                          // sendMessage
-    sxReceiveWidgetMessage,                 // receiveWidgetMessage
-    sxRegisterMessageListener,              // registerMessageListener
-    sxUnregisterMessageListener,            // unregisterMessageListener
     sxRegisterGeometry,                     // registerGeometry
     sxUnregisterGeometry,                   // unregisterGeometry
     sxSizeGeometry,                         // sizeGeometry

@@ -29,19 +29,52 @@
 + Remove personal .sig
 + Run the release checker (ignore LAUNCHER msg)
 
-# TODO
+# TODO for next build
+
++ Load a connection list from a JSON file.
++ Make toy apps load where aimed at.
++ Stability testing.
++ Push active app closer.
+
+# Misc
 
 + Hook into the Oculus console system to allow sending console commands w/o VNC.
 
++ Write a console module with channels + levels (like log, warn, error) + fatal errors.  Broadcast "console" messages so a "console" plugin can receive and display them in a cell, and implement that using JS+Skia.  (This plugin could also support typed keyboard commands, or that could be built into the Shell spotlight style...my instinct is the latter)
+
++ Broadcast profiler data via a "profile" message, write a JS+Skia profiler display widget.
+
+# Core 
+
++ Implement 3D transition animation support so things can animate smoothly.
+
 + Make a chain of event handlers like in the DOM, such that something can be added to intercept "key" events to make a watchdog script that resets things but never has to unload.
+
++ Move VNC to a .so plugin as an example so others can start to actually write plugins, and so C++ plugins can be fetched via HTTP.
+
++ Add Connection: close to the HTTP request.  (Or just implement multiple requests per connection, haha)
+
+The browser model for Shellspace over HTTP would be to execute a "shellspace.org/somespace/index.cfg" script file to populate everything.
+
+# Menu
+
++ Finish implementing the stacking.
+
++ Test a radial arrangement.
+
++ Support simple float/int slider, checkbox, enum controls such that data is communicated to/from the widget.
 
 # Shell
 
++ Automatically zoom in on the active widget.
+ 
 + A Ctrl-Alt-Delete-like hotkey that exects 'reset.cfg' to recover from scripting errors that break the shell.
 
 + Context specific menus.
 
-Idea: When back button is pressed, shell sends a "menu" message to the active widget.  The widget can respond by broadcasting a "menu xyz" message to the system, which will open and display xyz.vrkey.  The issue is widget-specific things like "vnc disconnect vnc0" where VNC0 is the id of the activating widget.  
+Idea: When back button is pressed, shell sends a "menu" message to the active widget.  The widget can respond by broadcasting a "menu xyz" message to the system, which will open and display xyz.vrkey.  (.vrkey is JSON, but could conceivably be injected JavaScript code via include( menuFile ).
+
+Menu may contain widget-specific things like "vnc disconnect $activeId" where $activeId is the id of the activating widget.  
 
 # VNC
 

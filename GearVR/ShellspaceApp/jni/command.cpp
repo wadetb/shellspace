@@ -261,8 +261,6 @@ void Cmd_Frame()
 	char 	*p;
 	uint 	pluginIndex;
 	SPlugin *plugin;
-	uint 	widgetIndex;
-	SWidget	*widget;
 
 	if ( !s_cmdGlob.bufferPos )
 		return;
@@ -284,6 +282,22 @@ void Cmd_Frame()
 		if ( !Cmd_Argc() )
 			goto next_cmd;
 
+		// if ( strcasecmp( Cmd_Argv( 0 ), "wait" ) == 0 )
+		// {
+		// 	if ( strcasecmp( Cmd_Argv( 1 ), "plugin" ) == 0 )
+		// 	{
+		// 		if ( Registry_GetPluginRef( Cmd_Argv( 2 ) == S_NULL_REF ) )
+		// 		{
+		// 			memmove( s_cmdGlob.buffer, p, strlen( p ) );
+		// 			s_bufferPos = 0;
+
+		// 			Prof_Stop( PROF_CMD );
+		// 			return;
+		// 		}
+		// 	}
+		// 	goto next_cmd;
+		// }
+
 		if ( App_Command() )
 		{
 			Cmd_Clear();
@@ -298,19 +312,6 @@ void Cmd_Frame()
 			if ( S_strcmp( plugin->id, Cmd_Argv( 0 ) ) == 0 )
 			{
 				Cmd_AddToQueue( &plugin->msgQueue );
-				Cmd_Clear();
-				goto next_cmd;
-			}
-		}
-
-		for ( widgetIndex = 0; widgetIndex < Registry_GetCount( WIDGET_REGISTRY ); widgetIndex++ )
-		{
-			widget = Registry_GetWidget( Registry_RefForIndex( widgetIndex ) );
-			assert( widget );
-
-			if ( S_strcmp( widget->id, Cmd_Argv( 0 ) ) == 0 )
-			{
-				Cmd_AddToQueue( &widget->msgQueue );
 				Cmd_Clear();
 				goto next_cmd;
 			}

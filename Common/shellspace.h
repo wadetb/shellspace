@@ -78,7 +78,7 @@ enum SxPluginKind
 typedef SxResult (*SxRegisterPlugin)( SxPluginHandle wd, SxPluginKind kind );
 typedef SxResult (*SxUnregisterPlugin)( SxPluginHandle wd );
 
-typedef SxResult (*SxReceivePluginMessage)( SxPluginHandle wd, uint waitMs, char *result, unsigned int resultLen );
+typedef SxResult (*SxReceiveMessage)( SxPluginHandle wd, uint waitMs, char *result, unsigned int resultLen );
 
 //
 // Widgets
@@ -100,10 +100,10 @@ typedef SxResult (*SxUnregisterWidget)( SxWidgetHandle wd );
 //  communication takes place.  
 //
 // Messages are simple text string in command line argument format, e.g.
-//  "spawn vnc 10.90.240.11 --format 565"
+//  "vnc create vnc0 10.90.240.11 bpp=16"
 // Arguments may be quoted, with any internal quotes escaped as \".
 //
-// Widgets can register for preferential receipt of certain messages via
+// Plugins can register for preferential receipt of certain messages via
 //  listeners.  Otherwise it's up to the shell and other widgets to pass
 //  messages along.  
 //
@@ -115,11 +115,6 @@ typedef SxResult (*SxUnregisterWidget)( SxWidgetHandle wd );
 #define SX_WAIT_INFINITE    0
 
 typedef SxResult (*SxPostMessage)( const char *message );
-typedef SxResult (*SxSendMessage)( SxWidgetHandle wd, const char *message );
-typedef SxResult (*SxReceiveWidgetMessage)( SxWidgetHandle wd, uint waitMs, char *result, unsigned int resultLen );
-
-typedef SxResult (*SxRegisterMessageListener)( SxWidgetHandle wd, const char *message );
-typedef SxResult (*SxUnregisterMessageListener)( SxWidgetHandle wd, const char *message );
 
 //
 // Entities
@@ -424,14 +419,10 @@ struct SxPluginInterface
     unsigned int                        version;
     SxRegisterPlugin                    registerPlugin;
     SxUnregisterPlugin                  unregisterPlugin;
-    SxReceivePluginMessage              receivePluginMessage;
+    SxReceiveMessage                    receiveMessage;
     SxRegisterWidget                    registerWidget;
     SxUnregisterWidget                  unregisterWidget;
     SxPostMessage                       postMessage;
-    SxSendMessage                       sendMessage;
-    SxReceiveWidgetMessage              receiveWidgetMessage;
-    SxRegisterMessageListener           registerMessageListener;
-    SxUnregisterMessageListener         unregisterMessageListener;
     SxRegisterGeometry                  registerGeometry;
     SxUnregisterGeometry                unregisterGeometry;
     SxSizeGeometry                      sizeGeometry;

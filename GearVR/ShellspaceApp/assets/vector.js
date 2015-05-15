@@ -110,6 +110,12 @@ Vec3.scale = function( a, v, out ) {
     out[2] = a[2] * v;
 }
 
+Vec3.set = function( out, x, y, z ) {
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+}
+
 Vec3.sub = function( a, b, out ) {
     out[0] = a[0] - b[0];
     out[1] = a[1] - b[1];

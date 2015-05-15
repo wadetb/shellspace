@@ -1,0 +1,8 @@
+[ 
+	{ 
+		caption: 'vnc 10.0.1.40', 
+		command: 'vnc create $newId; vnc connect $newId 10.0.1.40 asdf;'
+	},
+	{ caption: 'chrome', command: 'example create $newId chrome' },
+	{ caption: 'terminal', command: 'example create $newId terminal' },
+]

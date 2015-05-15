@@ -80,6 +80,20 @@ void Msg_Unshift( SMsg *msg, const char *text )
 }
 
 
+void Msg_Remove( SMsg *msg, uint index )
+{
+	uint argIndex;
+
+	if ( index >= msg->argCount )
+		return;
+
+	for ( argIndex = index; argIndex < msg->argCount; argIndex++ )
+		msg->args[argIndex] = msg->args[argIndex + 1];
+
+	msg->argCount--;
+}
+
+
 void Msg_Format( const SMsg *msg, char *result, uint resultLen )
 {
 	uint textPos;

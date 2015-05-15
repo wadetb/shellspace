@@ -85,6 +85,8 @@ struct SVNCWidget
 	pthread_t 			thread;
 	volatile sbool 		disconnect;
 
+	SMsgQueue			msgQueue;
+
 	rfbClient    		*client;
 	char 				*server;
 	char 				*password;
@@ -1175,16 +1177,24 @@ SMsgCmd s_vncWidgetCmds[] =
 
 void VNCThread_Messages( SVNCWidget *vnc )
 {
-	char 	msgBuf[MSG_LIMIT];
+	char 	*text;
 	SMsg 	msg;
 
 	assert( vnc );
 
-	g_pluginInterface.receiveWidgetMessage( vnc->id, 1, msgBuf, MSG_LIMIT );
+	text = MsgQueue_Get( &vnc->msgQueue, 1 );
+	if ( !text )
+		return;
 	
-	Msg_ParseString( &msg, msgBuf );
+	Msg_ParseString( &msg, text );
+
+	free( text );
+
 	if ( Msg_Empty( &msg ) )
 		return;
+
+	if ( Msg_IsArgv( &msg, 0, "vnc" ) )
+		Msg_Shift( &msg, 1 );
 
 	if ( Msg_IsArgv( &msg, 0, vnc->id ) )
 		Msg_Shift( &msg, 1 );
@@ -1513,6 +1523,27 @@ SVNCWidget *VNC_GetWidget( SxWidgetHandle id )
 }
 
 
+void VNC_WidgetCmd( const SMsg *msg )
+{
+	SVNCWidget 		*widget;
+	SxWidgetHandle 	wid;
+	char 			msgBuf[MSG_LIMIT];
+
+	wid = Msg_Argv( msg, 0 );
+
+	Msg_Format( msg, msgBuf, MSG_LIMIT );
+
+	widget = VNC_GetWidget( wid );
+	if ( !widget )
+	{
+		LOG( "VNC_WidgetCmd: This command was not recognized as either a plugin command or a valid widget id: %s", msgBuf );
+		return;
+	}
+
+	MsgQueue_Put( &widget->msgQueue, msgBuf );
+}
+
+
 void VNC_CreateCmd( const SMsg *msg, void *context )
 {
 	SxWidgetHandle 	id;
@@ -1572,7 +1603,7 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 
 	g_pluginInterface.parentEntity( vnc->cursorId, vnc->id );
 
-	snprintf( msgBuf, MSG_LIMIT, "shell register %s %s", vnc->id, vnc->id );
+	snprintf( msgBuf, MSG_LIMIT, "shell register vnc %s %s", vnc->id, vnc->id );
 	g_pluginInterface.postMessage( msgBuf );
 }
 
@@ -1676,7 +1707,7 @@ void *VNC_PluginThread( void *context )
 
 	for ( ;; )
 	{
-		g_pluginInterface.receivePluginMessage( "vnc", SX_WAIT_INFINITE, msgBuf, MSG_LIMIT );
+		g_pluginInterface.receiveMessage( "vnc", SX_WAIT_INFINITE, msgBuf, MSG_LIMIT );
 
 		Msg_ParseString( &msg, msgBuf );
 		if ( Msg_Empty( &msg ) )
@@ -1688,7 +1719,8 @@ void *VNC_PluginThread( void *context )
 		if ( Msg_IsArgv( &msg, 0, "unload" ) )
 			break;
 
-		MsgCmd_Dispatch( &msg, s_vncCmds, NULL );
+		if ( !MsgCmd_Dispatch( &msg, s_vncCmds, NULL ) )
+			VNC_WidgetCmd( &msg );
 	}
 
 	g_pluginInterface.unregisterPlugin( "vnc" );

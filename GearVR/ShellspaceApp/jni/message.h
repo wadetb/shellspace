@@ -60,6 +60,7 @@ sbool Msg_IsArgv( const SMsg *msg, uint argIndex, const char *value );
 
 void Msg_Shift( SMsg *msg, uint count );
 void Msg_Unshift( SMsg *msg, const char *text );
+void Msg_Remove( SMsg *msg, uint index );
 void Msg_Format( const SMsg *msg, char *result, uint resultLen );
 
 sbool MsgCmd_Dispatch( const SMsg *msg, const SMsgCmd *cmdList, void *context );

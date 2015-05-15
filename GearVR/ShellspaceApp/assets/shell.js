@@ -4,6 +4,7 @@
 //
 include( 'shellspace.js' );
 include( 'vector.js' );
+include( 'sprintf.js' );
 
 PLUGIN   = 'shell'
 
@@ -80,53 +81,54 @@ function getCellPoint( lat, lon, depth ) {
 	return Vec3.create( depth * su, depth * sv, -depth * cu * cv );
 }
 
-function orientEntityToCell( cell, entity ) {
-	var origin = getCellPoint( cell.lat, cell.lon, rootDepth );
+function orientEntityToCell( cell, entity, properties ) {
+	properties = properties || cell.properties;
 
-	try {
+	if ( properties.placement == 'center' ) {
+		var origin = getCellPoint( cell.lat, cell.lon, rootDepth );
+		var scale = Vec3.create( 1, 1, 1 );
+
 		orientEntity( entity, {
 			origin: [ origin[0], origin[1], origin[2] ],
 			angles: [ cell.lat, -cell.lon, 0 ],
 			scale:  [ 1, 1, 1 ]
 		} );
-	} catch ( e ) {
+	} else if ( properties.placement == 'fill' ) {
+		var lat0 = cell.lat - cell.latArc * 0.5;
+		var lat1 = cell.lat + cell.latArc * 0.5;
+
+		var lon0 = cell.lon - cell.lonArc * 0.5;
+		var lon1 = cell.lon + cell.lonArc * 0.5;
+
+		var p0 = getCellPoint( lat0, lon0, rootDepth );
+		var p1 = getCellPoint( lat0, lon1, rootDepth );
+		var p2 = getCellPoint( lat1, lon0, rootDepth );
+
+		var origin = Vec3.create();
+		Vec3.avg( p1, p2, origin );
+
+		var uSize = Vec3.distance( p0, p1 ) * 0.5;
+		var vSize = Vec3.distance( p0, p2 ) * 0.5;
+
+		try {
+			orientEntity( entity, {
+				origin: [ origin[0], origin[1], origin[2] ],
+				angles: [ cell.lat, -cell.lon, 0 ],
+				scale:  [ uSize, vSize, 1.0 ] 
+			});
+		} catch ( e ) {
+		}
 	}
 }
 
 function orientSquareToCell( cell, entity ) {
-	var lat0 = cell.lat - cell.latArc * 0.5;
-	var lat1 = cell.lat + cell.latArc * 0.5;
-
-	var lon0 = cell.lon - cell.lonArc * 0.5;
-	var lon1 = cell.lon + cell.lonArc * 0.5;
-
-	var p0 = getCellPoint( lat0, lon0, rootDepth );
-	var p1 = getCellPoint( lat0, lon1, rootDepth );
-	var p2 = getCellPoint( lat1, lon0, rootDepth );
-
-	var origin = Vec3.create( 0, 0, 0 );
-	Vec3.avg( p1, p2, origin );
-
-	var uSize = Vec3.distance( p0, p1 ) * 0.5;
-	var vSize = Vec3.distance( p0, p2 ) * 0.5;
-
-	orientEntity( entity, {
-		origin: [ origin[0], origin[1], origin[2] ],
-		angles: [ cell.lat, -cell.lon, 0 ],
-		scale:  [ uSize, vSize, 1.0 ] 
-	});
+	orientEntityToCell( cell, entity, { placement: 'fill' } );
 }
 
 function layoutWidget( cell ) {
 	orientEntityToCell( cell, cell.entity );
 
-	// log( 'sendMessage ' + cell.widget + ' ' + cell.entity );
-
-	var message = 'arc ' + cell.latArc + ' ' + cell.lonArc + ' ' + rootDepth;
-
-	log( cell.widget + ' ' + message );
-
-	try { sendMessage( cell.widget, message ); } catch ( e ) {}
+	postMessage( sprintf( '%s %s arc %s %s %s', cell.plugin, cell.widget, cell.latArc, cell.lonArc, rootDepth ) );
 }
 
 function layoutWidgets_r( cell ) {
@@ -299,8 +301,9 @@ function makeSquare() {
 }
 
 function registerCmd( args ) {
-	var wid = args[1];
-	var eid = args[2];
+	var pid = args[1];
+	var wid = args[2];
+	var eid = args[3];
 
 	if ( findCellByWidget( wid ) ) {
 		log( 'Widget ' + wid + ' already registered' );
@@ -318,21 +321,34 @@ function registerCmd( args ) {
 		return;
 	}
 
-	// parentEntity( eid, 'root' );
-
 	log( 'registerCmd: wid:' + wid + ' eid:' + eid );
 
 	cell.kind = 'widget';
+	cell.plugin = pid;
 	cell.widget = wid;
 	cell.entity = eid;
+
+	cell.properties = {
+		placement: 'center'
+	}
+
+	args.shift(2);
+	for ( var i = 0; i < args.length; i++ ) {
+		if ( args[i].indexOf( '=' ) !== -1 ) {
+			kv = args[i].split( '=' );
+			cell.properties[kv[0]] = kv[1];
+		}
+	}
+
+	// parentEntity( eid, 'root' );
 
 	layoutWidgets();
 
 	refreshActiveCell();
 
 	// $$$ VNC hack to alter defaults after the widget spawns.
-	if ( wid.match( /vnc/ ) ) {
-		sendMessage( wid, wid + ' zpush 8' );
+	if ( pid.match( /vnc/ ) ) {
+		postMessage( sprintf( '%s %s zpush 8', pid, wid ) );
 	}
 }
 
@@ -372,10 +388,8 @@ function postToActiveWidget( args ) {
 	if ( !cell || cell.kind == 'empty' )
 		return;
 
-	// log( 'postToActiveWidget: ' + cell.widget + ' < ' + args.join( ' ' ) );
-
 	assert( cell.kind == 'widget' );
-	try { sendMessage( cell.widget, args.join( ' ' ) );	} catch ( e ) {}
+	postMessage( sprintf( '%s %s ', cell.plugin, cell.widget ) + args.join( ' ' ) );
 }
 
 function postToMenu( args ) {
@@ -437,7 +451,7 @@ layoutCells();
 refreshActiveCell();
 
 for ( ;; ) {
-	var msg = receivePluginMessage( PLUGIN, 0 );
+	var msg = receiveMessage( PLUGIN, 0 );
 
 	if ( !msg ) // $$$ Not sure why this is happening.
 		break;
