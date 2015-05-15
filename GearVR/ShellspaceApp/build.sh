@@ -11,40 +11,33 @@ export BUILD_MODULE=Shellspace
 # echo "========================== Update "${BUILD_MODULE}" Project ==========================="
 # android update project -t android-19 -p . -s
  
-if [ -z "$ANDROID_NDK" ]; then
-  ANDROID_NDK=~/ndk
-fi
-
-if [ "$1" == "" ]; then
-    echo "========================== Build "${BUILD_MODULE}" ==========================="
-    $ANDROID_NDK/ndk-build NDK_DEBUG=1 OVR_DEBUG=1 
-fi
-
-if [ "$1" == "debug" ]; then
-    echo "========================== Build "${BUILD_MODULE} $1 " ==========================="
-    $ANDROID_NDK/ndk-build NDK_DEBUG=1 OVR_DEBUG=1 
-fi
-
-if [ "$1" == "release" ]; then
-    echo "========================== Build "${BUILD_MODULE} $1 " ==========================="
-    $ANDROID_NDK/ndk-build NDK_DEBUG=0 OVR_DEBUG=0 
-fi
-
 if [ "$1" == "clean" ]; then
-    echo "========================== Build "${BUILD_MODULE} $1 " ==========================="
+
+    echo "========================== Clean "${BUILD_MODULE} $1 " ==========================="
     $ANDROID_NDK/ndk-build clean NDK_DEBUG=1 
     $ANDROID_NDK/ndk-build clean NDK_DEBUG=0
     ant clean 
-fi
 
-echo "========================== Install "${BUILD_MODULE}" ==========================="
+else
 
-if [ "$1" != "clean" ]; then
+    if [ "$1" == "" ] || [ "$1" == "debug" ]; then
+        echo "========================== Build "${BUILD_MODULE}" Native ==========================="
+        $ANDROID_NDK/ndk-build NDK_DEBUG=1 OVR_DEBUG=1 
+    fi
+
+    if [ "$1" == "release" ]; then
+        echo "========================== Build "${BUILD_MODULE} $1 " Native ==========================="
+        $ANDROID_NDK/ndk-build NDK_DEBUG=0 OVR_DEBUG=0 
+    fi
+
+    echo "========================== Build "${BUILD_MODULE}" Java ==========================="
+
     #For the time being, just build debug releases until we have a keystore for signing
     #We do the rename to avoid confusion, since ant will name this as -debug.apk but
     #the native code is all built with release optimizations.
     ant -quiet debug
 
     cp bin/${BUILD_MODULE}-debug.apk bin/${BUILD_MODULE}.apk
-    adb install -r bin/${BUILD_MODULE}.apk
-fi 
+
+fi
+
