@@ -5,6 +5,7 @@
 include( 'shellspace.js' );
 include( 'vector.js' );
 include( 'sprintf.js' );
+include( 'gl-matrix.js' );
 
 PLUGIN   = 'shell'
 
@@ -30,26 +31,18 @@ function degToRad( v ) {
 	return v * Math.PI / 180.0;
 }
 
-function getChild( cell, x, y ) {
-	assert( cell.kind == 'grid' );
-	return cell.children[x + y*cell.width];
-}
-
 function dump_r( cell, depth ) {
 	log( 'kind:' + cell.kind + ' lat:' + cell.lat + ' lon:' + cell.lon + ' latArc:' + cell.latArc + ' lonArc:' + cell.lonArc );
 
-	if ( cell.kind == 'grid' ) {
-		for ( var y = 0; y < cell.height; y++ ) {
-			for ( var x = 0; x < cell.width; x++ ) {
-				var s = '';
-				for ( var i = 0; i < depth; i++ )
-					s += ' ';
-				s += ' x:' + x + ' y:' + y;
-				log( s );
+	if ( cell.kind == 'root' ) {
+		for ( var i = 0; y < cell.children.length; i++ ) {
+			var s = '';
+			for ( var i = 0; i < depth; i++ )
+				s += ' ';
+			s += ' i:' + i;
+			log( s );
 
-				var child = getChild( cell, x, y );
-				dump_r( child, depth + 1 );
-			}
+			dump_r( cell.children[i], depth + 1 );
 		}
 	} else if ( cell.kind == 'widget' ) {
 		log( 'widget:' + cell.widget + ' entity:' + cell.entity );
@@ -60,60 +53,37 @@ function dump() {
 	return dump_r( rootCell, 1 );
 }
 
-function makeGrid( cell, width, height ) {
-	cell.kind = 'grid';
-	cell.width = width;
-	cell.height = height;
-	cell.children = []
-
-	for ( var i = 0; i < width * height; i++ )
-		cell.children.push( { kind: 'empty' } );
-
-	return cell;
-}
-
-function getCellPoint( lat, lon, depth ) {
-	var cu = Math.cos( degToRad( lon ) );
-	var su = Math.sin( degToRad( lon ) );
-	var cv = Math.cos( degToRad( lat ) );
-	var sv = Math.sin( degToRad( lat ) );
-
-	return Vec3.create( depth * su, depth * sv, -depth * cu * cv );
-}
-
 function orientEntityToCell( cell, entity, properties ) {
 	properties = properties || cell.properties;
 
 	if ( properties.placement == 'center' ) {
-		var origin = getCellPoint( cell.lat, cell.lon, rootDepth );
-		var scale = Vec3.create( 1, 1, 1 );
+		var origin = vec3.fromValues( 0, 0, -rootDepth );
+		vec3.transformMat4( origin, origin, cell.xform );
+
+		// log( 'orientEntityToCell: center' );
+		// log( 'origin: ' + vec3.str( origin ) );
 
 		orientEntity( entity, {
 			origin: [ origin[0], origin[1], origin[2] ],
-			angles: [ cell.lat, -cell.lon, 0 ],
+			angles: [ cell.lat, cell.lon, 0 ],
 			scale:  [ 1, 1, 1 ]
 		} );
 	} else if ( properties.placement == 'fill' ) {
-		var lat0 = cell.lat - cell.latArc * 0.5;
-		var lat1 = cell.lat + cell.latArc * 0.5;
+		var origin = vec3.fromValues( 0, 0, -rootDepth );
+		vec3.transformMat4( origin, origin, cell.xform );
 
-		var lon0 = cell.lon - cell.lonArc * 0.5;
-		var lon1 = cell.lon + cell.lonArc * 0.5;
+		var uSize = rootDepth * Math.sin( degToRad( cell.lonArc * 0.5 ) );
+		var vSize = rootDepth * Math.sin( degToRad( cell.latArc * 0.5 ) );
 
-		var p0 = getCellPoint( lat0, lon0, rootDepth );
-		var p1 = getCellPoint( lat0, lon1, rootDepth );
-		var p2 = getCellPoint( lat1, lon0, rootDepth );
-
-		var origin = Vec3.create();
-		Vec3.avg( p1, p2, origin );
-
-		var uSize = Vec3.distance( p0, p1 ) * 0.5;
-		var vSize = Vec3.distance( p0, p2 ) * 0.5;
+		// log( 'orientEntityToCell: fill' );
+		// log( 'origin: ' + vec3.str( origin ) );
+		// log( 'uSize: ' + uSize );
+		// log( 'vSize: ' + vSize );
 
 		try {
 			orientEntity( entity, {
 				origin: [ origin[0], origin[1], origin[2] ],
-				angles: [ cell.lat, -cell.lon, 0 ],
+				angles: [ cell.lat, cell.lon, 0 ],
 				scale:  [ uSize, vSize, 1.0 ] 
 			});
 		} catch ( e ) {
@@ -132,12 +102,9 @@ function layoutWidget( cell ) {
 }
 
 function layoutWidgets_r( cell ) {
-	if ( cell.kind == 'grid' ) {
-		for ( var y = 0; y < cell.height; y++ ) {
-			for ( var x = 0; x < cell.width; x++ ) {
-				var child = getChild( cell, x, y );
-				layoutWidgets_r( child );
-			}
+	if ( cell.kind == 'root' ) {
+		for ( var i = 0; i < cell.children.length; i++ ) {
+			layoutWidgets_r( cell.children[i] );
 		}
 	} else if ( cell.kind == 'widget' ) {
 		layoutWidget( cell );
@@ -148,87 +115,77 @@ function layoutWidgets() {
 	layoutWidgets_r( rootCell );
 }
 
-function layoutCells_r( cell, lat, lon, latArc, lonArc ) {
-	cell.lat = lat;
-	cell.lon = lon;
-	cell.latArc = latArc - rootGutter;
-	cell.lonArc = lonArc - rootGutter;
+function layoutCells_r( cell, xform ) {
+	// $$$ should there be a translation?
 
-	if ( cell.kind == 'grid' ) {
-		var childLonArc = lonArc / cell.width;
-		var childLatArc = latArc / cell.height;
+	cell.xform = mat4.create();
+	mat4.rotateY( cell.xform, cell.xform, degToRad( cell.lon ) );
+	mat4.rotateX( cell.xform, cell.xform, degToRad( cell.lat ) );
 
-		var childLat = lat - (latArc * 0.5) + (childLatArc * 0.5);
+	cell.invXform = mat4.create();
+	mat4.transpose( cell.invXform, cell.xform );
 
-		for ( var y = 0; y < cell.height; y++ ) {
-			var childLon = lon - (lonArc * 0.5) + (childLonArc * 0.5);
+	// log( 'layoutCells_r: ' );
+	// log( 'xform: ' + mat4.str( cell.xform ) );
+	// log( 'invXform: ' + mat4.str( cell.invXform ) );
 
-			for ( var x = 0; x < cell.width; x++ ) {
-				var child = getChild( cell, x, y );
-
-				layoutCells_r( child, childLat, childLon, childLatArc, childLonArc );
-
-				childLon += childLonArc;
-			}
-
-			childLat += childLatArc;
+	if ( cell.kind == 'root' ) {
+		for ( var i = 0; i < cell.children.length; i++ ) {
+			layoutCells_r( cell.children[i], cell.xform );
 		}
 	}
 }
 
 function layoutCells() {
-	layoutCells_r( rootCell, 0, 0, 120, 360 );
+	var rootXform = mat4.create();
+
+	layoutCells_r( rootCell, rootXform );
 }
 
-function rayCast_r( cell, targetLat, targetLon ) {
-	if ( cell.kind == 'grid' ) {
-		for ( var y = 0; y < cell.height; y++ ) {
-			for ( var x = 0; x < cell.width; x++ ) {
-				var child = getChild( cell, x, y );
+function rayCast_r( cell, dir ) {
+	var localDir = vec3.create();
+	vec3.transformMat4( localDir, vec3.fromValues( dir[0], dir[1], dir[2] ), cell.invXform );
 
-				// log( 'rayCast child ' + cell.kind + ' x' + x + ' y' + y );
-				// log( 'lat ' + child.lat + ' lon' + child.lon );
-				// log( 'latArc ' + child.latArc + ' lonArc' + child.lonArc );
+	// log( 'rayCast_r: ' );
+	// log( 'xform: ' + mat4.str( cell.xform ) );
+	// log( 'invXform: ' + mat4.str( cell.invXform ) );
+	// log( 'localDir: ' + vec3.str( localDir ) );
 
-				if ( Math.abs( child.lat - targetLat ) <= child.latArc * 0.5 &&
-					 Math.abs( child.lon - targetLon ) <= child.lonArc * 0.5 )
-					return rayCast_r( child, targetLat, targetLon );
-			}
+	if ( cell.kind == 'root' ) {
+		for ( var i = 0; i < cell.children.length; i++ ) {
+			var result = rayCast_r( cell.children[i], localDir );
+			if ( result )
+				return result;
 		}
+	}
+	else {
+		var targetLat = radToDeg( Math.atan2( localDir[1], -localDir[2] ) );
+		var targetLon = radToDeg( Math.atan2( localDir[0], -localDir[2] ) );
 
-		return null;
+		if ( Math.abs( targetLat ) <= cell.latArc * 0.5 &&
+			 Math.abs( targetLon ) <= cell.lonArc * 0.5 )
+			return cell;
 	}
 
-	return cell;
+	return null;
 }
 
-function rayCast( targetLat, targetLon ) {
-	return rayCast_r( rootCell, targetLat, targetLon );
+function rayCast( dir ) {
+	return rayCast_r( rootCell, dir );
 }
 
 function getActiveCell() {
 	assert( Vec3.lengthSqr( gazeDir ) > 0.0 );
 
-	layoutCells();
-
-	var targetLat = radToDeg( Math.atan2( gazeDir[1], -gazeDir[2] ) );
-	var targetLon = radToDeg( Math.atan2( gazeDir[0], -gazeDir[2] ) );
-
-	// log( "getActiveCell targetLat:" + targetLat + " targetLon:" + targetLon );
-
-	return rayCast( targetLat, targetLon );
+	return rayCast( gazeDir );
 }
 
 function findCellByWidget_r( cell, wid ) {
-	if ( cell.kind == 'grid' ) {
-		for ( var y = 0; y < cell.height; y++ ) {
-			for ( var x = 0; x < cell.width; x++ ) {
-				var child = getChild( cell, x, y );
-
-				var result = findCellByWidget_r( child, wid );
-				if ( result )
-					return result;
-			}
+	if ( cell.kind == 'root' ) {
+		for ( var i = 0; i < cell.children.length; i++ ) {
+			var result = findCellByWidget_r( cell.children[i], wid );
+			if ( result )
+				return result;
 		}
 	} else if ( cell.kind == 'widget' ) {
 		if ( cell.widget == wid ) {
@@ -411,6 +368,8 @@ function refreshActiveCell() {
 	//     plugin name in addition to the widget name?  For now the menu just has
 	//     hardcoded entity string matching.  Alternately we could enforce that 
 	//     entity ID include widget and plugin ID as prefix tokens.
+	// $$$ Now that we have the plugin reference, this should just be a Cell reference
+	//     which may be null in the 'none' case.
 	var newActiveId;
 	if ( cell && cell.kind == 'empty' ) 
 		newActiveId = 'empty';
@@ -442,11 +401,13 @@ makeSquare();
 try { unregisterEntity( 'root' ); } catch (e) {}
 registerEntity( 'root' );
 
-makeGrid( rootCell, 5, 3 );
-makeGrid( getChild( rootCell, 2, 2 ), 4, 2 );
+rootCell = {
+	lat: 0, lon: 0, latArc: 0, lonArc: 0,
+	kind: 'root',
+	children: include( 'default.layout' )
+}
 
 layoutCells();
-// dump();
 
 refreshActiveCell();
 

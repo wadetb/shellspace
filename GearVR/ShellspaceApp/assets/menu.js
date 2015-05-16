@@ -142,6 +142,7 @@ function hitMenu( menu ) {
 }
 
 function openMenu( args ) {
+	log( 'activeId: ' + activeId );
 	if ( activeId == 'none' ) {
 		rootMenu.children = [
 			{ caption: 'reset', command: 'exec reset.cfg' },

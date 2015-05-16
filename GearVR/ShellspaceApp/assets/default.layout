@@ -1,0 +1,14 @@
+[
+	{ kind: 'empty', lat: -35, lon: -55, latArc: 25, lonArc: 30 },
+	{ kind: 'empty', lat: -37, lon: 0, latArc: 27, lonArc: 50 },
+	{ kind: 'empty', lat: -35, lon: 55, latArc: 25, lonArc: 30 },
+
+	{ kind: 'empty', lat: 0, lon: -55, latArc: 30, lonArc: 30 },
+	{ kind: 'empty', lat: 0, lon: 0, latArc: 40, lonArc: 70 },
+	{ kind: 'empty', lat: 0, lon: 55, latArc: 30, lonArc: 30 },
+
+	{ kind: 'empty', lat: 35, lon: -55, latArc: 25, lonArc: 30 },
+	{ kind: 'empty', lat: 37, lon: 0, latArc: 27, lonArc: 50 },
+	{ kind: 'empty', lat: 35, lon: 55, latArc: 25, lonArc: 30 },
+]
+	
