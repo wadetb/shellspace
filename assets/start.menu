@@ -8,6 +8,10 @@
 		command: 'vnc create vnc$newId; vnc connect vnc$newId 10.90.240.190 asdf;'
 	},
 	{ 
+		caption: 'vnc 192.168.43.9', 
+		command: 'vnc create vnc$newId; vnc connect vnc$newId 192.168.43.9 asdf;'
+	},
+	{ 
 		caption: 'test.mp4', 
 		command: 'vlc create vlc$newId;' +
 		         'vlc open vlc$newId /storage/extSdCard/Oculus/Shellspace/test.mp4;' +

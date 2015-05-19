@@ -1,27 +1,3 @@
-# Schedule
-
-4/21 - Today's date
-
-4/27 - First screenshot / video milestone
-        Release to beta testers when possible.
-        Add code license.  GPL
-        Upload to GitHub.
-        VNC client is solid - no crashes or major experience issues.
-        Bluetooth keyboard & mouse support.
-        Prettify the menu for the screenshot.
-        Get a video of me using it to code?
-        
-5/4 - First video of app running
-        This is all about the shell.
-        Multiple widgets; the "shell" part.
-        Shellspace geometry + texture API.
-        Toy apps.
-
-5/11 - Final build
-        Polish
-        Battery life & Framerate optimization
-
-
 # Release checkist
 
 + Enable Crittercism
@@ -31,9 +7,6 @@
 
 # TODO for next build
 
-+ Load a connection list from a JSON file.
-+ Make toy apps load where aimed at.
-+ Stability testing.
 + Push active app closer.
 
 # Misc
@@ -44,7 +17,7 @@
 
 + Broadcast profiler data via a "profile" message, write a JS+Skia profiler display widget.
 
-# Core 
+# Core
 
 + Implement 3D transition animation support so things can animate smoothly.
 
@@ -52,9 +25,7 @@
 
 + Move VNC to a .so plugin as an example so others can start to actually write plugins, and so C++ plugins can be fetched via HTTP.
 
-+ Add Connection: close to the HTTP request.  (Or just implement multiple requests per connection, haha)
-
-The browser model for Shellspace over HTTP would be to execute a "shellspace.org/somespace/index.cfg" script file to populate everything.
++ The browser model for Shellspace over HTTP would be to execute a "shellspace.org/somespace/index.cfg" script file to populate everything.
 
 # Menu
 
@@ -64,21 +35,17 @@ The browser model for Shellspace over HTTP would be to execute a "shellspace.org
 
 + Support simple float/int slider, checkbox, enum controls such that data is communicated to/from the widget.
 
++ Support commands with editable completion, e.g. "vnc open ..." where the ... is editable with an onscreen keyboard.
+
 # Shell
 
 + Automatically zoom in on the active widget.
  
 + A Ctrl-Alt-Delete-like hotkey that exects 'reset.cfg' to recover from scripting errors that break the shell.
 
-+ Context specific menus.
-
-Idea: When back button is pressed, shell sends a "menu" message to the active widget.  The widget can respond by broadcasting a "menu xyz" message to the system, which will open and display xyz.vrkey.  (.vrkey is JSON, but could conceivably be injected JavaScript code via include( menuFile ).
-
-Menu may contain widget-specific things like "vnc disconnect $activeId" where $activeId is the id of the activating widget.  
-
 # VNC
 
-+ When the connection is closed, we stop accepting messages and the queue fills up with Gaze events.  Probably need to make the connection status separate from the thread status and spawn widget-per-thread.
++ When the connection is closed, we stop accepting messages and the queue fills up with Gaze events.  Probably need to make the connection status separate from the thread status and spawn widget-per-thread, like the VLC widget.
 
 + Did toasts disappear somehow?
 
@@ -90,14 +57,14 @@ Menu may contain widget-specific things like "vnc disconnect $activeId" where $a
 
 + When app suspends, detect this and stop sending updates, but accumulate a texture dirty rectangle.  When unsuspended, submit the entire dirty rectangle.
 
-+ Use a Skia filter to darken and draw "disconnected" when the connection is lost.
++ Use a Skia filter to darken and draw "disconnected" when the connection is lost.  Actually, use Skia in general to draw connection status.
 
 # VLC
 
 + Thread about efficient display formats using OpenGL.
 https://forum.videolan.org/viewtopic.php?t=97672
 
-+ Use set_format_callback and accept the preferred format if possible.
++ Use set_format_callback and accept the preferred format if possible, instead of RV32.  Use of a YUV shader would be ideal.
 
 + Documentation
 https://www.videolan.org/developers/vlc/doc/doxygen/html/group__libvlc__media__player.html#ga46f687a8bc8a7aad325b58cb8fb37af0
@@ -122,13 +89,14 @@ vlc vlc0 open /storage/extSdCard/Oculus/Shellspace/test.mp4
  
 + Investigate https://vec.io/posts/faster-alternatives-to-glreadpixels-and-glteximage2d-in-opengl-es PBOs for texture updates.  Not clear whether this is better than triple buffered texture objects, but maybe?
 
-+ Tuning system for InQueue variables, possibly via console commands.
-+ Bounds accumulation for Geometry objects, frustum culling
-+ Optimize various decoders using NEON.
-+ Accelerated CopyRect?
-+ 16bit pixel support (runtime option)
-+ Server-side scaling support?  Check to see if it actually works.
-+ More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
++ VNC stuff:
++  Tuning system for InQueue variables, possibly via console commands.
++  Bounds accumulation for Geometry objects, frustum culling
++  Optimize various VNCdecoders using NEON.
++  Accelerated CopyRect?
++  16bit pixel support (runtime option)
++  Server-side scaling support?  Check to see if it actually works.
++  More profiling inside libvncserver (turbojpeg, rectangle copy, etc).
 
 + Add an "inqueue freeze" command to test how updates affect display perf.
   (See whether reintroducing throttling is important)
@@ -161,19 +129,11 @@ Idea for file widget- drag a file into a cell, it's represented by a filename an
  
 It could hold the API mutex, though this starts to act more like a global mutex and there could start to be bottlenecks there.
 
-# JavaScript
+# V8 Build notes
 
 make i18nsupport=off android_arm.release
 
 remove -lrt from ./tools/gyp/mksnapshot.host.android_arm.release.mk
-
-+ About embedding native modules into JNI apps:
-
-http://stackoverflow.com/questions/15719149/how-to-integrate-native-runtime-library-with-dlopen-on-ndk
-
-    The best strategy on Android is to load all native libraries from Java, even if you choose which libraries to load, by some runtime rules. You can use dlsym(0, ...) then to access exported functions there.
-
-    APK builder will pick up all .so files it finds in libs/armeabi-v7a and the installer will unpack them into /data/data/<your.package>/lib directory.
 
 + Expose API via a global "sx" object instead of global namespace functions.
 
@@ -184,7 +144,6 @@ http://stackoverflow.com/questions/15719149/how-to-integrate-native-runtime-libr
 + Allow binding swipe axes to different features, with keyboard control.
   For example swipe in could be "get closer to the image, in the direction I'm looking"
 
-+ Multiple sessions (window manager)
 + What is Comfort Mode?
 
 # Terminal
@@ -210,7 +169,6 @@ http://www.netsurf-browser.org/about/
 # Image quality improvements
 
 + Temporal jitter + reprojection with point filtering
-+ Render direct to screen with homemade distortion (loses timewarp unless I reimplement it)
 
 # Lazy free
 
@@ -274,59 +232,6 @@ For network and IPC comms, libuv (used by Node.JS) seems like a good cross platf
 
 http://nikhilm.github.io/uvbook/filesystem.html
 
-# Message queue design
-
-This ties into plugins vs widgets and whether plugins are an explicit concept or something that's transparently managed by the core.
-
-Right now there are two kinds of message loops; widget and plugin.  This is fine for a threaded plugin that creates a new message loop thread for each widget.  (And note, we could adopt this model fully by exposing the ability to spawn() or the like in javascript, though thread safety issues there get dicey)
-
-Most things now adopt the plugin centric model, where they just watch for plugin messages and the plugin is essentially a widget singleton.
-
-But if there were a plugin that was intended to spawn many widgets, there is currently no way to poll on an array of queues (and the syntax for that might become quite cumbersome if there were 100s?). 
-
-One option would be to eliminate widget queues and just direct widget messages to the plugin.  This seems ideal for JavaScript, but for VNC and other network connection-based widgets where there is a thread-per-widget it adds extra synchronization that could affect the performance of the core plugin thread.
-
-Need to keep thinking about it in the context of plugins vs widgets.  
-
-# Menu
-
-Thinking menus will be represented by JSON objects, a bit like Sublime Text menu files.
-
-    [
-        {
-            "caption": "launch",
-            "id": "launch", 
-            "children": [
-                {
-                    "caption": "vnc 10.0.1.4",
-                    "command": "vnc create vnc_$active_cell; vnc connect vnc_$active_cell 10.0.1.4 asdf"
-                }
-            ]
-        }
-    ]
-
-The menu system will replace certain variables in the command string with special values like the ID of the active cell.
-
-Plugins can "merge" new menus into the menu.  The active widget and the shell can also merge.  Events will be broadcast whenever the menu is opened to give things a chance to populate it.
-
-So, user presses back button and OvrApp broadcasts a "menu open" message.  The menu data structure is initially cleared.  
-
-The menu sends the shell a "shell menu opened" message.  This causes the shell to stop interpreting gaze data until it receives a "shell menu closed" message.
-
-The shell checks the active cell.  
-
-If there is no cell, the shell puts nothing in the menu.  (Eventually there might be global settings like background color that only come up when there is no active cell, that would be up to the shell.)
-
-If it's an empty cell, the shell sends a "launch" menu and a "divide" menu (to make a grid).
-
-If it's a widget, the "menu" message just gets forwarded to the widget, possibly with some initial data to merge in.
-
-Ultimately someone (the shell and/or the widget) sends a "menu contents" message with the JSON for the final menu.  All the "menu contents" messages are merged together.  
-
-Then the menu creates entities for the top level, and starts interpreting gaze data.
-
-When a touch is received, if it hits a menu entity, the corresponding command is posted and the menu closes.
-
 # Canvas API
 
 Seems like the canvas commands are becoming more and more core to doing anything useful at all.  If they become central to the API, I should consider merging aspects of Skia's API into the core API.  One way to do it would be to automatically create a SkCanvas and SkBitmap for every STexture, and expose a decent subset of the canvas APIs as Texture methods.  That would allow quite casually registering and drawing to textures, which would be natural for many of the apps I have in mind.
@@ -337,7 +242,7 @@ Seems like the canvas commands are becoming more and more core to doing anything
 + Rounded menu rectangles
 + Blue active highlight
 
-# Hm. something like PackageControl?
+# Something like PackageControl?
 
 # Plugin entity registration
 
@@ -352,7 +257,7 @@ Possibly need to sanitize the name and/or add some more characters to the allowa
 Post-It
 Twitter
 Profiler
-Plot
+Math Plot
 
 # Recordable settings
 
@@ -360,62 +265,7 @@ http://www.reddit.com/r/oculus/comments/2p812e/gear_vr_recording_at_solid_720p60
 
 - Note had to set 720p and 30hz manually.
 
-# Book readers
-
-http://vrjam.challengepost.com/submissions/36769-vr-library
-Basic book reader tied to Amazon?  Has prototype screenshot.  Asked about AA.
-
-http://vrjam.challengepost.com/submissions/36786-vr-reader
-Another book reader.  Has prototype screenshot.  Asked about AA.
-
-http://vrjam.challengepost.com/submissions/36434-virtual-book-reader
-Just a drawing but implies some image zooming behavior.
-
-http://vrjam.challengepost.com/submissions/36887-virtuareader
-Speed reader!  One word at a time.
-
-# Similar projects
-
-http://vrjam.challengepost.com/submissions/36938-process
-Vaguely related as it uses a terminal and typing.
-
-http://vrjam.challengepost.com/submissions/36305-panotrader
-Stock market trader.
-
-http://vrjam.challengepost.com/submissions/36148-learn-immersive
-Language learner with some on screen instructions
-
-http://vrjam.challengepost.com/submissions/36886-meetingright-vr
-Web conferencing.  Very little information even on the main website.
-
-http://vrjam.challengepost.com/submissions/36959-airvr
-Render realtime on a PC and stream to the GearVR!  Posted some questions about video streaming.
-
-http://vrjam.challengepost.com/submissions/36295-cnn
-Wow, CNN doing VR news.
-
-http://vrjam.challengepost.com/submissions/36890-social-symphony
-Facebook app.  Not much in the way of specifics.
-
-# Web browsers
-
-http://vrjam.challengepost.com/submissions/36902-browser-bubble - Commented
-
-# Video players / streaming video
-
-http://vrjam.challengepost.com/submissions/36500-fdplayer - Commented
-
-# School
-
-http://vrjam.challengepost.com/submissions/36371-immerse-your-brain
-
-# Other interesting projects
-
-http://vrjam.challengepost.com/submissions/37014-rex - Real estate
-
-http://vrjam.challengepost.com/submissions/36844-chess-vr - Really?
-
-# Build patch
+# NDK build patch
 
 define cmd-build-shared-library
 $(PRIVATE_CXX) \
@@ -429,4 +279,35 @@ $(PRIVATE_CXX) \
     $(PRIVATE_LDLIBS) \
     -o $(call host-path,$(LOCAL_BUILT_MODULE))
 endef
+
+# About embedding native modules into JNI apps:
+
+http://stackoverflow.com/questions/15719149/how-to-integrate-native-runtime-library-with-dlopen-on-ndk
+
+    The best strategy on Android is to load all native libraries from Java, even if you choose which libraries to load, by some runtime rules. You can use dlsym(0, ...) then to access exported functions there.
+
+    APK builder will pick up all .so files it finds in libs/armeabi-v7a and the installer will unpack them into /data/data/<your.package>/lib directory.
+
+# Plugin compiling notes
+
+Practically speaking the .so files would like to use various systems from the Shellspace core, like common types, the message queue, vector math library, etc.
+
+Also in many instances they will want to use shared libraries like Skia.
+
+One option is to migrate the shellspace core into a library libshellspacecore, similar to libvlccore.  Then the plugins and the app can both use the code provided in the core library, in fact they will get their own copy of it.  (So care must be taken that isolation is assumed between the core and the plugin w.r.t. globals)
+
+It's not clear to me that there is a string reason for libshellspacecore to actually be a library file, as opposed to a set of source files that may be arbitrarily included into the plugins.  The source file method gives the opportunity to inject defines into the shared source files, e.g. lists of profilers or threads.
+
+Directory structure:
+
+/core/*.cpp
+/shellspace/*.cpp
+/plugins/vnc/*.cpp
+/plugins/vlc/*.cpp
+/plugins/v8/*.cpp
+/gearvr/AndroidManifest.xml
+/gearvr/jni/Android.mk
+/external/v8/armeabi-v7a/...
+/external/vlc/armeabi-v7a/...
+
 
