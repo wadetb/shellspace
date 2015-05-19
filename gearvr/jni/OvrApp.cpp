@@ -253,12 +253,9 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 
 	APITest_Init();
 
-	// Shell_InitPlugin();
-	// VLC_InitPlugin();
+	VLC_InitPlugin();
 	VNC_InitPlugin();
 	V8_InitPlugin();
-
-	// Keyboard_Init();
 
 	Cmd_AddFile( "autoexec.vrcfg" );
 }
@@ -285,11 +282,7 @@ bool OvrApp::OnKeyEvent( const int keyCode, const KeyState::eKeyEventType eventT
 	if ( keyCode == AKEYCODE_BACK )
 	{
 		if ( eventType == KeyState::KEY_EVENT_SHORT_PRESS )
-		{
-			// Keyboard_Orient( s_app.lastGazeDir, 20.0f );
-			// Keyboard_Toggle();
 			Cmd_Add( "shell menu open" );
-		}
 
 		return true;
 	}
@@ -350,8 +343,6 @@ Matrix4f OvrApp::DrawEyeView( const int eye, const float fovDegrees )
 
 	Entity_Draw( view );
 
-	// Keyboard_Draw();
-
 	GL_CheckErrors( "draw" );
 
 	Prof_Stop( PROF_DRAW_EYE );
@@ -369,13 +360,7 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 	Vector3f eyeDir = GetViewMatrixForward( centerViewMatrix );
 	// Vector3f eyePos = GetViewMatrixPosition( centerViewMatrix );
 
-	// LOG( "APITest_Frame Enter" );
-	// APITest_Frame();
-	// LOG( "APITest_Frame Leave" );
-
 	InQueue_Frame();
-
-	// Keyboard_Frame( vrFrame.Input.buttonState, eyePos, eyeDir );
 
 	SxVector3 gazeDir;
 	Vec3Set( &gazeDir, eyeDir.x, eyeDir.y, eyeDir.z );

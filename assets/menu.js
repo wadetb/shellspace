@@ -147,12 +147,14 @@ function openMenu( args ) {
 	children = []
 
 	if ( activeKind == 'empty' ) {
-		var menu = include( 'start.menu' );
+		var menu;
+		try { menu = include( 'start.menu' ); } catch ( e ) {}
 		if ( menu )
 			children = children.concat( menu );
 	}
 	else if ( activeKind != 'none' ) {
-		var menu = include( activeKind + '.menu' );
+		var menu;
+		try { menu = include( activeKind + '.menu' ); } catch ( e ) {}
 		if ( menu )
 			children = children.concat( menu );
 	}

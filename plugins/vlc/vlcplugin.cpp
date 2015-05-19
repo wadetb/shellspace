@@ -33,8 +33,8 @@
 #define GLOBE_HORIZONTAL 			64
 #define GLOBE_VERTICAL				32
 
-#define VLC_DEFAULT_WIDTH 			1280
-#define VLC_DEFAULT_HEIGHT 			720
+#define VLC_DEFAULT_WIDTH 			320
+#define VLC_DEFAULT_HEIGHT 			200
 
 
 enum EVLCState
@@ -65,6 +65,10 @@ struct SVLCWidget
 	int 					width;
 	int 					height;
 	void 					*pixels;
+
+	float 					latArc;
+	float 					lonArc;
+	float 					depth;
 };
 
 
@@ -149,6 +153,27 @@ void vlc_log( void *data, int level, const libvlc_log_t *ctx, const char *fmt, v
 }
 
 
+void VLCThread_RebuildGeometry( SVLCWidget *vlc )
+{
+	char 	msg[256];
+	float 	aspect;
+
+	assert( vlc );
+
+	if ( vlc->width && vlc->height )
+		aspect = (float)vlc->width / vlc->height;
+	else
+		aspect = 16.0f / 10.0f;
+
+	if ( vlc->lonArc > vlc->latArc * aspect )
+		vlc->lonArc = vlc->latArc * aspect;
+
+	snprintf( msg, sizeof( msg ), "shell make rect %s %f %f %f", vlc->id, vlc->latArc, vlc->lonArc, vlc->depth );
+
+	g_pluginInterface.postMessage( msg );
+}
+
+
 void VLCThread_Create( SVLCWidget *vlc )
 {
 	assert( vlc );
@@ -214,6 +239,11 @@ void VLC_OpenCmd( const SMsg *msg, void *context )
     libvlc_video_set_callbacks( vlc->mp, vlc_lock, vlc_unlock, vlc_display, vlc );
 
     libvlc_video_set_format( vlc->mp, "RV32", vlc->width, vlc->height, vlc->width * 4 );
+
+	g_pluginInterface.formatTexture( vlc->id, SxTextureFormat_R8G8B8X8_SRGB );
+	g_pluginInterface.sizeTexture( vlc->id, vlc->width, vlc->height );
+
+	VLCThread_RebuildGeometry( vlc );
 
    	S_Log( "VLC_OpenCmd: Finished opening %s.", vlc->mediaPath );
 }
@@ -298,12 +328,28 @@ void VLC_StopCmd( const SMsg *msg, void *context )
 }
 
 
+void VLC_ArcCmd( const SMsg *msg, void *context )
+{
+	SVLCWidget 	*vlc;
+
+	vlc = (SVLCWidget *)context;
+	assert( vlc );
+
+	vlc->latArc = atof( Msg_Argv( msg, 1 ) );
+	vlc->lonArc = atof( Msg_Argv( msg, 2 ) );
+	vlc->depth = atof( Msg_Argv( msg, 3 ) );
+
+	VLCThread_RebuildGeometry( vlc );
+}
+
+
 SMsgCmd s_vlcWidgetCmds[] =
 {
 	{ "open", 			VLC_OpenCmd, 			"open" },
 	{ "close", 			VLC_CloseCmd, 			"close" },
 	{ "play", 			VLC_PlayCmd, 			"play" },
 	{ "stop", 			VLC_StopCmd, 			"stop" },
+	{ "arc", 			VLC_ArcCmd, 			"arc" },
 	{ NULL, NULL, NULL }
 };
 
@@ -514,9 +560,10 @@ void VLC_CreateCmd( const SMsg *msg, void *context )
 	g_pluginInterface.registerWidget( vlc->id );
 	g_pluginInterface.registerEntity( vlc->id );
 	g_pluginInterface.registerTexture( vlc->id );
+	g_pluginInterface.registerGeometry( vlc->id );
 
 	g_pluginInterface.setEntityTexture( vlc->id, vlc->id );
-	g_pluginInterface.setEntityGeometry( vlc->id, "quad" );
+	g_pluginInterface.setEntityGeometry( vlc->id, vlc->id );
 
 	snprintf( msgBuf, MSG_LIMIT, "shell register vlc %s %s", vlc->id, vlc->id );
 	g_pluginInterface.postMessage( msgBuf );
