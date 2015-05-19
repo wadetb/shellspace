@@ -136,6 +136,21 @@ inline int S_sprintfPos( char *buffer, uint bufferLen, uint *pos, const char *fo
     return written;
 }
 
+inline int S_vsprintfPos( char *buffer, uint bufferLen, uint *pos, const char *format, va_list args )
+{
+    uint    currentPos;
+    int     written;
+
+    currentPos = *pos;
+
+    written = vsnprintf( buffer + currentPos, bufferLen - currentPos, format, args );
+
+    if ( written >= 0 )
+        *pos = currentPos + written;
+
+    return written;
+}
+
 inline void S_RemoveTrailingSlash( char *path )
 {
     uint len;

@@ -18,7 +18,6 @@
 */
 #include "common.h"
 #include "vncplugin.h"
-#include "command.h"
 #include "message.h"
 #include "thread.h"
 
@@ -144,15 +143,22 @@ static void rfb_log(const char *format, ...)
 static void rfb_error(const char *format, ...)
 {
     va_list args;
-    char msg[256];
+    char 	msg[256];
+    uint 	msgPos;
+
+    msgPos = 0;
+    
+    S_sprintfPos( msg, sizeof( msg ), &msgPos, "notify \"" );
 
     va_start( args, format );
-    vsnprintf( msg, sizeof( msg ) - 1, format, args );
+    S_vsprintfPos( msg, sizeof( msg ) - 1, &msgPos, format, args );
     va_end( args );
+
+    S_sprintfPos( msg, sizeof( msg ), &msgPos, "\"" );
 
     S_Log( "%s", msg );
 
-    Cmd_Add( "notify \"%s\"", msg );
+    g_pluginInterface.postMessage( msg );
 }
 
 

@@ -14,4 +14,6 @@ After getting the source code, add a section for your computer to `GearVR/bin/de
 
 # Running
 
-To run, connect your phone using `adb`, change directory to `GearVR/ShellspaceApp/` and type `./build.sh && ./run.sh`.
+If your build environment isn't set up already, add an entry for your computer in `bin/android_dev.sh` and execute it using `source bin/android_dev.sh`.
+
+To run, connect your phone using `adb`, change directory to `gearvr` and type `./build.sh && ./run.sh`.

@@ -143,7 +143,7 @@ void Prof_Stop( EProfType prof )
 }
 
 
-static void Prof_Normalize()
+void Prof_Normalize()
 {
 	uint profIter;
 
@@ -162,10 +162,10 @@ static void Prof_Normalize()
 }
 
 
-static const char *s_dashes = "-----------------------------------------------------------";
+const char *s_dashes = "-----------------------------------------------------------";
 
 
-static void Prof_Print()
+void Prof_Print()
 {
 	uint 	profIter;
 	uint 	hitIter;
@@ -245,7 +245,7 @@ void Prof_Frame()
 	if ( s_profGlob.frameCount == PROF_FRAME_COUNT )
 	{
 		Prof_Normalize();
-		Prof_Print();
+		// Prof_Print();
 		s_profGlob.frameCount = 0;
 	}
 }
