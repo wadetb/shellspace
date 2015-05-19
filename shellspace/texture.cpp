@@ -21,6 +21,7 @@
 #include "registry.h"
 
 #include <core/SkCanvas.h>
+#include <GlUtils.h>
 #include <turbojpeg.h>
 
 
@@ -78,7 +79,7 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 	assert( texture );
 
-	// LOG( "Texture_Resize: %d by %d", width, height );
+	// S_Log( "Texture_Resize: %d by %d", width, height );
 
 	index = texture->updateIndex % BUFFER_COUNT;
 
@@ -142,7 +143,7 @@ void Texture_Update( STexture *texture, uint x, uint y, uint width, uint height,
 	// endMs = 1000.0 * clock() / CLOCKS_PER_SEC;
 	// costMs = endMs - startMs;
 
-	// LOG( "Texture_Update: (%d,%d) %d by %d (%d pixels) cost %f ms %fms/100kpx", x, y, width, height, 
+	// S_Log( "Texture_Update: (%d,%d) %d by %d (%d pixels) cost %f ms %fms/100kpx", x, y, width, height, 
 	// 	width*height, costMs, 100000.0 * costMs / (width*height));
 
 	OVR::GL_CheckErrors( "after Texture_Update" );
@@ -215,14 +216,14 @@ sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *widthOu
 	tjh = tjInitDecompress();
 	if ( !tjh )
 	{
-		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		S_Log( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
 		return sfalse;
 	}
 
 	tjerr = tjDecompressHeader( tjh, (byte *)jpegData, jpegSize, &width, &height );
 	if ( tjerr < 0 )
 	{
-		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		S_Log( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
 		tjDestroy( tjh );
 		return sfalse;
 	}
@@ -230,7 +231,7 @@ sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *widthOu
 	data = malloc( width * height * 4 );
 	if ( !data )
 	{
-		LOG( "Texture_DecompressJpeg: Unable to allocate %d bytes", width * height * 4 );
+		S_Log( "Texture_DecompressJpeg: Unable to allocate %d bytes", width * height * 4 );
 		tjDestroy( tjh );
 		return sfalse;
 	}
@@ -239,7 +240,7 @@ sbool Texture_DecompressJpeg( const void *jpegData, uint jpegSize, uint *widthOu
 	if ( tjerr < 0 )
 	{
 		free( data );
-		LOG( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
+		S_Log( "Texture_DecompressJpeg: %s", tjGetErrorStr() );
 		tjDestroy( tjh );
 		return sfalse;
 	}

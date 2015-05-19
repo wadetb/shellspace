@@ -32,7 +32,7 @@ void Thread_Init()
 	{
 		err = pthread_mutex_init( &s_mutex[mutexIter], NULL );
 		if ( err != 0 )
-			FAIL( "Thread_Init: pthread_mutex_init returned %i", err );
+			S_Fail( "Thread_Init: pthread_mutex_init returned %i", err );
 	}
 }
 
@@ -46,7 +46,7 @@ void Thread_Shutdown()
 	{
 		err = pthread_mutex_destroy( &s_mutex[mutexIter] );
 		if ( err != 0 )
-			FAIL( "Thread_Shutdown: pthread_mutex_destroy returned %i", err );
+			S_Fail( "Thread_Shutdown: pthread_mutex_destroy returned %i", err );
 	}
 }
 

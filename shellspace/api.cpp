@@ -53,7 +53,7 @@ SxResult sxRegisterPlugin( SxPluginHandle pl, SxPluginKind kind )
 
 	MsgQueue_Create( &plugin->msgQueue );
 
-	LOG( "Registered plugin %s.", id );
+	S_Log( "Registered plugin %s.", id );
 
 	return SX_OK;
 }
@@ -77,7 +77,7 @@ SxResult sxUnregisterPlugin( SxPluginHandle pl )
 
 	Registry_Unregister( PLUGIN_REGISTRY, ref );
 
-	LOG( "Unregistered plugin %s.", plugin->id );
+	S_Log( "Unregistered plugin %s.", plugin->id );
 	free( plugin->id );
 
 	return SX_OK;

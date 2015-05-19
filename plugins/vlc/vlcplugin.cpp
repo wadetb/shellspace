@@ -146,7 +146,7 @@ void vlc_log( void *data, int level, const libvlc_log_t *ctx, const char *fmt, v
 
     vsnprintf( buffer + strlen( buffer ), sizeof( buffer ) - strlen( buffer ), fmt, args );
 
-    LOG( buffer );
+    S_Log( "%s", buffer );
 }
 
 
@@ -155,7 +155,7 @@ void VLCThread_Create( SVLCWidget *vlc )
 	assert( vlc );
 	assert( !vlc->libvlc );
 
-	LOG( "VLCThread_Create: Creating %s...", vlc->id );
+	S_Log( "VLCThread_Create: Creating %s...", vlc->id );
 
     char const *vlc_argv[] =
     {
@@ -172,7 +172,7 @@ void VLCThread_Create( SVLCWidget *vlc )
 
 	vlc->state = VLCSTATE_CLOSED;
 
-	LOG( "VLCThread_Create: Finished creating %s.", vlc->id );
+	S_Log( "VLCThread_Create: Finished creating %s.", vlc->id );
 }
 
 
@@ -185,20 +185,20 @@ void VLC_OpenCmd( const SMsg *msg, void *context )
 
 	if ( Msg_Argc( msg ) != 2 )
 	{
-		LOG( "Usage: open <mediaPath>" );
+		S_Log( "Usage: open <mediaPath>" );
 		return;
 	}
 
 	if ( vlc->mediaPath )
 	{
-		LOG( "open: %s is already open; please close it first.", vlc->mediaPath );
+		S_Log( "open: %s is already open; please close it first.", vlc->mediaPath );
 		return;
 	}
 
 	vlc->mediaPath = strdup( Msg_Argv( msg, 1 ) );
 	assert( vlc->mediaPath );
 
-	LOG( "VLC_OpenCmd: Opening %s...", vlc->mediaPath );
+	S_Log( "VLC_OpenCmd: Opening %s...", vlc->mediaPath );
 
 	assert( vlc->libvlc );
 
@@ -216,7 +216,7 @@ void VLC_OpenCmd( const SMsg *msg, void *context )
 
     libvlc_video_set_format( vlc->mp, "RV32", vlc->width, vlc->height, vlc->width * 4 );
 
-   	LOG( "VLC_OpenCmd: Finished opening %s.", vlc->mediaPath );
+   	S_Log( "VLC_OpenCmd: Finished opening %s.", vlc->mediaPath );
 }
 
 
@@ -229,13 +229,13 @@ void VLC_CloseCmd( const SMsg *msg, void *context )
 
 	if ( Msg_Argc( msg ) != 1 )
 	{
-		LOG( "Usage: close" );
+		S_Log( "Usage: close" );
 		return;
 	}
 
 	if ( !vlc->mediaPath )
 	{
-		LOG( "close: No media is open." );
+		S_Log( "close: No media is open." );
 		return;
 	}
 
@@ -262,13 +262,13 @@ void VLC_PlayCmd( const SMsg *msg, void *context )
 
 	if ( Msg_Argc( msg ) != 1 )
 	{
-		LOG( "Usage: play" );
+		S_Log( "Usage: play" );
 		return;
 	}
 
 	if ( !vlc->mediaPath )
 	{
-		LOG( "play: No media is open." );
+		S_Log( "play: No media is open." );
 		return;
 	}
 
@@ -285,13 +285,13 @@ void VLC_StopCmd( const SMsg *msg, void *context )
 
 	if ( Msg_Argc( msg ) != 1 )
 	{
-		LOG( "Usage: stop" );
+		S_Log( "Usage: stop" );
 		return;
 	}
 
 	if ( !vlc->mediaPath )
 	{
-		LOG( "stop: No media is open." );
+		S_Log( "stop: No media is open." );
 		return;
 	}
 
@@ -359,7 +359,7 @@ static void VLCThread_Cleanup( SVLCWidget *vlc )
 
 	if ( vlc->mediaPath )
 	{
-		LOG( "VLCThread_Cleanup: Closing %s.", vlc->mediaPath );
+		S_Log( "VLCThread_Cleanup: Closing %s.", vlc->mediaPath );
 
 	    libvlc_media_player_stop( vlc->mp );
 	    libvlc_media_player_release( vlc->mp );
@@ -414,7 +414,7 @@ SVLCWidget *VLC_AllocWidget( SxWidgetHandle id )
 		};
 	}
 
-	LOG( "VLC_AllocWidget: Cannot allocate %s; limit of %i widgets reached.", id, VLC_WIDGET_LIMIT );
+	S_Log( "VLC_AllocWidget: Cannot allocate %s; limit of %i widgets reached.", id, VLC_WIDGET_LIMIT );
 
 	return NULL;
 }
@@ -457,7 +457,7 @@ SVLCWidget *VLC_GetWidget( SxWidgetHandle id )
 			return widget;
 	}
 
-	LOG( "VLC_GetWidget: Widget %s does not exist.", id );
+	S_Log( "VLC_GetWidget: Widget %s does not exist.", id );
 
 	return NULL;
 }
@@ -476,7 +476,7 @@ void VLC_WidgetCmd( const SMsg *msg )
 	widget = VLC_GetWidget( wid );
 	if ( !widget )
 	{
-		LOG( "VLC_WidgetCmd: This command was not recognized as either a plugin command or a valid widget id: %s", msgBuf );
+		S_Log( "VLC_WidgetCmd: This command was not recognized as either a plugin command or a valid widget id: %s", msgBuf );
 		return;
 	}
 
@@ -495,7 +495,7 @@ void VLC_CreateCmd( const SMsg *msg, void *context )
 	
 	if ( VLC_WidgetExists( id ) )
 	{
-		LOG( "create: Widget %s already exists.", id );
+		S_Log( "create: Widget %s already exists.", id );
 		return;
 	}
 
@@ -510,7 +510,7 @@ void VLC_CreateCmd( const SMsg *msg, void *context )
 
 	err = pthread_create( &vlc->thread, NULL, VLCThread, vlc );
 	if ( err != 0 )
-		FAIL( "VLC_CreateCmd: pthread_create returned %i", err );
+		S_Fail( "VLC_CreateCmd: pthread_create returned %i", err );
 
 	g_pluginInterface.registerWidget( vlc->id );
 	g_pluginInterface.registerEntity( vlc->id );
@@ -535,7 +535,7 @@ void VLC_DestroyCmd( const SMsg *msg, void *context )
 	vlc = VLC_GetWidget( id );
 	if ( !vlc )
 	{
-		LOG( "destroy: Widget %s does not exist.", id );
+		S_Log( "destroy: Widget %s does not exist.", id );
 		return;
 	}
 
@@ -543,12 +543,12 @@ void VLC_DestroyCmd( const SMsg *msg, void *context )
 	{
 		vlc->disconnect = strue;
 
-		LOG( "VLC_DestroyCmd: Cleaning up the thread..." );
+		S_Log( "VLC_DestroyCmd: Cleaning up the thread..." );
 
 		while ( vlc->state != VLCSTATE_DESTROYED )
 			Thread_Sleep( 3 );
 
-		LOG( "VLC_DestroyCmd: Finished cleaning up the thread." );
+		S_Log( "VLC_DestroyCmd: Finished cleaning up the thread." );
 
 		vlc->disconnect = sfalse;
 	}
@@ -611,7 +611,7 @@ void VLC_InitPlugin()
 
 	err = pthread_create( &s_vlcGlob.pluginThread, NULL, VLC_PluginThread, NULL );
 	if ( err != 0 )
-		FAIL( "VLC_InitPlugin: pthread_create returned %i", err );
+		S_Fail( "VLC_InitPlugin: pthread_create returned %i", err );
 }
 
 

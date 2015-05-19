@@ -19,6 +19,8 @@
 #ifndef __ENTITY_H__
 #define __ENTITY_H__
 
+#include <OVR.h>
+
 struct SEntity;
 
 void Entity_Init();

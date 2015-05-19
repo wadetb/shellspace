@@ -175,12 +175,12 @@ static void Prof_Print()
 	double	frameMax;
 	uint 	frameCount;
 
-	LOG( "%-30s   %4s %8s %8s %8s %8s %8s", "name", "hits", "avg/c", "avg/f", "total", "min", "max" );
-	LOG( "%.30s   %.4s %.8s %.8s %.8s %.8s %.8s", s_dashes, s_dashes, s_dashes, s_dashes, s_dashes, s_dashes, s_dashes );
+	S_Log( "%-30s   %4s %8s %8s %8s %8s %8s", "name", "hits", "avg/c", "avg/f", "total", "min", "max" );
+	S_Log( "%.30s   %.4s %.8s %.8s %.8s %.8s %.8s", s_dashes, s_dashes, s_dashes, s_dashes, s_dashes, s_dashes, s_dashes );
 
 	for ( profIter = 0; profIter < PROF_COUNT; profIter++ )
 	{
-		LOG( "%-30s : %4d %8.2f %8.2f %8.2f %8.2f %8.2f", 
+		S_Log( "%-30s : %4d %8.2f %8.2f %8.2f %8.2f %8.2f", 
 			s_profNames[profIter], 
 			s_profGlob.hits[profIter], 
 			s_profGlob.avgPerCall[profIter],
@@ -195,11 +195,11 @@ static void Prof_Print()
 		s_profGlob.min[profIter] = FLT_MAX;
 	}
 
-	LOG( "" );
+	S_Log( " " );
 
 	if ( s_profGlob.probe < PROF_COUNT )
 	{
-		LOG( "Probe \"%s\":", s_profNames[s_profGlob.probe] );
+		S_Log( "Probe \"%s\":", s_profNames[s_profGlob.probe] );
 
 		hitFrame = UINT_MAX;
 
@@ -208,10 +208,10 @@ static void Prof_Print()
 			if ( s_profGlob.probeHitFrame[hitIter] != hitFrame )
 			{
 				if ( hitIter != 0 )
-					LOG( "Min: %f Max: %f Total: %f Avg: %f Count: %d", frameMin, frameMax, frameTotal, frameTotal / frameCount, frameCount );
+					S_Log( "Min: %f Max: %f Total: %f Avg: %f Count: %d", frameMin, frameMax, frameTotal, frameTotal / frameCount, frameCount );
 
 				hitFrame = s_profGlob.probeHitFrame[hitIter];
-				LOG( "Frame %d: ", hitFrame );
+				S_Log( "Frame %d: ", hitFrame );
 
 				frameMin = FLT_MAX;
 				frameMax = 0.0;
@@ -219,7 +219,7 @@ static void Prof_Print()
 				frameCount = 0;
 			}
 
-			LOG( "%d : %f", hitIter, s_profGlob.probeHitTime[hitIter] );
+			S_Log( "%d : %f", hitIter, s_profGlob.probeHitTime[hitIter] );
 
 			if ( s_profGlob.probeHitTime[hitIter] < frameMin )
 				frameMin = s_profGlob.probeHitTime[hitIter];
@@ -231,7 +231,7 @@ static void Prof_Print()
 
 		s_profGlob.probeHitCount = 0;
 
-		LOG( "" );
+		S_Log( " " );
 	}
 }
 

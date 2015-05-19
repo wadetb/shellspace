@@ -535,7 +535,7 @@ void V8SkCanvas::Initialize(Isolate *isolate, Handle<ObjectTemplate> target) {
 
 void V8Skia_Error( SkError error, void *context )
 {
-    LOG( SkGetLastErrorString() );
+    S_Log( "%s", SkGetLastErrorString() );
 }
 
 

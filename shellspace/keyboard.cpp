@@ -230,7 +230,7 @@ static void Keyboard_Previous()
 {
 	s_keyGlob.activeIndex = (s_keyGlob.activeIndex + s_keyGlob.keyboardCount - 1) % s_keyGlob.keyboardCount;
 	s_keyGlob.key = INVALID_KEY;
-	LOG( "Selected keyboard: %s", s_keyGlob.keyboards[s_keyGlob.activeIndex].fileName );
+	S_Log( "Selected keyboard: %s", s_keyGlob.keyboards[s_keyGlob.activeIndex].fileName );
 }
 
 
@@ -238,7 +238,7 @@ static void Keyboard_Next()
 {
 	s_keyGlob.activeIndex = (s_keyGlob.activeIndex + 1) % s_keyGlob.keyboardCount;	
 	s_keyGlob.key = INVALID_KEY;
-	LOG( "Selected keyboard: %s", s_keyGlob.keyboards[s_keyGlob.activeIndex].fileName );
+	S_Log( "Selected keyboard: %s", s_keyGlob.keyboards[s_keyGlob.activeIndex].fileName );
 }
 
 
@@ -376,13 +376,13 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 	status = jsonParse( buffer, &endptr, &keyboardJson, allocator );
 	if ( status != JSON_OK ) 
 	{
-	    LOG( "%s at %zd\n", jsonStrError( status ), endptr - buffer );
+	    S_Log( "%s at %zd\n", jsonStrError( status ), endptr - buffer );
 	    return sfalse;
 	}
 
 	if ( keyboardJson.getTag() != JSON_OBJECT )
 	{
-		LOG( "Expected JSON object." );
+		S_Log( "Expected JSON object." );
 		return sfalse;
 	}
 
@@ -392,7 +392,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 	{
 		if ( keysJson->value.getTag() != JSON_ARRAY || strcmp( keysJson->key, "keys" ) )
 		{
-			LOG( "Expected keys array." );
+			S_Log( "Expected keys array." );
 			continue;
 		}
 
@@ -402,14 +402,14 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 
 			if ( keyJson->value.getTag() != JSON_OBJECT )
 			{
-				LOG( "Expected key object." );
+				S_Log( "Expected key object." );
 				continue;
 			}
 
 			xJson = getFirstChildByKey( keyJson->value, "x" );
 			if ( !xJson || xJson->value.getTag() != JSON_NUMBER )
 			{
-				LOG( "Missing x field" );
+				S_Log( "Missing x field" );
 				continue;
 			}
 			key->x = xJson->value.toNumber();
@@ -417,7 +417,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 			yJson = getFirstChildByKey( keyJson->value, "y" );
 			if ( !yJson || yJson->value.getTag() != JSON_NUMBER )
 			{
-				LOG( "Missing y field" );
+				S_Log( "Missing y field" );
 				continue;
 			}
 			key->y = yJson->value.toNumber();
@@ -436,7 +436,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 
 			if ( !key->code && !key->label )
 			{
-				LOG( "Key is has neither a code nor a label field." );
+				S_Log( "Key is has neither a code nor a label field." );
 				continue;
 			}
 
@@ -446,7 +446,7 @@ static sbool Keyboard_ParseKeyboard( char *buffer, const char *fileName, SKeyboa
 
 	if ( !keyCount )
 	{
-		LOG( "Keyboard contains no keys." );
+		S_Log( "Keyboard contains no keys." );
 		return sfalse;
 	}
 
@@ -471,12 +471,12 @@ static sbool Keyboard_LoadKeyboardFromFileSystem( const char *fileName, SKeyboar
 	size_t 	read;
 	sbool 	result;
 
-	LOG( "Loading %s from the filesystem", fileName );
+	S_Log( "Loading %s from the filesystem", fileName );
 
 	in = fopen( fileName, "r" );
 	if ( !in )
 	{
-		LOG( "Failed to load JSON file: %s", fileName );
+		S_Log( "Failed to load JSON file: %s", fileName );
 		return sfalse;
 	}
 
@@ -487,7 +487,7 @@ static sbool Keyboard_LoadKeyboardFromFileSystem( const char *fileName, SKeyboar
 	buffer = (char *)malloc( length + 1 );
 	if ( !buffer )
 	{
-		LOG( "Failed to allocate %d bytes of memory for the JSON file: %s", length + 1, fileName );
+		S_Log( "Failed to allocate %d bytes of memory for the JSON file: %s", length + 1, fileName );
 		fclose( in );
 		return sfalse;
 	}
@@ -495,7 +495,7 @@ static sbool Keyboard_LoadKeyboardFromFileSystem( const char *fileName, SKeyboar
 	read = fread( buffer, 1, length, in );
 	if ( read != length )
 	{
-		LOG( "Failed to read %d bytes from the JSON file: %s", length, fileName );
+		S_Log( "Failed to read %d bytes from the JSON file: %s", length, fileName );
 		fclose( in );
 		return sfalse;
 	}
@@ -517,13 +517,13 @@ static sbool Keyboard_LoadKeyboardFromPackage( const char *fileName, SKeyboard *
 	void 	*buffer;
 	bool 	result;
 
-	LOG( "Loading %s from package", fileName );
+	S_Log( "Loading %s from package", fileName );
 
 	ovr_ReadFileFromApplicationPackage( fileName, length, buffer );
 
 	if ( !buffer )
 	{
-		LOG( "Failed to load JSON file: %s", fileName );
+		S_Log( "Failed to load JSON file: %s", fileName );
 		return sfalse;
 	}
 	

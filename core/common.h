@@ -19,13 +19,15 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include <android/log.h>
 #include <assert.h>
+#include <math.h>
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
-#include <GLES3/gl3.h>
-#include <GlUtils.h>
-#include <Log.h>
-#include <OVR.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 // #include "coffeecatch/coffeecatch.h"
 // #include "coffeecatch/coffeejni.h"
 
@@ -46,6 +48,9 @@ typedef unsigned int   uint;
 #define MB      (1024 * KB)
 
 #define assertindex( v, count ) assert( v < count )
+
+#define S_Log( ... )  __android_log_print( ANDROID_LOG_INFO, "Shellspace", __VA_ARGS__ )
+#define S_Fail( ... ) {__android_log_print( ANDROID_LOG_WARN, "Shellspace", __VA_ARGS__ );abort();}
 
 inline unsigned int S_NextPow2(unsigned int v)
 {

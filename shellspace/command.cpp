@@ -106,7 +106,7 @@ sbool Cmd_CopyOneToArgBuffer( char **cmd )
 
 	if ( out > end )
 	{
-		LOG( "Command is too long; %d characters is the maximum.", MAX_CMD_LENGTH );
+		S_Log( "Command is too long; %d characters is the maximum.", MAX_CMD_LENGTH );
 		return sfalse;
 	}
 	else
@@ -148,7 +148,7 @@ sbool Cmd_Parse( char **cmd )
 
 			if ( *p != '"' )
 			{
-				LOG( "Failed to parse argument %d; missing end quote.", s_cmdGlob.argCount + 1 );
+				S_Log( "Failed to parse argument %d; missing end quote.", s_cmdGlob.argCount + 1 );
 				return sfalse;
 			}
 
@@ -171,7 +171,7 @@ sbool Cmd_Parse( char **cmd )
 
 		if ( s_cmdGlob.argCount >= MAX_CMD_ARGS )
 		{
-			LOG( "Too many arguments to parse; %d is the maximum.", MAX_CMD_ARGS );
+			S_Log( "Too many arguments to parse; %d is the maximum.", MAX_CMD_ARGS );
 			return sfalse;
 		}
 		s_cmdGlob.argCount++;
@@ -220,13 +220,13 @@ void Cmd_Add( const char *format, ... )
 
 	if ( written < 0 )
 	{
-		LOG( "Invalid command characters." );
+		S_Log( "Invalid command characters." );
 		return;
 	}
 
 	if ( written >= bufferLen )
 	{
-		LOG( "Command buffer too full." );
+		S_Log( "Command buffer too full." );
 		return;
 	}
 
@@ -269,7 +269,7 @@ void Cmd_Frame()
 	
 	p = s_cmdGlob.buffer;
 
-	LOG( "> %s", s_cmdGlob.buffer );
+	S_Log( "> %s", s_cmdGlob.buffer );
 
 	while ( *p )
 	{
@@ -317,7 +317,7 @@ void Cmd_Frame()
 			}
 		}
 
-		LOG( "Unrecognized command '%s'.", Cmd_Argv( 0 ) );
+		S_Log( "Unrecognized command '%s'.", Cmd_Argv( 0 ) );
 		Cmd_Clear();
 next_cmd:;
 	}
@@ -333,7 +333,7 @@ void Cmd_AddFile( const char *fileName )
 {
 	char *text;
 
-	LOG( "Executing %s", fileName );
+	S_Log( "Executing %s", fileName );
 
 	text = (char *)File_Read( fileName, NULL );
 	if ( !text )

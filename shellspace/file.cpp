@@ -70,7 +70,7 @@ void File_Init()
 	// Cached downloaded files.
 	if ( !S_strempty( s_file.cacheDir ) )
 	{
-		LOG( "File_Init: Cache directory is %s", s_file.cacheDir );
+		S_Log( "File_Init: Cache directory is %s", s_file.cacheDir );
 		File_AddPath( s_file.cacheDir );
 	}
 
@@ -97,7 +97,7 @@ void File_AddPath( const char *path )
 
 	if ( s_file.pathCount == PATH_LIMIT )
 	{
-		LOG( "Exceeded the limit of %d search paths; not adding %s.", PATH_LIMIT, path );
+		S_Log( "Exceeded the limit of %d search paths; not adding %s.", PATH_LIMIT, path );
 		return;
 	}
 
@@ -106,7 +106,7 @@ void File_AddPath( const char *path )
 
 	S_RemoveTrailingSlash( newPath );
 
-	LOG( "Added '%s' to the search path.", newPath );
+	S_Log( "Added '%s' to the search path.", newPath );
 
 	s_file.paths[s_file.pathCount] = newPath;
 	s_file.pathCount++;
@@ -177,7 +177,7 @@ void File_DownloadToCache( const char *fileName )
 	result = getaddrinfo( s_file.httpHost, httpPort, &hints, &addr );
 	if ( result )
 	{
-    	LOG( "File_DownloadToCache: Unable to resolve %s: %s", s_file.httpHost, gai_strerror( result ) );
+    	S_Log( "File_DownloadToCache: Unable to resolve %s: %s", s_file.httpHost, gai_strerror( result ) );
     	return;
 	}
 
@@ -186,14 +186,14 @@ void File_DownloadToCache( const char *fileName )
         sockFd = socket( a->ai_family, a->ai_socktype, a->ai_protocol );
         if ( sockFd == -1 )
         {
-        	LOG( "File_DownloadToCache: Unable to create socket: %s", strerror( errno ) );
+        	S_Log( "File_DownloadToCache: Unable to create socket: %s", strerror( errno ) );
             continue;
         }
 
         if ( connect( sockFd, a->ai_addr, a->ai_addrlen ) != -1 )
             break;
 
-    	LOG( "File_DownloadToCache: Unable to connect to %s: %s", s_file.httpHost, strerror( errno ) );
+    	S_Log( "File_DownloadToCache: Unable to connect to %s: %s", s_file.httpHost, strerror( errno ) );
 
         close( sockFd );
     }
@@ -239,7 +239,7 @@ void File_DownloadToCache( const char *fileName )
 
 				if ( sscanf( header, "HTTP/1.%*d %d", &httpStatus ) != 1 )
 				{
-					LOG( "File_DownloadToCache: Invalid HTTP header: %s.", header );
+					S_Log( "File_DownloadToCache: Invalid HTTP header: %s.", header );
 					break;
 				}
 
@@ -253,7 +253,7 @@ void File_DownloadToCache( const char *fileName )
 
 				if ( httpStatus != 200 )
 				{
-					LOG( "File_DownloadToCache: Unexpected HTTP status %d: %s", httpStatus, header );
+					S_Log( "File_DownloadToCache: Unexpected HTTP status %d: %s", httpStatus, header );
 					unlink( fullPath );
 					break;
 				}
@@ -261,7 +261,7 @@ void File_DownloadToCache( const char *fileName )
 				out = fopen( fullPath, "wb" );
 				if ( !out )
 				{
-					LOG( "File_DownloadToCache: Unable to open cache file %s for write", fullPath );
+					S_Log( "File_DownloadToCache: Unable to open cache file %s for write", fullPath );
 					unlink( fullPath );
 					break;
 				}
@@ -286,7 +286,7 @@ void File_DownloadToCache( const char *fileName )
     if ( inBody )
     {
     	fclose( out );
-		LOG( "File_DownloadToCache: Saved %s", fullPath );
+		S_Log( "File_DownloadToCache: Saved %s", fullPath );
 	}
 
 	free( header );
@@ -342,20 +342,20 @@ byte *File_Read( const char *fileName, uint *bytesRead )
 		if ( buffer )
 			return buffer;
 
-		LOG( "Failed to find %s in the package or in the following search paths:", fileName );
+		S_Log( "Failed to find %s in the package or in the following search paths:", fileName );
 
 		for ( pathIter = 0; pathIter < s_file.pathCount; pathIter++ )
-			LOG( "\t\"%s\"", s_file.paths[pathIter] );
+			S_Log( "\t\"%s\"", s_file.paths[pathIter] );
 
 		return NULL;
 	}
 
-	LOG( "File_Read: %s", fullPath );
+	S_Log( "File_Read: %s", fullPath );
 
 	in = fopen( fullPath, "rb" );
 	if ( !in )
 	{
-		LOG( "Failed to load %s", fullPath );
+		S_Log( "Failed to load %s", fullPath );
 		return NULL;
 	}
 
@@ -366,7 +366,7 @@ byte *File_Read( const char *fileName, uint *bytesRead )
 	buffer = (byte *)malloc( length + 1 );
 	if ( !buffer )
 	{
-		LOG( "Failed to allocate %d bytes of memory for %s", length + 1, fullPath );
+		S_Log( "Failed to allocate %d bytes of memory for %s", length + 1, fullPath );
 		fclose( in );
 		return NULL;
 	}
@@ -374,7 +374,7 @@ byte *File_Read( const char *fileName, uint *bytesRead )
 	read = fread( buffer, 1, length, in );
 	if ( read != length )
 	{
-		LOG( "Failed to read %d bytes from %s", length, fullPath );
+		S_Log( "Failed to read %d bytes from %s", length, fullPath );
 		fclose( in );
 		free( buffer );
 		return NULL;
@@ -401,7 +401,7 @@ sbool File_Command()
 			{
 				if ( Cmd_Argc() != 3 )
 				{
-					LOG( "Usage: file http enable" );
+					S_Log( "Usage: file http enable" );
 					return strue;
 				}
 
@@ -414,7 +414,7 @@ sbool File_Command()
 			{
 				if ( Cmd_Argc() != 3 )
 				{
-					LOG( "Usage: file http disable" );
+					S_Log( "Usage: file http disable" );
 					return strue;
 				}
 
@@ -427,7 +427,7 @@ sbool File_Command()
 			{
 				if ( Cmd_Argc() != 4 )
 				{
-					LOG( "Usage: file http host <host>" );
+					S_Log( "Usage: file http host <host>" );
 					return strue;
 				}
 
@@ -440,7 +440,7 @@ sbool File_Command()
 			{
 				if ( Cmd_Argc() != 4 )
 				{
-					LOG( "Usage: file http port <port>" );
+					S_Log( "Usage: file http port <port>" );
 					return strue;
 				}
 
@@ -453,7 +453,7 @@ sbool File_Command()
 			{
 				if ( Cmd_Argc() != 4 )
 				{
-					LOG( "Usage: file http root <host>" );
+					S_Log( "Usage: file http root <host>" );
 					return strue;
 				}
 

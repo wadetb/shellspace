@@ -710,7 +710,7 @@ void LogCallback( const FunctionCallbackInfo<Value>& args )
 
 	String::Utf8Value messageStr( args[0] );
 
-	LOG( *messageStr );
+	S_Log( "%s", *messageStr );
 }
 
 
@@ -858,7 +858,7 @@ void V8_ReportException( Isolate* isolate, TryCatch* tryCatch )
     {
         // V8 didn't provide any extra information about this error; just
         // print the exception.
-        LOG( exceptionString );
+        S_Log( "%s", exceptionString );
         return;
     }
 
@@ -868,12 +868,12 @@ void V8_ReportException( Isolate* isolate, TryCatch* tryCatch )
 
     int lineNumber = message->GetLineNumber();
 
-    LOG( "%s:%i: %s", filenameString, lineNumber, exceptionString );
+    S_Log( "%s:%i: %s", filenameString, lineNumber, exceptionString );
 
     // Print line of source code.
     String::Utf8Value sourceLine( message->GetSourceLine() );
     const char* sourceLineString = V8_StringArg( sourceLine );
-    LOG( sourceLineString );
+    S_Log( "%s", sourceLineString );
 
     // Print wavy underline (GetUnderline is deprecated).
     uint start = message->GetStartColumn();
@@ -887,13 +887,13 @@ void V8_ReportException( Isolate* isolate, TryCatch* tryCatch )
     	underLine[i] = i < start ? ' ' : '^';
     }
     underLine[i] = '\0';
-    LOG( underLine );
+    S_Log( "%s", underLine );
 
     String::Utf8Value stackTrace( tryCatch->StackTrace() );
     if ( stackTrace.length() > 0 ) 
     {
         const char* stackTraceString = V8_StringArg( stackTrace );
-        LOG( stackTraceString );
+        S_Log( "%s", stackTraceString );
     }
 }
 
@@ -905,7 +905,7 @@ void *V8_InstanceThread( void *threadContext )
 	v8 = (SV8Instance *)threadContext;
 	assert( v8 );
 
-	LOG( "V8 instance %s (%p) starting up...", v8->fileName, threadContext );
+	S_Log( "V8 instance %s (%p) starting up...", v8->fileName, threadContext );
 
 	v8->isolate = Isolate::New();
 
@@ -941,7 +941,7 @@ void *V8_InstanceThread( void *threadContext )
 		}
 	}
 
-	LOG( "V8 instance %s (%p) shutting down...", v8->fileName, threadContext );
+	S_Log( "V8 instance %s (%p) shutting down...", v8->fileName, threadContext );
 
 	v8->isolate->Dispose();
 
@@ -978,7 +978,7 @@ void V8_LoadCmd( const SMsg *msg, void *context )
 
 	err = pthread_create( &v8->thread, NULL, V8_InstanceThread, v8 );
 	if ( err != 0 )
-		FAIL( "V8_LoadCmd: pthread_create returned %i", err );
+		S_Fail( "V8_LoadCmd: pthread_create returned %i", err );
 }
 
 
@@ -1042,6 +1042,6 @@ void V8_InitPlugin()
 
 	err = pthread_create( &s_v8.pluginThread, NULL, V8_PluginThread, NULL );
 	if ( err != 0 )
-		FAIL( "V8_InitPlugin: pthread_create returned %i", err );
+		S_Fail( "V8_InitPlugin: pthread_create returned %i", err );
 }
 

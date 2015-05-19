@@ -453,7 +453,7 @@ void InQueue_Frame()
 	SItem 		*in;
 	// double 		startMs;
 
-	// LOG( "InQueue_Frame Enter" );
+	// S_Log( "InQueue_Frame Enter" );
 
 	Prof_Start( PROF_GPU_UPDATE );
 
@@ -506,7 +506,7 @@ void InQueue_Frame()
 
 	// if ( count >= INQUEUE_SIZE * 75 / 100 )
 	// {
-	// 	LOG( "GPU update queue 75%% full, forcing textures & geometry to present (may flicker)." );
+	// 	S_Log( "GPU update queue 75%% full, forcing textures & geometry to present (may flicker)." );
 	// 	InQueue_AutoPresent( index );
 	// }
 
@@ -516,9 +516,9 @@ void InQueue_Frame()
 
 	Prof_Stop( PROF_GPU_UPDATE );
 
-	// LOG( "InQueue: count=%d", s_iq.count );
+	// S_Log( "InQueue: count=%d", s_iq.count );
 
-	// LOG( "InQueue_Frame Leave" );
+	// S_Log( "InQueue_Frame Leave" );
 }
 
 
@@ -577,48 +577,48 @@ void InQueue_Print()
 		switch ( in->kind )
 		{
 		case INQUEUE_TEXTURE_UPDATE:
-			LOG( "texture_update %d %x %d,%d %dx%d",
+			S_Log( "texture_update %d %x %d,%d %dx%d",
 				in->texture.ref, in->texture.updateMask,
 				in->texture.update.x, in->texture.update.y, 
 				in->texture.update.width, in->texture.update.height );
 			break;
 		case INQUEUE_TEXTURE_RESIZE:
-			LOG( "texture_resize %d %x %dx%d",
+			S_Log( "texture_resize %d %x %dx%d",
 				in->texture.ref, in->texture.updateMask,
 				in->texture.resize.width, in->texture.resize.height );
 			break;
 		case INQUEUE_TEXTURE_PRESENT:
-			LOG( "texture_present %d %x",
+			S_Log( "texture_present %d %x",
 				in->texture.ref, in->texture.updateMask );
 			break;
 
 		case INQUEUE_GEOMETRY_UPDATE_INDEX:
-			LOG( "geometry_update_index %d %x [%d,%d)",
+			S_Log( "geometry_update_index %d %x [%d,%d)",
 				in->geometry.ref, in->geometry.updateMask,
 				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
 			break;
 		case INQUEUE_GEOMETRY_UPDATE_POSITION:
-			LOG( "geometry_update_position %d %x [%d,%d)",
+			S_Log( "geometry_update_position %d %x [%d,%d)",
 				in->geometry.ref, in->geometry.updateMask,
 				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
 			break;
 		case INQUEUE_GEOMETRY_UPDATE_COLOR:
-			LOG( "geometry_update_color %d %x [%d,%d)",
+			S_Log( "geometry_update_color %d %x [%d,%d)",
 				in->geometry.ref, in->geometry.updateMask,
 				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
 			break;
 		case INQUEUE_GEOMETRY_UPDATE_TEXCOORD:
-			LOG( "geometry_update_texcoord %d %x [%d,%d)",
+			S_Log( "geometry_update_texcoord %d %x [%d,%d)",
 				in->geometry.ref, in->geometry.updateMask,
 				in->geometry.update.first, in->geometry.update.first + in->geometry.update.count );
 			break;
 		case INQUEUE_GEOMETRY_RESIZE:
-			LOG( "geometry_resize %d %x v%d i%d",
+			S_Log( "geometry_resize %d %x v%d i%d",
 				in->geometry.ref, in->geometry.updateMask,
 				in->geometry.resize.vertexCount, in->geometry.resize.indexCount );
 			break;
 		case INQUEUE_GEOMETRY_PRESENT:
-			LOG( "geometry_present %d %x",
+			S_Log( "geometry_present %d %x",
 				in->geometry.ref, in->geometry.updateMask );
 			break;
 
@@ -659,7 +659,7 @@ SItem *InQueue_BeginAppend( EInQueueKind kind )
 
 		if ( !logged )
 		{
-			LOG( "InQueue_BeginAppend: GPU update queue is full, stalling." );
+			S_Log( "InQueue_BeginAppend: GPU update queue is full, stalling." );
 			// InQueue_Print();
 			logged = strue;
 		}
@@ -710,7 +710,7 @@ void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint heigh
 	texture = Registry_GetTexture( ref );
 	assert( texture );
 
-	// LOG( "InQueue_UpdateTextureRect: %d,%d %dx%d", x, y, width, height );
+	// S_Log( "InQueue_UpdateTextureRect: %d,%d %dx%d", x, y, width, height );
 
 	assert( x + width <= texture->width );
 	assert( y + height <= texture->height );
@@ -738,7 +738,7 @@ void InQueue_UpdateTextureRect( SRef ref, uint x, uint y, uint width, uint heigh
 
 		if ( !dataCopy )
 		{
-			LOG( "InQueue_UpdateTextureRect: Unable to allocate %d bytes.", batchDataSize );
+			S_Log( "InQueue_UpdateTextureRect: Unable to allocate %d bytes.", batchDataSize );
 			return;
 		}
 

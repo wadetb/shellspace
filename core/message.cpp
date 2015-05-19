@@ -157,7 +157,7 @@ sbool Msg_SetFloatCmd( const SMsg *msg, float *value, float mn, float mx )
 
 	if ( Msg_Argc( msg ) < 2 )
 	{
-		LOG( "Float value expected" );
+		S_Log( "Float value expected" );
 		return sfalse;
 	}
 
@@ -170,13 +170,13 @@ sbool Msg_SetFloatCmd( const SMsg *msg, float *value, float mn, float mx )
 
 	if ( newValue < mn )
 	{
-		LOG( "Value is below the minimum %f", mn );
+		S_Log( "Value is below the minimum %f", mn );
 		return sfalse;
 	}	
 
 	if ( newValue > mx )
 	{
-		LOG( "Value is above the maximum %f", mx );
+		S_Log( "Value is above the maximum %f", mx );
 		return sfalse;
 	}
 
@@ -196,7 +196,7 @@ sbool Msg_SetIntCmd( const SMsg *msg, int *value, int mn, int mx )
 
 	if ( Msg_Argc( msg ) < 2 )
 	{
-		LOG( "Integer value expected" );
+		S_Log( "Integer value expected" );
 		return sfalse;
 	}
 
@@ -209,13 +209,13 @@ sbool Msg_SetIntCmd( const SMsg *msg, int *value, int mn, int mx )
 
 	if ( newValue < mn )
 	{
-		LOG( "Value is below the minimum %i", mn );
+		S_Log( "Value is below the minimum %i", mn );
 		return sfalse;
 	}	
 
 	if ( newValue > mx )
 	{
-		LOG( "Value is above the maximum %i", mx );
+		S_Log( "Value is above the maximum %i", mx );
 		return sfalse;
 	}
 
@@ -234,7 +234,7 @@ sbool Msg_SetBoolCmd( const SMsg *msg, sbool *value )
 
 	if ( Msg_Argc( msg ) < 2 )
 	{
-		LOG( "Boolean value expected" );
+		S_Log( "Boolean value expected" );
 		return sfalse;
 	}
 
@@ -252,7 +252,7 @@ sbool Msg_SetBoolCmd( const SMsg *msg, sbool *value )
 	}
 	else
 	{
-		LOG( "Expected 0/1/true/false for boolean value" );
+		S_Log( "Expected 0/1/true/false for boolean value" );
 		return sfalse;
 	}
 }
@@ -317,7 +317,7 @@ sbool Msg_CopyOneToArgBuffer( SMsg *msg, const char **cmd )
 
 	if ( out > end )
 	{
-		LOG( "Message is too long; %d characters is the maximum.", MSG_LIMIT );
+		S_Log( "Message is too long; %d characters is the maximum.", MSG_LIMIT );
 		return sfalse;
 	}
 	else
@@ -359,7 +359,7 @@ sbool Msg_Parse( SMsg *msg, const char **cmd )
 
 			if ( *p != '"' )
 			{
-				LOG( "Failed to parse argument %d; missing end quote.", msg->argCount + 1 );
+				S_Log( "Failed to parse argument %d; missing end quote.", msg->argCount + 1 );
 				return sfalse;
 			}
 
@@ -382,7 +382,7 @@ sbool Msg_Parse( SMsg *msg, const char **cmd )
 
 		if ( msg->argCount >= MSG_ARG_LIMIT )
 		{
-			LOG( "Too many arguments to parse; %d is the maximum.", MSG_ARG_LIMIT );
+			S_Log( "Too many arguments to parse; %d is the maximum.", MSG_ARG_LIMIT );
 			return sfalse;
 		}
 		msg->argCount++;
@@ -444,13 +444,13 @@ void MsgQueue_Put( SMsgQueue *queue, const char *text )
 
 	assert( queue );
 
-	// LOG( "MsgQueue_Put: %s", text );
+	// S_Log( "MsgQueue_Put: %s", text );
 
 	pthread_mutex_lock( &queue->mutex );
 
 	if ( queue->put >= queue->get + MSG_QUEUE_LIMIT )
 	{
-		LOG( "MsgQueue_Put: Queue is full, skipping %s.", text );
+		S_Log( "MsgQueue_Put: Queue is full, skipping %s.", text );
 		pthread_mutex_unlock( &queue->mutex );
 		return;	// $$$ wait for drain?  drop msg and post warning?  expand queue until memory is exhausted?
 	}

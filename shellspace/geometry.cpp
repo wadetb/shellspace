@@ -20,6 +20,8 @@
 #include "geometry.h"
 #include "registry.h"
 
+#include <GlUtils.h>
+    
 
 void Geometry_MakeVertexArrayObject( SGeometry *geometry )
 {

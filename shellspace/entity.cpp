@@ -192,18 +192,18 @@ void Entity_DrawChildren( const OVR::Matrix4f &view, const SxTransform& xform, S
 
 		// if ( strstr( entity->id, "vnc" ) )
 		// {		
-		// 	LOG( "entityXform %s:", entity->id );
-		// 	LOG( "xAxis: %f %f %f", entityXform.axes.x.x, entityXform.axes.x.y, entityXform.axes.x.z );
-		// 	LOG( "yAxis: %f %f %f", entityXform.axes.y.x, entityXform.axes.y.y, entityXform.axes.y.z );
-		// 	LOG( "zAxis: %f %f %f", entityXform.axes.z.x, entityXform.axes.z.y, entityXform.axes.z.z );
-		// 	LOG( "origin: %f %f %f", entityXform.origin.x, entityXform.origin.y, entityXform.origin.z );
-		// 	LOG( "scale: %f %f %f", entityXform.scale.x, entityXform.scale.y, entityXform.scale.z );
-		// 	LOG( "childXform %s:", entity->id );
-		// 	LOG( "xAxis: %f %f %f", childXform.axes.x.x, childXform.axes.x.y, childXform.axes.x.z );
-		// 	LOG( "yAxis: %f %f %f", childXform.axes.y.x, childXform.axes.y.y, childXform.axes.y.z );
-		// 	LOG( "zAxis: %f %f %f", childXform.axes.z.x, childXform.axes.z.y, childXform.axes.z.z );
-		// 	LOG( "origin: %f %f %f", childXform.origin.x, childXform.origin.y, childXform.origin.z );
-		// 	LOG( "scale: %f %f %f", childXform.scale.x, childXform.scale.y, childXform.scale.z );
+		// 	S_Log( "entityXform %s:", entity->id );
+		// 	S_Log( "xAxis: %f %f %f", entityXform.axes.x.x, entityXform.axes.x.y, entityXform.axes.x.z );
+		// 	S_Log( "yAxis: %f %f %f", entityXform.axes.y.x, entityXform.axes.y.y, entityXform.axes.y.z );
+		// 	S_Log( "zAxis: %f %f %f", entityXform.axes.z.x, entityXform.axes.z.y, entityXform.axes.z.z );
+		// 	S_Log( "origin: %f %f %f", entityXform.origin.x, entityXform.origin.y, entityXform.origin.z );
+		// 	S_Log( "scale: %f %f %f", entityXform.scale.x, entityXform.scale.y, entityXform.scale.z );
+		// 	S_Log( "childXform %s:", entity->id );
+		// 	S_Log( "xAxis: %f %f %f", childXform.axes.x.x, childXform.axes.x.y, childXform.axes.x.z );
+		// 	S_Log( "yAxis: %f %f %f", childXform.axes.y.x, childXform.axes.y.y, childXform.axes.y.z );
+		// 	S_Log( "zAxis: %f %f %f", childXform.axes.z.x, childXform.axes.z.y, childXform.axes.z.z );
+		// 	S_Log( "origin: %f %f %f", childXform.origin.x, childXform.origin.y, childXform.origin.z );
+		// 	S_Log( "scale: %f %f %f", childXform.scale.x, childXform.scale.y, childXform.scale.z );
 		// }
 
 		m = OVR::Matrix4f( 
@@ -216,7 +216,7 @@ void Entity_DrawChildren( const OVR::Matrix4f &view, const SxTransform& xform, S
 
 		if ( entity->firstChild != S_NULL_REF )
 		{
-			// LOG( "%s has children", entity->id );
+			// S_Log( "%s has children", entity->id );
 			Entity_DrawChildren( view, childXform, entity->firstChild );
 		}
 	}
@@ -295,7 +295,7 @@ sbool Entity_Command()
 		{
 			if ( Cmd_Argc() != 4 )
 			{
-				LOG( "Usage: entity shaders <vertex> <pixel>" );
+				S_Log( "Usage: entity shaders <vertex> <pixel>" );
 				return strue;
 			}
 

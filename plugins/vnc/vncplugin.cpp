@@ -22,8 +22,9 @@
 #include "message.h"
 #include "thread.h"
 
-#include <libvncserver/rfb/rfbclient.h>
 #include <android/keycodes.h>
+#include <ctype.h>
+#include <libvncserver/rfb/rfbclient.h>
 
 
 #define VNC_WIDGET_LIMIT 			16
@@ -136,7 +137,7 @@ static void rfb_log(const char *format, ...)
     vsnprintf( msg, sizeof( msg ) - 1, format, args );
     va_end( args );
 
-    LOG( msg );
+    S_Log( "%s", msg );
 }
 
 
@@ -149,7 +150,7 @@ static void rfb_error(const char *format, ...)
     vsnprintf( msg, sizeof( msg ) - 1, format, args );
     va_end( args );
 
-    LOG( msg );
+    S_Log( "%s", msg );
 
     Cmd_Add( "notify \"%s\"", msg );
 }
@@ -211,7 +212,7 @@ void VNCThread_BuildGlobeVertexPositions( SVNCWidget *vnc )
 	positions = (SxVector3 *)malloc( vnc->globe.vertexCount * sizeof( SxVector3 ) );
 	if ( !positions )
 	{
-		LOG( "VNCThread_BuildGlobeVertexPositions: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector3 ) );
+		S_Log( "VNCThread_BuildGlobeVertexPositions: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector3 ) );
 		return;
 	}
 
@@ -250,14 +251,14 @@ void VNCThread_BuildGlobeVertexComponents( SVNCWidget *vnc )
 	texCoords = (SxVector2 *)malloc( vnc->globe.vertexCount * sizeof( SxVector2 ) );
 	if ( !texCoords )
 	{
-		LOG( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector2 ) );
+		S_Log( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector2 ) );
 		return;
 	}
 
 	colors = (SxColor *)malloc( vnc->globe.vertexCount * sizeof( SxColor ) );
 	if ( !texCoords )
 	{
-		LOG( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxColor ) );
+		S_Log( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxColor ) );
 		free( texCoords );
 		return;
 	}
@@ -302,7 +303,7 @@ void VNCThread_BuildGlobeIndices( SVNCWidget *vnc )
 	indices = (ushort *)malloc( vnc->globe.indexCount * sizeof( ushort ) );
 	if ( !indices )
 	{
-		LOG( "VNCThread_BuildGlobeIndices: Unable to allocate %d bytes of memory.", vnc->globe.indexCount * sizeof( ushort ) );
+		S_Log( "VNCThread_BuildGlobeIndices: Unable to allocate %d bytes of memory.", vnc->globe.indexCount * sizeof( ushort ) );
 		return;
 	}
 
@@ -407,23 +408,23 @@ static rfbBool vnc_thread_resize( rfbClient *client )
 	width = client->width;
 	height = client->height;
 
-	LOG( "Requested client dimensions: %dx%d", width, height );
+	S_Log( "Requested client dimensions: %dx%d", width, height );
 
 	client->updateRect.x = 0;
 	client->updateRect.y = 0;
 	client->updateRect.w = width; 
 	client->updateRect.h = height;
 
-	LOG( "Frame buffer size          : %d", width * height * 4 );
+	S_Log( "Frame buffer size          : %d", width * height * 4 );
 
 	if ( client->frameBuffer )
 		free( client->frameBuffer );
 
 	client->frameBuffer = (uint8_t *)malloc( width * height * 4 );
 	if ( !client->frameBuffer )
-		FAIL( "Failed to allocate %dx%dx32bpp client frame buffer.", width, height );
+		S_Fail( "Failed to allocate %dx%dx32bpp client frame buffer.", width, height );
 
-	LOG( "Frame buffer address       : %p", client->frameBuffer );
+	S_Log( "Frame buffer address       : %p", client->frameBuffer );
 
 	client->format.bitsPerPixel = 32;
 	client->format.redShift = 0;
@@ -570,7 +571,7 @@ void VNCThread_UpdateTextureRect( SVNCWidget *vnc, int x, int y, int width, int 
 	buffer = (byte *)malloc( width * height * 4 );
 	if ( !buffer )
 	{
-		LOG( "VNCThread_UpdateTextureRect: Failed to allocated %d bytes; skipping update.", width * height * 4 );
+		S_Log( "VNCThread_UpdateTextureRect: Failed to allocated %d bytes; skipping update.", width * height * 4 );
 		Prof_Stop( PROF_VNC_THREAD_UPDATE_TEXTURE_RECT );
 		return;
 	}
@@ -604,7 +605,7 @@ void vnc_thread_update( rfbClient *client, int x, int y, int w, int h )
 #endif // #if USE_OVERLAY
 
 	if ( w == 1 && h == 1 )
-		LOG( "Got weird 1x1 rectangle at %d,%d", x, y );
+		S_Log( "Got weird 1x1 rectangle at %d,%d", x, y );
 
 	VNCThread_UpdateTextureRect( vnc, x, y, w, h );
 
@@ -665,7 +666,7 @@ void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int wid
 	buffer = (byte *)malloc( vnc->cursor.width * vnc->cursor.height * 4 );
 	if ( !buffer )
 	{
-		LOG( "vnc_thread_got_cursor_shape: Unable to allocate %d bytes for cursor data.", vnc->cursor.width * vnc->cursor.height * 4 );
+		S_Log( "vnc_thread_got_cursor_shape: Unable to allocate %d bytes for cursor data.", vnc->cursor.width * vnc->cursor.height * 4 );
 		return;
 	}
 
@@ -752,7 +753,7 @@ static void vnc_thread_got_x_cut_text( rfbClient *client, const char *text, int 
 	}	
 	else
 	{
-		LOG( "Clipboard text: %s", text );
+		S_Log( "Clipboard text: %s", text );
 	}
 }
 
@@ -766,11 +767,11 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 	assert( vnc );
 	assert( !vnc->client );
 
-	LOG( "VNCThread_Connect: Connecting to %s...", vnc->server );
+	S_Log( "VNCThread_Connect: Connecting to %s...", vnc->server );
 
 	client = rfbGetClient( 8, 3, 4 );
 	if ( !client )
-		FAIL( "Failed to create VNC client." );
+		S_Fail( "Failed to create VNC client." );
 
 	vnc->client = client;
 
@@ -802,7 +803,7 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 	if ( !rfbInitClient( client, &argc, const_cast< char ** >( argv ) ) ) 
 		return sfalse;
 
-	LOG( "VNCThread_Connect: Connected to %s.", vnc->server );
+	S_Log( "VNCThread_Connect: Connected to %s.", vnc->server );
 
 	vnc->state = VNCSTATE_CONNECTED;
 
@@ -828,7 +829,7 @@ static sbool VNCThread_Input( SVNCWidget *vnc )
 	Prof_Stop( PROF_VNC_THREAD_WAIT );
 	if ( result < 0 )
 	{
-		LOG( "VNC WaitForMessage failed: %i", result );
+		S_Log( "VNC WaitForMessage failed: %i", result );
 		Prof_Stop( PROF_VNC_THREAD_INPUT );
 		return sfalse;
 	}
@@ -840,7 +841,7 @@ static sbool VNCThread_Input( SVNCWidget *vnc )
 		Prof_Stop( PROF_VNC_THREAD_HANDLE );
 		if ( !result )
 		{
-			LOG( "HandleRFBServerMessage failed." );
+			S_Log( "HandleRFBServerMessage failed." );
 			Prof_Stop( PROF_VNC_THREAD_INPUT );
 			return sfalse;
 		}
@@ -1001,7 +1002,7 @@ void VNC_KeyCmd( const SMsg *msg, void *context )
 	code = atoi( Msg_Argv( msg, 1 ) );
 	down = S_streq( Msg_Argv( msg, 2 ), "down" );
 
-	LOG( "VNC_KeyCmd: %d %d", code, down );
+	S_Log( "VNC_KeyCmd: %d %d", code, down );
 
 	vncCode = VNC_KeyCodeForAndroidCode( code );
 	if ( vncCode != INVALID_KEY_CODE )
@@ -1126,7 +1127,7 @@ static void VNCThread_Cleanup( SVNCWidget *vnc )
 	assert( vnc );
 	assert( vnc->client );
 
-	LOG( "VNCThread_Cleanup: Disconnected from %s; cleaning up.", vnc->server );
+	S_Log( "VNCThread_Cleanup: Disconnected from %s; cleaning up.", vnc->server );
 
 	rfbClientCleanup( vnc->client );
 	vnc->client = NULL;
@@ -1169,7 +1170,7 @@ void VNC_Connect( SVNCWidget *vnc, const char *server, const char *password )
 
 	if ( vnc->state != VNCSTATE_DISCONNECTED )
 	{
-		LOG( "VNC_Connect: Already connected to %s.", vnc->server );
+		S_Log( "VNC_Connect: Already connected to %s.", vnc->server );
 		return;
 	}
 
@@ -1184,7 +1185,7 @@ void VNC_Connect( SVNCWidget *vnc, const char *server, const char *password )
 
 	err = pthread_create( &vnc->thread, NULL, VNCThread, vnc );
 	if ( err != 0 )
-		FAIL( "VNC_Connect: pthread_create returned %i", err );
+		S_Fail( "VNC_Connect: pthread_create returned %i", err );
 }
 
 
@@ -1194,7 +1195,7 @@ void VNC_Disconnect( SVNCWidget *vnc )
 
 	if ( vnc->state == VNCSTATE_DISCONNECTED )
 	{
-		LOG( "VNC_Disconnect: Not connected." );
+		S_Log( "VNC_Disconnect: Not connected." );
 		return;
 	}
 
@@ -1203,7 +1204,7 @@ void VNC_Disconnect( SVNCWidget *vnc )
 	while ( vnc->state != VNCSTATE_DISCONNECTED )
 		Thread_Sleep( 3 );
 
-	LOG( "VNC_Disconnect: Finished disconnecting." );
+	S_Log( "VNC_Disconnect: Finished disconnecting." );
 
 	vnc->disconnect = sfalse;
 }
@@ -1329,7 +1330,7 @@ SDL_bool Android_JNI_HasClipboardText()
 // 	{
 // 		if ( Cmd_Argc() != 2 )
 // 		{
-// 			LOG( "Usage: headmouse <on/off/toggle>" );
+// 			S_Log( "Usage: headmouse <on/off/toggle>" );
 // 			return strue;
 // 		}
 
@@ -1347,7 +1348,7 @@ SDL_bool Android_JNI_HasClipboardText()
 // 		}
 // 		else
 // 		{
-// 			LOG( "Usage: headmouse <on/off/toggle>" );
+// 			S_Log( "Usage: headmouse <on/off/toggle>" );
 // 		}
 
 // 		return strue;
@@ -1373,7 +1374,7 @@ SVNCWidget *VNC_AllocWidget( SxWidgetHandle id )
 		};
 	}
 
-	LOG( "VNC_AllocWidget: Cannot allocate %s; limit of %i widgets reached.", id, VNC_WIDGET_LIMIT );
+	S_Log( "VNC_AllocWidget: Cannot allocate %s; limit of %i widgets reached.", id, VNC_WIDGET_LIMIT );
 
 	return NULL;
 }
@@ -1416,7 +1417,7 @@ SVNCWidget *VNC_GetWidget( SxWidgetHandle id )
 			return widget;
 	}
 
-	LOG( "VNC_GetWidget: Widget %s does not exist.", id );
+	S_Log( "VNC_GetWidget: Widget %s does not exist.", id );
 
 	return NULL;
 }
@@ -1435,7 +1436,7 @@ void VNC_WidgetCmd( const SMsg *msg )
 	widget = VNC_GetWidget( wid );
 	if ( !widget )
 	{
-		LOG( "VNC_WidgetCmd: This command was not recognized as either a plugin command or a valid widget id: %s", msgBuf );
+		S_Log( "VNC_WidgetCmd: This command was not recognized as either a plugin command or a valid widget id: %s", msgBuf );
 		return;
 	}
 
@@ -1455,7 +1456,7 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	
 	if ( VNC_WidgetExists( id ) )
 	{
-		LOG( "VNC_CreateCmd: Widget %s already exists.", id );
+		S_Log( "VNC_CreateCmd: Widget %s already exists.", id );
 		return;
 	}
 
@@ -1518,7 +1519,7 @@ void VNC_DestroyCmd( const SMsg *msg, void *context )
 	vnc = VNC_GetWidget( id );
 	if ( !vnc )
 	{
-		LOG( "VNC_DestroyCmd: Widget %s does not exist.", id );
+		S_Log( "VNC_DestroyCmd: Widget %s does not exist.", id );
 		return;
 	}
 
@@ -1552,7 +1553,7 @@ void VNC_ConnectCmd( const SMsg *msg, void *context )
 
 	if ( Msg_Argc( msg ) != 3 && Msg_Argc( msg ) != 4 )
 	{
-		LOG( "Usage: connect <wid> <server> [password]" );
+		S_Log( "Usage: connect <wid> <server> [password]" );
 		return;
 	}
 
@@ -1639,5 +1640,5 @@ void VNC_InitPlugin()
 
 	err = pthread_create( &s_vncGlob.pluginThread, NULL, VNC_PluginThread, NULL );
 	if ( err != 0 )
-		FAIL( "VNC_InitPlugin: pthread_create returned %i", err );
+		S_Fail( "VNC_InitPlugin: pthread_create returned %i", err );
 }
