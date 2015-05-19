@@ -7,6 +7,12 @@
 		caption: 'vnc 10.90.240.190', 
 		command: 'vnc create vnc$newId; vnc connect vnc$newId 10.90.240.190 asdf;'
 	},
+	{ 
+		caption: 'test.mp4', 
+		command: 'vlc create vlc$newId;' +
+		         'vlc open vlc$newId /storage/extSdCard/Oculus/Shellspace/test.mp4;' +
+		         'vlc play vlc$newId'
+	},
 	{ caption: 'chrome', command: 'example create example$newId chrome' },
 	{ caption: 'terminal', command: 'example create example$newId terminal' },
 	// { id: 'test3', caption: 'hello', command: 'example spawn hello' },

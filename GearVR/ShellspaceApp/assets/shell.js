@@ -13,12 +13,11 @@ try { unregisterPlugin( PLUGIN ); } catch (e) {}
 
 registerPlugin( PLUGIN, SxPluginKind_Shell );
 
-var rootCell = { kind: 'empty' };
+var rootCell = null;
 var rootDepth = 40.0;
-var rootGutter = 5.0;
 
 var menuOpened = false;
-var activeId = 'none';
+var activeCell = null;
 var squareCell = null;
 
 var gazeDir = Vec3.create( 0, 0, -1 );
@@ -174,12 +173,6 @@ function rayCast( dir ) {
 	return rayCast_r( rootCell, dir );
 }
 
-function getActiveCell() {
-	assert( Vec3.lengthSqr( gazeDir ) > 0.0 );
-
-	return rayCast( gazeDir );
-}
-
 function findCellByWidget_r( cell, wid ) {
 	if ( cell.kind == 'root' ) {
 		for ( var i = 0; i < cell.children.length; i++ ) {
@@ -267,7 +260,7 @@ function registerCmd( args ) {
 		return;
 	}
 
-	var cell = getActiveCell();
+	var cell = activeCell;
 	if ( !cell ) {
 		log( 'No active cell to place ' + wid + ' in' );
 		return;
@@ -286,7 +279,8 @@ function registerCmd( args ) {
 	cell.entity = eid;
 
 	cell.properties = {
-		placement: 'center'
+		placement: 'center',
+		gazeMouse: 'false',
 	}
 
 	args.shift(2);
@@ -339,11 +333,72 @@ function unregisterCmd( args ) {
 	refreshActiveCell();
 }
 
+var gazeMouse = {
+	x: 0,
+	y: 0,
+	buttons: 0
+};
+
+function gazeMouseDir() {
+	var cell = activeCell;
+	assert( cell );
+
+	var localGazeDir = vec3.create();
+	vec3.transformMat4( localGazeDir, vec3.fromValues( gazeDir[0], gazeDir[1], gazeDir[2] ), cell.invXform );
+
+	var gazeXz = vec3.clone( localGazeDir );
+	gazeXz[1] = 0;
+	vec3.normalize( gazeXz, gazeXz );
+
+	var gazeYz = vec3.clone( localGazeDir );
+	gazeYz[0] = 0;
+	vec3.normalize( gazeYz, gazeYz );
+
+	var xzAngle = Math.acos( gazeXz.z );
+	var yzAngle = Math.acos( gazeYz.z );
+
+	var x = xzAngle / cell.lonArc;
+	var y = yzAngle / cell.latArc;
+
+	if ( gazeDir[0] < 0 )
+		x = -x;
+
+	if ( gazeDir[1] < 0 )
+		y = -y;
+
+	gazeMouse.x = x;
+	gazeMouse.y = y;
+
+	// $$$ This sends -1 to 1 space, which is fine, but it's unclear what a real mouse would send via the same message.
+	//     Thinking that a real mouse will maybe just send deltas (with + or - notation to indicate relativity).
+	postMessage( sprintf( '%s %s mouse %f %f %d', cell.plugin, cell.widget, gazeMouse.x, gazeMouse.y, gazeMouse.buttons ) );
+}
+
+function gazeMouseTouch( args ) {
+	var cell = activeCell;
+	assert( cell );
+
+	gazeMouse.buttons = +(args[1]);
+
+	postMessage( sprintf( '%s %s mouse %f %f %d', cell.plugin, cell.widget, gazeMouse.x, gazeMouse.y, gazeMouse.buttons ) );
+}
+
 function postToActiveWidget( args ) {
-	var cell = getActiveCell();
+	var cell = activeCell;
 
 	if ( !cell || cell.kind == 'empty' )
 		return;
+
+	if ( activeCell.properties.gazeMouse ) {
+		if ( args[0] == 'gaze' ) {
+			gazeMouseDir();
+			return;
+		}
+		else if ( args[0] == 'touch' ) {
+			gazeMouseTouch( args );
+			return;
+		}
+	}
 
 	assert( cell.kind == 'widget' );
 	postMessage( sprintf( '%s %s ', cell.plugin, cell.widget ) + args.join( ' ' ) );
@@ -357,30 +412,22 @@ function postToMenu( args ) {
 }
 
 function refreshActiveCell() {
-	cell = getActiveCell();
+	assert( Vec3.lengthSqr( gazeDir ) > 0.0 );
+	cell = rayCast( gazeDir );
 
 	if ( cell && cell != squareCell ) {
 		squareCell = cell;
 		orientSquareToCell( squareCell, 'square' );
 	}
 
-	// $$$ To make this more useful to the menu, it might be desireable to register the
-	//     plugin name in addition to the widget name?  For now the menu just has
-	//     hardcoded entity string matching.  Alternately we could enforce that 
-	//     entity ID include widget and plugin ID as prefix tokens.
-	// $$$ Now that we have the plugin reference, this should just be a Cell reference
-	//     which may be null in the 'none' case.
-	var newActiveId;
-	if ( cell && cell.kind == 'empty' ) 
-		newActiveId = 'empty';
-	else if ( cell && cell.kind == 'widget' ) 
-		newActiveId = cell.widget;
-	else
-		newActiveId = 'none';
-
-	if ( newActiveId != activeId ) {
-		activeId = newActiveId;
-		postMessage( 'menu activate ' + activeId );
+	if ( cell != activeCell ) {
+		activeCell = cell;
+		if ( cell && cell.kind == 'widget' )
+			postMessage( 'menu activate ' + cell.plugin + ' ' + cell.widget );
+		else if ( cell && cell.kind == 'empty' )
+			postMessage( 'menu activate empty' );
+		else
+			postMessage( 'menu activate none' );
 	}
 }
 
@@ -390,10 +437,26 @@ function gazeCmd( args ) {
 	} else {
 		gazeDir = Vec3.create( +(args[1]), +(args[2]), +(args[3]) );
 
-		postToActiveWidget( args );
-
 		refreshActiveCell();
+
+		postToActiveWidget( args );
 	}
+}
+
+function setPropertyCmd( args ) {
+	var wid = args[1];
+	var property = args[2];
+	var value = args[3];
+
+	var cell = findCellByWidget( wid );
+
+	if ( !cell ) {
+		log( 'Unable to find a cell containing widget ' + wid );
+		dump();
+		return;
+	}
+
+	cell.property[property] = value;
 }
 
 makeSquare();
@@ -444,7 +507,12 @@ for ( ;; ) {
 			gazeCmd( args );
 			break;
 
+		case 'setproperty':
+			setPropertyCmd( args );
+			break;
+
 		case 'key':
+		case 'touch':
 		case 'swipe':
 		case 'tap':
 			if ( menuOpened )

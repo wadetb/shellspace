@@ -48,6 +48,8 @@ void File_GetAndroidPaths()
 		jobject returnString = g_jni->CallStaticObjectMethod( vrLibClass, internalCacheDirID, g_activityObject );
 		snprintf( s_file.cacheDir, MAX_PATH, "%s", g_jni->GetStringUTFChars( (jstring)returnString, JNI_FALSE ) );
 		g_jni->DeleteLocalRef( returnString );
+
+		S_RemoveTrailingSlash( s_file.cacheDir );
 	}
 
 	strcpy( s_file.userDir, "/storage/extSdCard/Oculus/Shellspace/" );
@@ -91,13 +93,22 @@ void File_Shutdown()
 
 void File_AddPath( const char *path )
 {
+	char 	*newPath;
+
 	if ( s_file.pathCount == PATH_LIMIT )
 	{
 		LOG( "Exceeded the limit of %d search paths; not adding %s.", PATH_LIMIT, path );
 		return;
 	}
 
-	s_file.paths[s_file.pathCount] = strdup( path );
+	newPath = strdup( path );
+	assert( newPath );
+
+	S_RemoveTrailingSlash( newPath );
+
+	LOG( "Added '%s' to the search path.", newPath );
+
+	s_file.paths[s_file.pathCount] = newPath;
 	s_file.pathCount++;
 }
 
@@ -126,7 +137,7 @@ sbool File_Find( const char *fileName, char fullPath[MAX_PATH] )
 	{
 		path = s_file.paths[pathIter];
 
-		snprintf( fullPath, MAX_PATH, "%s%s", path, fileName );
+		snprintf( fullPath, MAX_PATH, "%s/%s", path, fileName );
 
 		if ( File_Exists( fullPath ) )
 			return strue;		
@@ -195,6 +206,7 @@ void File_DownloadToCache( const char *fileName )
     bufferPos = 0;
     S_sprintfPos( buffer, sizeof( buffer ), &bufferPos, "GET %s%s HTTP/1.1\r\n", s_file.httpRoot, fileName );
     S_sprintfPos( buffer, sizeof( buffer ), &bufferPos, "Host: %s\r\n", s_file.httpHost );
+    S_sprintfPos( buffer, sizeof( buffer ), &bufferPos, "Connection: close\r\n" );
     S_sprintfPos( buffer, sizeof( buffer ), &bufferPos, "\r\n" );
 
     send( sockFd, buffer, strlen( buffer ), 0 );

@@ -3,7 +3,7 @@
 // Author: Wade Brainerd <wadeb@wadeb.com>
 //
 include( 'shellspace.js' );
-include( 'vector.js' );
+include( 'gl-matrix.js' );
 
 PLUGIN   = 'menu'
 
@@ -13,18 +13,20 @@ registerPlugin( PLUGIN, SxPluginKind_Widget );
 
 var rootMenu = { id: 'root', children: [] };
 
-var activeId = 'none';
+var activeKind = 'none';
+var activeId;
+
 var nextId = 0;
 var nextMenuId = 0;
 
 var menuStack = [];
 
-var gazeDir = Vec3.create( 0, 0, -1 );
+var gazeDir = vec3.create( 0, 0, -1 );
 
-var menuOrigin = Vec3.create( 0, 0, -5 );
-var menuDir = Vec3.create( 0, 0, 1 );
-var menuUp = Vec3.create( 0, 1, 0 );
-var menuRight = Vec3.create( 1, 0, 0 );
+var menuOrigin = vec3.create( 0, 0, -5 );
+var menuDir = vec3.create( 0, 0, 1 );
+var menuUp = vec3.create( 0, 1, 0 );
+var menuRight = vec3.create( 1, 0, 0 );
 
 function renderCaption( texture, text, hilite ) {
 	var bitmap = new Bitmap();
@@ -89,8 +91,8 @@ function showItems( menu ) {
 
 		showItem( m );
 
-		var origin = Vec3.create( 0, 0, -5 );
-		Vec3.mad( origin, 1 + row * -0.4, menuUp, origin );
+		var origin = vec3.clone( menuOrigin );
+		vec3.scaleAndAdd( origin, origin, menuUp, 1 + row * -0.4 );
 
 		m.origin = [0, 1 + row * -0.4, -5];
 		m.scale = [1, 0.19, 1];
@@ -142,42 +144,39 @@ function hitMenu( menu ) {
 }
 
 function openMenu( args ) {
-	log( 'activeId: ' + activeId );
-	if ( activeId == 'none' ) {
-		rootMenu.children = [
-			{ caption: 'reset', command: 'exec reset.cfg' },
-		];
-	} else if ( activeId == 'empty' ) {
-		rootMenu.children = include( 'start.menu' );
-	} else {
-		// Context sensitive options
-		if ( activeId.match( /vnc/ ) ) {
-			rootMenu.children = [ 
-				{ caption: 'zpush-', command: 'vnc $activeId zpush -1;', closeMenu: false },
-				{ caption: 'zpush+', command: 'vnc $activeId zpush +1;', closeMenu: false },
-				// { id: 'close', caption: 'close', command: 'shell unregister $activeId;' },
-				{ caption: 'close', command: 'vnc destroy $activeId;' },
-			];
-		} else if ( activeId.match( /example/ ) ) {
-			rootMenu.children = [ 
-				{ caption: 'close', command: 'example destroy $activeId;' },
-			];
-		}
+	children = []
+
+	if ( activeKind == 'empty' ) {
+		var menu = include( 'start.menu' );
+		if ( menu )
+			children = children.concat( menu );
 	}
+	else if ( activeKind != 'none' ) {
+		var menu = include( activeKind + '.menu' );
+		if ( menu )
+			children = children.concat( menu );
+	}
+
+	children = children.concat(
+		{ caption: 'reset', command: 'exec reset.cfg' }
+	);
+
+	rootMenu.children = children;
 
 	menuStack = [ rootMenu ];
 	showItems( menuStack[0] );
 
 	// Capture the gaze direction to use as the menu location.
-	Vec3.scale( gazeDir, 5.0, menuOrigin );
+	vec3.scale( menuOrigin, gazeDir, 5.0 );
+	vec3.negate( menuDir, gazeDir );
 
-	Vec3.negate( gazeDir, menuDir );
+	vec3.cross( menuRight, menuDir, vec3.fromValues( 0, 1, 0 ) );
+	vec3.normalize( menuRight, menuRight );
 
-	Vec3.cross( menuDir, Vec3.xAxis, menuUp );
-	Vec3.normalize( menuUp, menuUp );
+	vec3.cross( menuUp, menuDir, menuRight );
+	vec3.normalize( menuUp, menuUp );
 
-	Vec3.cross( menuUp, menuDir, menuRight );
-	Vec3.normalize( menuRight, menuRight );
+	// $$$ Angles to orient the entity.
 
 	// Hilite any initially active item.
 	var active = hitMenu( menuStack[0] );
@@ -208,7 +207,7 @@ function onGaze( args ) {
 
 	var oldActive = hitMenu( menuStack[0] );
 
-	gazeDir = Vec3.create( +(args[0]), +(args[1]), +(args[2]) );
+	gazeDir = vec3.create( +(args[0]), +(args[1]), +(args[2]) );
 
 	var active = hitMenu( menuStack[0] );
 
@@ -266,7 +265,15 @@ function onTap() {
 		nextId++;
 	}
 
-	command = command.replace( /\$activeId/g, activeId );
+	if ( command.match( /\$activeId/ ) ) {
+		if ( activeId ) {
+			command = command.replace( /\$activeId/g, '' + activeId );
+		}
+		else {
+			log( 'Command requires an active widget but there is none: ' + command );
+			return;
+		}
+	}
 
 	log( 'Item ' + m.id + ' activated: ' + command );
 
@@ -307,7 +314,8 @@ for ( ;; ) {
 		onTap();
 	}
 	else if ( command == 'activate' ) {
-		activeId = args[0];
+		activeKind = args[0];
+		activeId = args[1];
 	}
 	else if ( command == 'contents' ) {
 		mergeMenuContents( eval( args[1] ) );

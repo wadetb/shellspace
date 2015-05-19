@@ -52,17 +52,10 @@ const char *s_profNames[PROF_COUNT] =
 	"Frame", 					// PROF_FRAME
 	" Cmd",      				// PROF_CMD
 	" Keyboard", 				// PROF_KEYBOARD
-	" VNCWidget", 				// PROF_VNC_WIDGET
-	"  InQueue",                // PROF_VNC_WIDGET_INQUEUE
-	"   Advance",               // PROF_VNC_WIDGET_ADVANCE
-	"   Resize",                // PROF_VNC_WIDGET_RESIZE
-	"   Update",                // PROF_VNC_WIDGET_UPDATE
-	"   Finished Updates",  	// PROF_VNC_WIDGET_FINISHED_UPDATES
 	" Scene",      				// PROF_SCENE
 	" Draw",      				// PROF_DRAW
 	"  Draw Eye",      			// PROF_DRAW_EYE
 	"   Draw Keyboard ",   		// PROF_DRAW_KEYBOARD
-	"   Draw VNCWidget",  		// PROF_DRAW_VNC_WIDGET
 	"VNCThread", 				// PROF_VNC_THREAD
 	" Input", 					// PROF_VNC_THREAD_INPUT
 	"  Wait", 					// PROF_VNC_THREAD_WAIT
@@ -72,11 +65,7 @@ const char *s_profNames[PROF_COUNT] =
 	"   Finished Updates", 		// PROF_VNC_THREAD_HANDLE_FINISHED_UDPATES
 	"   Cursor Shape", 			// PROF_VNC_THREAD_HANDLE_CURSOR_SHAPE
 	"   Cursor Pos", 			// PROF_VNC_THREAD_HANDLE_CURSOR_POS
-	"   Cursor Save", 			// PROF_VNC_THREAD_HANDLE_CURSOR_SAVE
-	"   Cursor Restore", 		// PROF_VNC_THREAD_HANDLE_CURSOR_RESTORE
-	"  Lock InQueue", 			// PROF_VNC_THREAD_LOCK_IN_QUEUE
 	"  UpdateTextureRect",      // PROF_VNC_THREAD_UPDATE_TEXTURE_RECT
-	" Output", 					// PROF_VNC_THREAD_OUTPUT
 	"  Update",					// PROF_RFB_UPDATE
 	"   EncRaw",				// PROF_RFB_ENCODING_RAW
 	"   EncCopyRect",			// PROF_RFB_ENCODING_COPY_RECT
@@ -90,6 +79,7 @@ const char *s_profNames[PROF_COUNT] =
 	"    EncTightJpeg", 		// PROF_RFB_ENCODING_TIGHT_JPEG
 	"   EncZYWRLE",				// PROF_RFB_ENCODING_ZYWRLE
 	"   EncH264",				// PROF_RFB_ENCODING_H264
+	"VLCThread",                // PROF_VLC_THREAD
 	"GpuUpdate", 				// PROF_GPU_UPDATE
 	" Append", 					// PROF_GPU_UPDATE_APPEND
 	" Texture Resize",			// PROF_TEXTURE_RESIZE,

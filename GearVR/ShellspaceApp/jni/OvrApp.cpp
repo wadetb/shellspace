@@ -19,9 +19,12 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "registry.h"
 #include "thread.h"
 
+#include "vlcplugin.h"
 #include "vncplugin.h"
 #include "v8plugin.h"
 // #include "shellplugin.h"
+
+#include "std_logger/std_logger.h"
 
 #include <android/keycodes.h>
 #include <jni.h>
@@ -40,7 +43,9 @@ jlong Java_oculus_MainActivity_nativeSetAppInterface( JNIEnv * jni, jclass clazz
 
 struct SAppGlobals
 {
+	std_logger 	*logger;
 	SxVector3 	lastGazeDir;
+	sbool 		lastTouch;
 	float 		clearColor[3];
 	uint 		resolution;
 };
@@ -202,6 +207,12 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	g_jni = app->GetVrJni();
 	g_activityObject = app->GetJavaObject();
 
+	s_app.logger = std_logger_Open( "std" );
+	printf( "STDOUT is working.\n" );
+	fflush( stdout );
+	fprintf( stderr, "STDERR is working.\n" );
+	fflush( stderr );
+
 	s_app.clearColor[0] = 0.0f;
 	s_app.clearColor[1] = 0.0f;
 	s_app.clearColor[2] = 0.0f;
@@ -245,6 +256,7 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	APITest_Init();
 
 	// Shell_InitPlugin();
+	// VLC_InitPlugin();
 	VNC_InitPlugin();
 	V8_InitPlugin();
 
@@ -260,6 +272,8 @@ void OvrApp::OneTimeShutdown()
 	Registry_Shutdown();
 	Thread_Shutdown();
 	File_Shutdown();
+
+	std_logger_Close( s_app.logger );
 }
 
 void OvrApp::Command( const char * msg )
@@ -387,6 +401,13 @@ Matrix4f OvrApp::Frame(const VrFrame vrFrame)
 		Cmd_Add( "shell tap single" );
 	if ( vrFrame.Input.buttonState & BUTTON_TOUCH_DOUBLE )
 		Cmd_Add( "shell tap double" );
+
+	sbool touch = (vrFrame.Input.buttonState & BUTTON_TOUCH) != 0;
+	if ( touch != s_app.lastTouch )
+	{
+		s_app.lastTouch = touch;
+		Cmd_Add( "shell touch %d", touch );
+	}
 
 	Cmd_Frame();
 

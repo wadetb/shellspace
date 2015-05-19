@@ -131,6 +131,19 @@ inline int S_sprintfPos( char *buffer, uint bufferLen, uint *pos, const char *fo
     return written;
 }
 
+inline void S_RemoveTrailingSlash( char *path )
+{
+    uint len;
+
+    len = strlen( path );
+
+    if ( len )
+    {
+        if ( path[len - 1] == '/' || path[len - 1] == '\\' )
+            path[len - 1] = 0;
+    }
+}
+
 #define FNV_32_PRIME ((uint)0x01000193)
 
 inline uint S_FNV32( const char *str, uint hval )

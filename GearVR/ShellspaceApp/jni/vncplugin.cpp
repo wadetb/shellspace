@@ -1035,105 +1035,6 @@ void VNC_MouseCmd( const SMsg *msg, void *context )
 }
 
 
-void VNC_TouchCmd( const SMsg *msg, void *context )
-{
-	SVNCWidget 	*vnc;
-	// sbool 		touch;
-	// float 		x;
-	// float 		y;
-
-	if ( !s_vncGlob.headmouse )
-		return;
-
-	vnc = (SVNCWidget *)context;
-	assert( vnc );
-
-	// touch = atoi( Msg_Argv( msg, 1 ) );
-	// x = atof( Msg_Argv( msg, 2 ) );
-	// y = atof( Msg_Argv( msg, 3 ) );
-
-	// $$$ synthesize mouse down/up, sync with gaze events
-}
-
-
-void VNC_GazeCmd( const SMsg *msg, void *context )
-{
-#if 0
-	SVNCWidget 	*vnc;
-	float 		gazeX;
-	float 		gazeY;
-	float 		gazeZ;
-	sbool 		touch;
-
-	if ( !s_vncGlob.headmouse )
-		return;
-
-	gazeX = atof( Msg_Argv( msg, 1 ) );
-	gazeY = atof( Msg_Argv( msg, 2 ) );
-	gazeZ = atof( Msg_Argv( msg, 3 ) );
-	touch = sfalse; // $$$ sync with touch events
-
-	vnc = (SVNCWidget *)context;
-	assert( vnc );
-
-	Vector3f eyeDir( gazeX, gazeY, gazeZ );
-	Vector3f centerDir = vnc->globe.origin; // eye assumed at origin
-
-	Vector3f xz = centerDir;
-	xz.y = 0;
-	xz.Normalize();
-
-	Vector3f eyeXz = eyeDir;
-	eyeXz.y = 0;
-	eyeXz.Normalize();
-
-	float xzDot = xz.Dot( eyeXz );
-	float xzAngle = acosf( xzDot );
-
-	Vector3f yz = centerDir;
-	yz.x = 0;
-	yz.Normalize();
-
-	Vector3f eyeYz = eyeDir;
-	eyeYz.x = 0;
-	eyeYz.Normalize();
-
-	float yzDot = yz.Dot( eyeYz );
-	float yzAngle = acosf( yzDot );
-
-	float x = xzAngle / (0.25f * (float)vnc->width / vnc->height);
-	float y = yzAngle / 0.25f; 
-
-	if ( eyeXz.x < xz.x )
-		x = -x;
-
-	if ( eyeYz.x > yz.y )
-		y = -y;
-
-	int xInt = vnc->width / 2 + (int)( x * vnc->width / 2 );
-	int yInt = vnc->height / 2 + (int)( y * vnc->height / 2 );
-
-	int button = touch ? rfbButton1Mask : 0;
-
-	static int lastXInt; // $$$ store in widget
-	static int lastYInt;
-	static int lastButton;
-
-	if ( xInt >= 0 && xInt < vnc->width && yInt >= 0 && yInt < vnc->height )
-	{
-		if ( xInt != lastXInt || yInt != lastYInt || button != lastButton )
-		{
-			SendPointerEvent( vnc->client, xInt, yInt, button );
-		}
-	}
-
-	lastXInt = xInt;
-	lastYInt = yInt;
-	lastButton = button;
-#endif
-}
-
-
 void VNC_ArcCmd( const SMsg *msg, void *context )
 {
 	SVNCWidget 	*vnc;
@@ -1166,9 +1067,7 @@ void VNC_ZPushCmd( const SMsg *msg, void *context )
 SMsgCmd s_vncWidgetCmds[] =
 {
 	{ "key", 			VNC_KeyCmd, 			"key <code> <down>" },
-	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <button1> <button2> <button3>" },
-	{ "touch", 			VNC_TouchCmd, 			"touch <up|down|moved> <x> <y>" },
-	{ "gaze", 			VNC_GazeCmd, 			"gaze <x> <y> <z>" },
+	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <buttons>" },
 	{ "arc",          	VNC_ArcCmd,             "arc <value>" },
 	{ "zpush",          VNC_ZPushCmd,           "zpush <value>" },
 	{ NULL, NULL, NULL }
@@ -1497,7 +1396,7 @@ sbool VNC_WidgetExists( SxWidgetHandle id )
 	for ( wIter = 0; wIter < VNC_WIDGET_LIMIT; wIter++ )
 	{
 		widget = &s_vncGlob.widgetPool[wIter];
-		if ( widget->id && S_strcmp( widget->id, id ) == 0 )
+		if ( widget->id && S_streq( widget->id, id ) )
 			return strue;
 	}
 

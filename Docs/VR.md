@@ -92,10 +92,36 @@ Menu may contain widget-specific things like "vnc disconnect $activeId" where $a
 
 + Use a Skia filter to darken and draw "disconnected" when the connection is lost.
 
+# VLC
+
++ Thread about efficient display formats using OpenGL.
+https://forum.videolan.org/viewtopic.php?t=97672
+
++ Use set_format_callback and accept the preferred format if possible.
+
++ Documentation
+https://www.videolan.org/developers/vlc/doc/doxygen/html/group__libvlc__media__player.html#ga46f687a8bc8a7aad325b58cb8fb37af0
+
+vlc create vlc0
+vlc vlc0 open /storage/extSdCard/Oculus/Shellspace/test.mp4
+
+# RDP
+
++ Use freerdp.org / libfreerdp.
+
+# Menu
+
++ Animate "square" entity from the launching widget to the menu.
++ Give the menu a title.
++ Auto detect the required text width.
++ Show the command to be executed as a subtitle.
+
 # Performance
 
-+ Textures should start initially cleared to 0 or something, NOT uninitialized.  Same goes for geometry.  Currently if a texture is created and never updated, it will hold garbage memory.
++ Textures should start initially cleared, NOT uninitialized.  Same goes for geometry.  Currently if a texture is created and never updated, it will hold garbage memory.
  
++ Investigate https://vec.io/posts/faster-alternatives-to-glreadpixels-and-glteximage2d-in-opengl-es PBOs for texture updates.  Not clear whether this is better than triple buffered texture objects, but maybe?
+
 + Tuning system for InQueue variables, possibly via console commands.
 + Bounds accumulation for Geometry objects, frustum culling
 + Optimize various decoders using NEON.

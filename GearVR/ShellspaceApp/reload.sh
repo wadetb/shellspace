@@ -26,5 +26,6 @@ adb push assets/start.menu /storage/extSdCard/Oculus/Shellspace/start.menu
 adb push assets/default.layout /storage/extSdCard/Oculus/Shellspace/default.layout
 
 adb push sdcard/user.cfg /storage/extSdCard/Oculus/Shellspace/user.cfg
+#adb push sdcard/test.mp4 /storage/extSdCard/Oculus/Shellspace/test.mp4
 
 echo '$$!exec reset.cfg' | pbcopy
