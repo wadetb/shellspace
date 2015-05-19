@@ -21,8 +21,8 @@
 #include "command.h"
 #include "message.h"
 #include "thread.h"
-#include "libvncserver/rfb/rfbclient.h"
-#include "../../../Common/shellspace.h"
+
+#include <libvncserver/rfb/rfbclient.h>
 #include <android/keycodes.h>
 
 

@@ -1,9 +1,9 @@
 LOCAL_PATH := $(call my-dir)
 
-CORE_PATH       := $(LOCAL_PATH)/../../core
-SHELLSPACE_PATH := $(LOCAL_PATH)/../../shellapce
-PLUGINS_PATH    := $(LOCAL_PATH)/../../plugins
-EXTERNAL_PATH   := $(LOCAL_PATH)/../../external
+CORE_PATH       := ../../core
+SHELLSPACE_PATH := ../../shellspace
+PLUGINS_PATH    := ../../plugins
+EXTERNAL_PATH   := ../../external
 
 # Prebuilt VLC 
 
@@ -281,8 +281,8 @@ include $(OVR_MOBILE_SDK)/VRLib/import_vrlib.mk
 PLUGIN_SRC_FILES := \
 	$(PLUGINS_PATH)/v8/v8plugin.cpp \
 	$(PLUGINS_PATH)/v8/v8skia.cpp \
-	$(PLUGINS_PATH)/vlc/vlcplugin.cpp
-	$(PLUGINS_PATH)/vnc/vncplugin.cpp \
+	$(PLUGINS_PATH)/vlc/vlcplugin.cpp \
+	$(PLUGINS_PATH)/vnc/vncplugin.cpp
 
 EXTERNAL_SRC_FILES := \
 	$(EXTERNAL_PATH)/gason/gason.cpp \
@@ -299,7 +299,6 @@ EXTERNAL_SRC_FILES := \
 #	$(EXTERNAL_PATH)/coffeecatch/coffeejni.c 
 
 CORE_SRC_FILES := \
-	$(CORE_PATH)/file.cpp \
 	$(CORE_PATH)/message.cpp \
 	$(CORE_PATH)/profile.cpp \
 	$(CORE_PATH)/thread.cpp 
@@ -308,6 +307,7 @@ SHELLSPACE_SRC_FILES := \
 	$(SHELLSPACE_PATH)/api.cpp \
 	$(SHELLSPACE_PATH)/command.cpp \
 	$(SHELLSPACE_PATH)/entity.cpp \
+	$(SHELLSPACE_PATH)/file.cpp \
 	$(SHELLSPACE_PATH)/geometry.cpp \
 	$(SHELLSPACE_PATH)/inqueue.cpp \
 	$(SHELLSPACE_PATH)/registry.cpp \
@@ -328,10 +328,10 @@ LOCAL_SHARED_LIBRARIES += libskia_android
 
 LOCAL_MODULE     := shellspace
 
-LOCAL_SRC_FILES  := $(CORE_SRC_FILES) $(PLUGIN_SRC_FILES) $(SHELLSPACE_SRC_FILES) $(GEARVR_SRC_FILES)
+LOCAL_SRC_FILES  := $(CORE_SRC_FILES) $(PLUGIN_SRC_FILES) $(SHELLSPACE_SRC_FILES) $(GEARVR_SRC_FILES) $(EXTERNAL_SRC_FILES)
 
 LOCAL_LDLIBS += \
-	-L$(EXTERNAL_PATH)/vlc/contrib \
+	-L../external/vlc/contrib \
 	-ldl -lz -lm -llog \
 	-ldvbpsi -lmatroska -lebml -ltag \
 	-logg -lFLAC -ltheora -lvorbis \
@@ -353,10 +353,11 @@ LOCAL_LDLIBS += \
 	$(EXTRA_LDFLAGS)
 
 LOCAL_CFLAGS	 += -Wall -x c++ -std=c++11 
-LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common 
-LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/vlc
-LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/v8
-LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/skia/include
-LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/skia/include/config
+LOCAL_CFLAGS     += -I../core -I../shellspace
+LOCAL_CFLAGS     += -isystem ../external/libvncserver -isystem ../external/libvncserver/common 
+LOCAL_CFLAGS     += -isystem ../external
+LOCAL_CFLAGS     += -isystem ../external/v8
+LOCAL_CFLAGS     += -isystem ../external/skia/include
+LOCAL_CFLAGS     += -isystem ../external/skia/include/config
 
 include $(BUILD_SHARED_LIBRARY)

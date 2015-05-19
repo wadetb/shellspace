@@ -15,14 +15,12 @@ Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 #include "entity.h"
 #include "file.h"
 #include "inqueue.h"
-// #include "keyboard.h"
 #include "registry.h"
 #include "thread.h"
 
-#include "vlcplugin.h"
-#include "vncplugin.h"
-#include "v8plugin.h"
-// #include "shellplugin.h"
+#include "../plugins/vlc/vlcplugin.h"
+#include "../plugins/vnc/vncplugin.h"
+#include "../plugins/v8/v8plugin.h"
 
 #include "std_logger/std_logger.h"
 

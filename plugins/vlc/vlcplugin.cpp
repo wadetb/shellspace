@@ -21,7 +21,6 @@
 #include "command.h"
 #include "message.h"
 #include "thread.h"
-#include "../../../Common/shellspace.h"
 
 #include <android/keycodes.h>
 #include <vlc/vlc.h>

@@ -188,7 +188,7 @@ struct SRefLink
     SRef     prev;
 };
 
-#include "../../../Common/shellspace.h"
+#include "shellspace.h"
 #include "profile.h"
 #include "vector.h"
 

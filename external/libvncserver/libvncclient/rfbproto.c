@@ -69,7 +69,7 @@
 #include "minilzo.h"
 #include "tls.h"
 
-#include "../profile.h"
+#include "profile.h"
 
 #ifdef _MSC_VER
 #  define snprintf _snprintf /* MSVC went straight to the underscored syntax */
