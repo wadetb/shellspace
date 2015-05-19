@@ -1,25 +1,30 @@
 LOCAL_PATH := $(call my-dir)
 
+CORE_PATH       := $(LOCAL_PATH)/../../core
+SHELLSPACE_PATH := $(LOCAL_PATH)/../../shellapce
+PLUGINS_PATH    := $(LOCAL_PATH)/../../plugins
+EXTERNAL_PATH   := $(LOCAL_PATH)/../../external
+
 # Prebuilt VLC 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libvlc
-LOCAL_SRC_FILES := vlc/libvlc.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/vlc/libvlc.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libvlccore
-LOCAL_SRC_FILES := vlc/libvlccore.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/vlc/libvlccore.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libcompat
-LOCAL_SRC_FILES := vlc/libcompat.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/vlc/libcompat.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libiconv
-LOCAL_SRC_FILES := vlc/libiconv.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/vlc/libiconv.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 VLC_PLUGINS += liba52_plugin
@@ -227,7 +232,7 @@ VLC_PLUGINS += libzvbi_plugin
 define vlc-plugin-static-library
 include $$(CLEAR_VARS)
 LOCAL_MODULE    := $1
-LOCAL_SRC_FILES := vlc/modules/$1.a
+LOCAL_SRC_FILES := $$(EXTERNAL_PATH)/vlc/modules/$1.a
 include $$(PREBUILT_STATIC_LIBRARY)
 endef
 
@@ -237,35 +242,35 @@ $(foreach p,$(VLC_PLUGINS),$(eval $(call vlc-plugin-static-library,$p)))
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_base
-LOCAL_SRC_FILES := v8/libv8_base.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/v8/libv8_base.a
 LOCAL_LDLIBS    := -lstdc++
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_libbase
-LOCAL_SRC_FILES := v8/libv8_libbase.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/v8/libv8_libbase.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_libplatform
-LOCAL_SRC_FILES := v8/libv8_libplatform.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/v8/libv8_libplatform.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_snapshot
-LOCAL_SRC_FILES := v8/libv8_snapshot.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/v8/libv8_snapshot.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libv8_nosnapshot
-LOCAL_SRC_FILES := v8/libv8_nosnapshot.a
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/v8/libv8_nosnapshot.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 # Prebuilt Skia 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libskia_android
-LOCAL_SRC_FILES := skia/libskia_android.so
+LOCAL_SRC_FILES := $(EXTERNAL_PATH)/skia/libskia_android.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 # Shellspace Shared Object
@@ -273,42 +278,43 @@ include $(CLEAR_VARS)
 
 include $(OVR_MOBILE_SDK)/VRLib/import_vrlib.mk	
 
-### XXX tls_openssl or tls_gnutls
-
 PLUGIN_SRC_FILES := \
-	vncplugin.cpp \
-	libvncserver/common/minilzo.c \
-	libvncserver/libvncclient/cursor.c \
-	libvncserver/libvncclient/listen.c \
-	libvncserver/libvncclient/rfbproto.c \
-	libvncserver/libvncclient/sockets.c \
-	libvncserver/libvncclient/tls_none.c \
-	libvncserver/libvncclient/vncviewer.c 
+	$(PLUGINS_PATH)/v8/v8plugin.cpp \
+	$(PLUGINS_PATH)/v8/v8skia.cpp \
+	$(PLUGINS_PATH)/vlc/vlcplugin.cpp
+	$(PLUGINS_PATH)/vnc/vncplugin.cpp \
 
-PLUGIN_SRC_FILES += vlcplugin.cpp
+EXTERNAL_SRC_FILES := \
+	$(EXTERNAL_PATH)/gason/gason.cpp \
+	$(EXTERNAL_PATH)/libvncserver/common/minilzo.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/cursor.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/listen.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/rfbproto.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/sockets.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/tls_none.c \
+	$(EXTERNAL_PATH)/libvncserver/libvncclient/vncviewer.c \
+	$(EXTERNAL_PATH)/std_logger/std_logger.c 
 
-# PLUGIN_SRC_FILES += shellplugin.cpp 
+#	$(EXTERNAL_PATH)/coffeecatch/coffeecatch.c 
+#	$(EXTERNAL_PATH)/coffeecatch/coffeejni.c 
 
-PLUGIN_SRC_FILES += v8plugin.cpp v8skia.cpp
+CORE_SRC_FILES := \
+	$(CORE_PATH)/file.cpp \
+	$(CORE_PATH)/message.cpp \
+	$(CORE_PATH)/profile.cpp \
+	$(CORE_PATH)/thread.cpp 
 
-COMMON_SRC_FILES := \
-	api.cpp \
-	command.cpp \
-	entity.cpp \
-	file.cpp \
-	gason/gason.cpp \
-	geometry.cpp \
-	inqueue.cpp \
-	message.cpp \
-	OvrApp.cpp \
-	profile.cpp \
-	registry.cpp \
-	texture.cpp \
-	thread.cpp \
-	std_logger/std_logger.c
+SHELLSPACE_SRC_FILES := \
+	$(SHELLSPACE_PATH)/api.cpp \
+	$(SHELLSPACE_PATH)/command.cpp \
+	$(SHELLSPACE_PATH)/entity.cpp \
+	$(SHELLSPACE_PATH)/geometry.cpp \
+	$(SHELLSPACE_PATH)/inqueue.cpp \
+	$(SHELLSPACE_PATH)/registry.cpp \
+	$(SHELLSPACE_PATH)/texture.cpp \
 
-#	coffeecatch/coffeecatch.c 
-#	coffeecatch/coffeejni.c 
+GEARVR_SRC_FILES := \
+	OvrApp.cpp
 
 LOCAL_ARM_MODE   := arm
 
@@ -316,25 +322,16 @@ LOCAL_ARM_MODE   := arm
 #LOCAL_ARM_NEON  := true				# compile with neon support enabled
 #LOCAL_CFLAGS += -O3 -funroll-loops -ftree-vectorize -ffast-math -fpermissive
 
-#  LOCAL_SRC_FILES_TARGET_CFLAGS.<filename> contains the list of
-#      target-specific C compiler flags used to compile a given
-#      source file. This is set by the function TARGET-set-cflags
-#      defined in the toolchain's setup.mk script.
+LOCAL_STATIC_LIBRARIES += libcompat libvlccore libvlc libiconv $(foreach p,$(VLC_PLUGINS),$p )) 
+LOCAL_STATIC_LIBRARIES += libv8_base libv8_nosnapshot libv8_libplatform libv8_libbase
+LOCAL_SHARED_LIBRARIES += libskia_android
 
-#LOCAL_SHARED_LIBRARIES  += libvlcjni
-LOCAL_STATIC_LIBRARIES	 += libcompat libvlccore libvlc libiconv $(foreach p,$(VLC_PLUGINS),$p )) 
-LOCAL_STATIC_LIBRARIES	 += libv8_base libv8_nosnapshot libv8_libplatform libv8_libbase
-LOCAL_SHARED_LIBRARIES   += libskia_android
+LOCAL_MODULE     := shellspace
 
-LOCAL_MODULE     := ovrapp
+LOCAL_SRC_FILES  := $(CORE_SRC_FILES) $(PLUGIN_SRC_FILES) $(SHELLSPACE_SRC_FILES) $(GEARVR_SRC_FILES)
 
-LOCAL_SRC_FILES  := $(COMMON_SRC_FILES) $(PLUGIN_SRC_FILES)
-
-#LOCAL_LDLIBS     += -Ljni/vlc/modules
-#LOCAL_LDLIBS     += -lmp4_plugin
-
-LOCAL_LDLIBS     += -Ljni/vlc/contrib
 LOCAL_LDLIBS += \
+	-L$(EXTERNAL_PATH)/vlc/contrib \
 	-ldl -lz -lm -llog \
 	-ldvbpsi -lmatroska -lebml -ltag \
 	-logg -lFLAC -ltheora -lvorbis \
@@ -356,8 +353,6 @@ LOCAL_LDLIBS += \
 	$(EXTRA_LDFLAGS)
 
 LOCAL_CFLAGS	 += -Wall -x c++ -std=c++11 
-LOCAL_CFLAGS     += -funwind-tables -Wl,--no-merge-exidx-entries
-
 LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/libvncserver -isystem $(LOCAL_PATH)/libvncserver/common 
 LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/vlc
 LOCAL_CFLAGS     += -isystem $(LOCAL_PATH)/v8

@@ -26,7 +26,7 @@ public class MainActivity extends VrActivity {
     // public static int b = 0;
 
     static {
-        System.loadLibrary( "ovrapp" );
+        System.loadLibrary( "shellspace" );
     }
 
     public static native long nativeSetAppInterface( VrActivity act );

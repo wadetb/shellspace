@@ -18,7 +18,6 @@ public class ShellspaceApp extends Application {
  
     @Override
     public void onCreate() {
-		Log.d(TAG, "onCreate HIHIHI");
         super.onCreate();
         // ACRA.init(this); 
     }

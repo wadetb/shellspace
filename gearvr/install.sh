@@ -1,8 +1,7 @@
-source ../bin/dev.sh
+#!/bin/bash
+source ../bin/android_dev.sh
 set -e 
 
-export BUILD_MODULE=Shellspace
+echo "========================== Install Shellspace ==========================="
 
-echo "========================== Install "${BUILD_MODULE}" ==========================="
-
-adb install -r bin/${BUILD_MODULE}.apk
+adb install -r bin/Shellspace.apk

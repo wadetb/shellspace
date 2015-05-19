@@ -1,10 +1,8 @@
 #!/bin/bash
+source ../bin/android_dev.sh
+set -e 
 
-source ../bin/dev.sh
-
-export BUILD_MODULE=Shellspace
-
-echo "========================== Run "${BUILD_MODULE}" ==========================="
+echo "========================== Run Shellspace ==========================="
 
 source ./reload.sh
 

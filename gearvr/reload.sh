@@ -1,7 +1,5 @@
 #!/bin/bash
-
-source ../bin/dev.sh
-
+source ../bin/android_dev.sh
 set -e 
 
 # ./run.sh
