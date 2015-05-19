@@ -12,4 +12,3 @@ v8 load shell.js
 v8 load menu.js
 v8 load example.js
 
-exec user.cfg

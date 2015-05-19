@@ -250,6 +250,107 @@ function makeSquare() {
 	setEntityTexture( 'square', 'white' );
 }
 
+function getGlobePosition( out, u, v, latArc, lonArc, depth )
+{
+	var lon = degToRad( (u - 0.5) * lonArc ) - Math.PI/2;
+
+	out[0] = depth * Math.cos( lon );
+	out[1] = depth * (v - 0.5) * Math.sin( degToRad( latArc ) );
+	out[2] = depth * Math.sin( lon ) + depth;
+}
+
+GLOBE_HORIZONTAL = 64.0
+GLOBE_VERTICAL	 = 32.0
+
+function makeGlobeRect( id, latArc, lonArc, depth ) {
+	var vertexCount = ( GLOBE_HORIZONTAL + 1 ) * ( GLOBE_VERTICAL + 1 );
+	var indexCount = GLOBE_HORIZONTAL * GLOBE_VERTICAL * 6;
+
+	var positions = new Float32Array( vertexCount * 3 );
+	var position = vec3.create();
+
+	var index = 0;
+
+	for ( var y = 0; y <= GLOBE_VERTICAL; y++ )
+	{
+		var v = y / GLOBE_VERTICAL;
+
+		for ( var x = 0; x <= GLOBE_HORIZONTAL; x++ )
+		{
+			var u = x / GLOBE_HORIZONTAL;
+
+			getGlobePosition( position, u, v, latArc, lonArc, depth );
+			
+			positions[index * 3 + 0] = position[0];
+			positions[index * 3 + 1] = position[1];
+			positions[index * 3 + 2] = position[2];
+
+			index++;
+		}
+	}
+
+	var texCoords = new Float32Array( vertexCount * 2 );
+	var colors = new Uint32Array( vertexCount );
+
+	index = 0;
+
+	for ( var y = 0; y <= GLOBE_VERTICAL; y++ )
+	{
+		var v = y / GLOBE_VERTICAL;
+
+		for ( var x = 0; x <= GLOBE_HORIZONTAL; x++ )
+		{
+			var u = x / GLOBE_HORIZONTAL;
+
+			texCoords[index * 2 + 0] = u;
+			texCoords[index * 2 + 1] = 1.0 - v;
+
+			colors[index] = 0xffffffff;
+
+			index++;
+		}
+	}
+
+	var indices = new Uint16Array( indexCount );
+
+	index = 0;
+
+	for ( var x = 0; x < GLOBE_HORIZONTAL; x++ )
+	{
+		for ( var y = 0; y < GLOBE_VERTICAL; y++ )
+		{
+			indices[index + 0] = y * (GLOBE_HORIZONTAL + 1) + x;
+			indices[index + 1] = y * (GLOBE_HORIZONTAL + 1) + x + 1;
+			indices[index + 2] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x;
+			indices[index + 3] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x;
+			indices[index + 4] = y * (GLOBE_HORIZONTAL + 1) + x + 1;
+			indices[index + 5] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x + 1;
+			index += 6;
+		}
+	}
+
+	sizeGeometry( id, vertexCount, indexCount );
+
+	updateGeometryPositionRange( id, 0, vertexCount, positions );
+	updateGeometryTexCoordRange( id, 0, vertexCount, texCoords );
+	updateGeometryColorRange( id, 0, vertexCount, colors );
+
+	updateGeometryIndexRange( id, 0, indexCount, indices );
+
+	presentGeometry( id );
+}
+
+function makeCmd( args ) {
+	if ( args[1] == 'rect' ) {
+		var id = args[2];
+		var latArc = +(args[3]);
+		var lonArc = +(args[4]);
+		var depth = +(args[5]);
+
+		makeGlobeRect( id, latArc, lonArc, depth );
+	}
+}
+
 function registerCmd( args ) {
 	var pid = args[1];
 	var wid = args[2];
@@ -295,12 +396,8 @@ function registerCmd( args ) {
 
 	layoutWidgets();
 
+	activeCell = null;
 	refreshActiveCell();
-
-	// $$$ VNC hack to alter defaults after the widget spawns.
-	if ( pid.match( /vnc/ ) ) {
-		postMessage( sprintf( '%s %s zpush 8', pid, wid ) );
-	}
 }
 
 function unregisterCmd( args ) {
@@ -330,6 +427,7 @@ function unregisterCmd( args ) {
 
 	cell.kind = 'empty';
 
+	activeCell = null;
 	refreshActiveCell();
 }
 
@@ -472,7 +570,13 @@ rootCell = {
 
 layoutCells();
 
+activeCell = null;
 refreshActiveCell();
+
+// $$$ This is a hack to ensure the shell plugin finishes loading before user.cfg is executed.
+//     We need a way for the command system to delay until prior actions have completed before continuing
+//     to process messages, but this is quite difficult given the decentralized queues.
+postMessage( 'exec user.cfg' );
 
 for ( ;; ) {
 	var msg = receiveMessage( PLUGIN, 0 );
@@ -519,6 +623,10 @@ for ( ;; ) {
 				postToMenu( args );
 			else
 				postToActiveWidget( args );
+			break;
+
+		case 'make': 
+			makeCmd( args );
 			break;
 
 		case 'menu': 

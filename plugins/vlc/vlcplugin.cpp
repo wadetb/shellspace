@@ -18,7 +18,6 @@
 */
 #include "common.h"
 #include "vlcplugin.h"
-#include "command.h"
 #include "message.h"
 #include "thread.h"
 

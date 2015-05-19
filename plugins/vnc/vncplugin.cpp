@@ -31,9 +31,6 @@
 #define AKEYCODE_UNKNOWN 			(UINT_MAX)
 #define INVALID_KEY_CODE            (-1)
 
-#define GLOBE_HORIZONTAL 			64
-#define GLOBE_VERTICAL				32
-
 
 enum EVNCState
 {
@@ -41,14 +38,6 @@ enum EVNCState
 	VNCSTATE_CONNECTING,
 	VNCSTATE_CONNECTED
 };
-
-
-#define COPY_TO_BACKUP 		0
-#define COPY_FROM_BACKUP 	1
-#define COPY_FROM_CURSOR 	2
-
-#define CURSOR_BUFFER 		0
-#define CURSOR_BACKUP	 	1
 
 
 struct SVNCCursor
@@ -59,21 +48,6 @@ struct SVNCCursor
 	uint 				yHot;
 	uint 				width;
 	uint 				height;
-};
-
-
-struct SVNCGlobe
-{
-	uint 				vertexCount;
-	uint 				indexCount;
-	float 				aspect;
-	float 				latArc;
-	float 				lonArc;
-	float 				depth;
-	float 				xScale;
-	float 				yScale;
-	float 				zOffset;
-	SxVector3 			origin;
 };
 
 
@@ -94,13 +68,14 @@ struct SVNCWidget
 	volatile EVNCState	state;
 
 	SVNCCursor			cursor;
-	SVNCGlobe 			globe;
 
 	int 				width;
 	int 				height;
 	sbool 				updatePending;
 
-	float 				globeZPush;
+	float 				latArc;
+	float 				lonArc;
+	float 				depth;
 };
 
 
@@ -175,187 +150,36 @@ static char *vnc_thread_get_password( rfbClient *client )
 }
 
 
-void VNCThread_SetGlobeConsts( SVNCWidget *vnc )
-{
-	assert( vnc );
-
-	vnc->globe.vertexCount = ( GLOBE_HORIZONTAL + 1 ) * ( GLOBE_VERTICAL + 1 );
-	vnc->globe.indexCount = GLOBE_HORIZONTAL * GLOBE_VERTICAL * 6;
-
-	if ( vnc->width && vnc->height )
-		vnc->globe.aspect = (float)vnc->width / vnc->height;
-	else
-		vnc->globe.aspect = 16.0f / 10.0f;
-
-	if ( vnc->globe.lonArc > vnc->globe.latArc * vnc->globe.aspect )
-		vnc->globe.lonArc = vnc->globe.latArc * vnc->globe.aspect;
-}
-
-
 void VNCThread_GetGlobePosition( SVNCWidget *vnc, float u, float v, SxVector3 *result )
 {
 	float lon;
 
-	lon = S_degToRad( (u - 0.5f) * vnc->globe.lonArc ) - S_PI/2;
+	lon = S_degToRad( (u - 0.5f) * vnc->lonArc ) - S_PI/2;
 
-	result->x = vnc->globe.depth * cosf( lon );
-	result->y = vnc->globe.depth * (v - 0.5f) * sinf( S_degToRad( vnc->globe.latArc ) );
-	result->z = vnc->globe.depth * sinf( lon ) + vnc->globe.depth + vnc->globeZPush;
+	result->x = vnc->depth * cosf( lon );
+	result->y = vnc->depth * (v - 0.5f) * sinf( S_degToRad( vnc->latArc ) );
+	result->z = vnc->depth * sinf( lon ) + vnc->depth;
 }
 
 
-void VNCThread_BuildGlobeVertexPositions( SVNCWidget *vnc )
+void VNCThread_RebuildGeometry( SVNCWidget *vnc )
 {
-	SxVector3 	*positions;
-	uint 		x;
-	uint 		y;
-	float 		u;
-	float 		v;
-	uint 		index;
+	char 	msg[256];
+	float 	aspect;
 
 	assert( vnc );
 
-	positions = (SxVector3 *)malloc( vnc->globe.vertexCount * sizeof( SxVector3 ) );
-	if ( !positions )
-	{
-		S_Log( "VNCThread_BuildGlobeVertexPositions: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector3 ) );
-		return;
-	}
+	if ( vnc->width && vnc->height )
+		aspect = (float)vnc->width / vnc->height;
+	else
+		aspect = 16.0f / 10.0f;
 
-	index = 0;
+	if ( vnc->lonArc > vnc->latArc * aspect )
+		vnc->lonArc = vnc->latArc * aspect;
 
-	for ( y = 0; y <= GLOBE_VERTICAL; y++ )
-	{
-		v = (float)y / GLOBE_VERTICAL;
+	snprintf( msg, sizeof( msg ), "shell make rect %s %f %f %f", vnc->id, vnc->latArc, vnc->lonArc, vnc->depth );
 
-		for ( x = 0; x <= GLOBE_HORIZONTAL; x++ )
-		{
-			u = (float)x / GLOBE_HORIZONTAL;
-
-			VNCThread_GetGlobePosition( vnc, u, v, &positions[index] );
-
-			index++;
-		}
-	}
-
-	g_pluginInterface.updateGeometryPositionRange( vnc->id, 0, vnc->globe.vertexCount, positions );
-
-	free( positions );
-}
-
-
-void VNCThread_BuildGlobeVertexComponents( SVNCWidget *vnc )
-{
-	SxVector2 	*texCoords;
-	SxColor 	*colors;
-	uint 		x;
-	uint 		y;
-	float 		u;
-	float 		v;
-	uint 		index;
-
-	texCoords = (SxVector2 *)malloc( vnc->globe.vertexCount * sizeof( SxVector2 ) );
-	if ( !texCoords )
-	{
-		S_Log( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxVector2 ) );
-		return;
-	}
-
-	colors = (SxColor *)malloc( vnc->globe.vertexCount * sizeof( SxColor ) );
-	if ( !texCoords )
-	{
-		S_Log( "VNCThread_BuildGlobeVertexComponents: Unable to allocate %d bytes of memory.", vnc->globe.vertexCount * sizeof( SxColor ) );
-		free( texCoords );
-		return;
-	}
-
-	index = 0;
-
-	for ( y = 0; y <= GLOBE_VERTICAL; y++ )
-	{
-		v = (float)y / GLOBE_VERTICAL;
-
-		for ( x = 0; x <= GLOBE_HORIZONTAL; x++ )
-		{
-			u = (float)x / GLOBE_HORIZONTAL;
-
-			texCoords[index].x = u;
-			texCoords[index].y = 1.0f - v;
-
-			colors[index].r = 255;
-			colors[index].g = 255;
-			colors[index].b = 255;
-			colors[index].a = 255;
-
-			index++;
-		}
-	}
-
-	g_pluginInterface.updateGeometryTexCoordRange( vnc->id, 0, vnc->globe.vertexCount, texCoords );
-	g_pluginInterface.updateGeometryColorRange( vnc->id, 0, vnc->globe.vertexCount, colors );
-
-	free( texCoords );
-	free( colors );
-}
-
-
-void VNCThread_BuildGlobeIndices( SVNCWidget *vnc )
-{
-	ushort 		*indices;
-	uint 		index;
-	uint 		x;
-	uint 		y;
-
-	indices = (ushort *)malloc( vnc->globe.indexCount * sizeof( ushort ) );
-	if ( !indices )
-	{
-		S_Log( "VNCThread_BuildGlobeIndices: Unable to allocate %d bytes of memory.", vnc->globe.indexCount * sizeof( ushort ) );
-		return;
-	}
-
-	index = 0;
-
-	for ( x = 0; x < GLOBE_HORIZONTAL; x++ )
-	{
-		for ( y = 0; y < GLOBE_VERTICAL; y++ )
-		{
-			indices[index + 0] = y * (GLOBE_HORIZONTAL + 1) + x;
-			indices[index + 1] = y * (GLOBE_HORIZONTAL + 1) + x + 1;
-			indices[index + 2] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x;
-			indices[index + 3] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x;
-			indices[index + 4] = y * (GLOBE_HORIZONTAL + 1) + x + 1;
-			indices[index + 5] = (y + 1) * (GLOBE_HORIZONTAL + 1) + x + 1;
-			index += 6;
-		}
-	}
-
-	g_pluginInterface.updateGeometryIndexRange( vnc->id, 0, vnc->globe.indexCount, indices );
-
-	free( indices );
-}
-
-
-void VNCThread_BuildGlobe( SVNCWidget *vnc )
-{
-	VNCThread_SetGlobeConsts( vnc );
-
-	g_pluginInterface.sizeGeometry( vnc->id, vnc->globe.vertexCount, vnc->globe.indexCount );
-
-	VNCThread_BuildGlobeVertexPositions( vnc );
-	VNCThread_BuildGlobeVertexComponents( vnc );
-	VNCThread_BuildGlobeIndices( vnc );
-
-	g_pluginInterface.presentGeometry( vnc->id );
-}
-
-
-void VNCThread_RebuildGlobe( SVNCWidget *vnc )
-{
-	VNCThread_SetGlobeConsts( vnc );
-
-	VNCThread_BuildGlobeVertexPositions( vnc );
-
-	g_pluginInterface.presentGeometry( vnc->id );
+	g_pluginInterface.postMessage( msg );
 }
 
 
@@ -448,7 +272,7 @@ static rfbBool vnc_thread_resize( rfbClient *client )
 	vnc->width = width;
 	vnc->height = height;
 
-	VNCThread_RebuildGlobe( vnc );
+	VNCThread_RebuildGeometry( vnc );
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_RESIZE );
 
@@ -1049,26 +873,26 @@ void VNC_ArcCmd( const SMsg *msg, void *context )
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	vnc->globe.latArc = atof( Msg_Argv( msg, 1 ) );
-	vnc->globe.lonArc = atof( Msg_Argv( msg, 2 ) );
-	vnc->globe.depth = atof( Msg_Argv( msg, 3 ) );
+	vnc->latArc = atof( Msg_Argv( msg, 1 ) );
+	vnc->lonArc = atof( Msg_Argv( msg, 2 ) );
+	vnc->depth = atof( Msg_Argv( msg, 3 ) );
 
-	VNCThread_RebuildGlobe( vnc );
+	VNCThread_RebuildGeometry( vnc );
 }
 
 
-void VNC_ZPushCmd( const SMsg *msg, void *context )
-{
-	SVNCWidget 	*vnc;
+// void VNC_ZPushCmd( const SMsg *msg, void *context )
+// {
+// 	SVNCWidget 	*vnc;
 
-	vnc = (SVNCWidget *)context;
-	assert( vnc );
+// 	vnc = (SVNCWidget *)context;
+// 	assert( vnc );
 
-	if ( !Msg_SetFloatCmd( msg, &vnc->globeZPush, -100.0f, 100.0f ) )
-		return;
+// 	if ( !Msg_SetFloatCmd( msg, &vnc->globeZPush, -100.0f, 100.0f ) )
+// 		return;
 
-	VNCThread_RebuildGlobe( vnc );
-}
+// 	VNCThread_RebuildGeometry( vnc );
+// }
 
 
 SMsgCmd s_vncWidgetCmds[] =
@@ -1076,7 +900,7 @@ SMsgCmd s_vncWidgetCmds[] =
 	{ "key", 			VNC_KeyCmd, 			"key <code> <down>" },
 	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <buttons>" },
 	{ "arc",          	VNC_ArcCmd,             "arc <value>" },
-	{ "zpush",          VNC_ZPushCmd,           "zpush <value>" },
+	// { "zpush",          VNC_ZPushCmd,           "zpush <value>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -1470,8 +1294,6 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	if ( !vnc )
 		return;
 
-	vnc->globeZPush = 0.0f;
-
 	g_pluginInterface.registerWidget( vnc->id );
 
 	// Primary entity
@@ -1482,8 +1304,6 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 
 	g_pluginInterface.registerGeometry( vnc->id );
 	g_pluginInterface.setEntityGeometry( vnc->id, vnc->id );
-
-	VNCThread_BuildGlobe( vnc );
 
 	// Cursor entity
 	snprintf( msgBuf, MSG_LIMIT, "%s_cursor", vnc->id );

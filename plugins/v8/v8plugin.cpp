@@ -18,7 +18,6 @@
 */
 #include "common.h"
 #include "v8plugin.h"
-#include "command.h"
 #include "file.h"
 #include "message.h"
 
