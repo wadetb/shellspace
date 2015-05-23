@@ -11,8 +11,9 @@ if [[ `hostname` =~ .*wade-air.* ]]; then
 	export PATH=$ANDROID_ROOT/android-ndk-r10d:"$PATH"
 	export PATH=$ANDROID_ROOT/apache-ant-1.9.4/bin:"$PATH"
 	export PATH=$ANDROID_ROOT/depot_tools:"$PATH"
+	export PATH=$ANDROID_NDK_ROOT/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin:"$PATH"
 
 	DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-	
+
 	export OVR_MOBILE_SDK=$DIR/../external/ovr_mobile_sdk_0.4.3.1
 fi

@@ -146,6 +146,10 @@ remove -lrt from ./tools/gyp/mksnapshot.host.android_arm.release.mk
 
 + What is Comfort Mode?
 
+# Editor
+
+Try atom.io; it uses V8 internally so might be more easy to integrate?  OTOH it actually *uses* node.js, wow.  Should I do that too?  Looks pretty crazy, the whole thing is written in "coffee".
+
 # Terminal
 
 https://github.com/jackpal/Android-Terminal-Emulator/blob/master/libtermexec/src/main/jni/process.cpp

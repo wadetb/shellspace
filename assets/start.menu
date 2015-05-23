@@ -1,21 +1,21 @@
 [ 
 	{ 
-		caption: 'vnc 10.0.1.40', 
-		command: 'vnc create vnc$newId; vnc connect vnc$newId 10.0.1.40 asdf;'
+		caption: 'vnc1', 
+		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5901 shellspace1;'
 	},
 	{ 
-		caption: 'vnc 10.90.240.190', 
-		command: 'vnc create vnc$newId; vnc connect vnc$newId 10.90.240.190 asdf;'
+		caption: 'vnc2', 
+		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5902 shellspace2;'
 	},
 	{ 
-		caption: 'vnc 192.168.43.9', 
-		command: 'vnc create vnc$newId; vnc connect vnc$newId 192.168.43.9 asdf;'
+		caption: 'vnc3', 
+		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5903 shellspace3;'
 	},
 	{ 
 		caption: 'test.mp4', 
 		command: 'vlc create vlc$newId;' +
-		         'vlc open vlc$newId /storage/extSdCard/Oculus/Shellspace/test.mp4;' +
-		         'vlc play vlc$newId'
+		         'vlc vlc$newId open /storage/extSdCard/Oculus/Shellspace/test.mp4;' +
+		         'vlc vlc$newId play'
 	},
 	{ caption: 'chrome', command: 'example create example$newId chrome' },
 	{ caption: 'terminal', command: 'example create example$newId terminal' },

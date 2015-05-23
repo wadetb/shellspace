@@ -205,11 +205,11 @@ void OvrApp::OneTimeInit( const char * launchIntent )
 	g_jni = app->GetVrJni();
 	g_activityObject = app->GetJavaObject();
 
-	s_app.logger = std_logger_Open( "std" );
-	printf( "STDOUT is working.\n" );
-	fflush( stdout );
-	fprintf( stderr, "STDERR is working.\n" );
-	fflush( stderr );
+	// s_app.logger = std_logger_Open( "std" );
+	// printf( "STDOUT is working.\n" );
+	// fflush( stdout );
+	// fprintf( stderr, "STDERR is working.\n" );
+	// fflush( stderr );
 
 	s_app.clearColor[0] = 0.0f;
 	s_app.clearColor[1] = 0.0f;
@@ -268,7 +268,7 @@ void OvrApp::OneTimeShutdown()
 	Thread_Shutdown();
 	File_Shutdown();
 
-	std_logger_Close( s_app.logger );
+	// std_logger_Close( s_app.logger );
 }
 
 void OvrApp::Command( const char * msg )

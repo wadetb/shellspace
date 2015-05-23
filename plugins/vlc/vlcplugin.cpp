@@ -118,6 +118,7 @@ void vlc_display( void *data, void *id )
 	assert( vlc );
 
 	g_pluginInterface.updateTextureRect( vlc->id, 0, 0, vlc->width, vlc->height, vlc->width * 4, vlc->pixels );
+	g_pluginInterface.presentTexture( vlc->id );
 
 	assert( id == NULL ); // picture identifier, not needed here
 }

@@ -631,7 +631,10 @@ static sbool VNCThread_Connect( SVNCWidget *vnc )
 	argv[1] = vnc->server;
 
 	if ( !rfbInitClient( client, &argc, const_cast< char ** >( argv ) ) ) 
+	{
+		vnc->client = NULL; // rfbInitClient frees the client on failure to connect.
 		return sfalse;
+	}
 
 	S_Log( "VNCThread_Connect: Connected to %s.", vnc->server );
 
@@ -955,12 +958,14 @@ static void VNCThread_Loop( SVNCWidget *vnc )
 static void VNCThread_Cleanup( SVNCWidget *vnc )
 {
 	assert( vnc );
-	assert( vnc->client );
 
 	S_Log( "VNCThread_Cleanup: Disconnected from %s; cleaning up.", vnc->server );
 
-	rfbClientCleanup( vnc->client );
-	vnc->client = NULL;
+	if ( vnc->client )
+	{
+		rfbClientCleanup( vnc->client );
+		vnc->client = NULL;
+	}
 
 	free( vnc->server );
 	vnc->server = NULL;

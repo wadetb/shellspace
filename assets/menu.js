@@ -21,12 +21,12 @@ var nextMenuId = 0;
 
 var menuStack = [];
 
-var gazeDir = vec3.create( 0, 0, -1 );
+var gazeDir = vec3.fromValues( 0, 0, -1 );
 
-var menuOrigin = vec3.create( 0, 0, -5 );
-var menuDir = vec3.create( 0, 0, 1 );
-var menuUp = vec3.create( 0, 1, 0 );
-var menuRight = vec3.create( 1, 0, 0 );
+var menuOrigin = vec3.fromValues( 0, 0, -5 );
+var menuDir = vec3.fromValues( 0, 0, 1 );
+var menuUp = vec3.fromValues( 0, 1, 0 );
+var menuRight = vec3.fromValues( 1, 0, 0 );
 
 function renderCaption( texture, text, hilite ) {
 	var bitmap = new Bitmap();
@@ -209,7 +209,7 @@ function onGaze( args ) {
 
 	var oldActive = hitMenu( menuStack[0] );
 
-	gazeDir = vec3.create( +(args[0]), +(args[1]), +(args[2]) );
+	gazeDir = vec3.fromValues( parseFloat( args[0] ), parseFloat( args[1] ), parseFloat( args[2] ) );
 
 	var active = hitMenu( menuStack[0] );
 
