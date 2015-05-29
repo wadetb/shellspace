@@ -1,23 +1,23 @@
 [ 
 	{ 
-		caption: 'vnc1', 
+		caption: 'Public VNC 1: Ubuntu GUI', 
 		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5901 shellspace1;'
 	},
 	{ 
-		caption: 'vnc2', 
+		caption: 'Public VNC 2: Ubuntu CLI', 
 		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5902 shellspace2;'
 	},
-	{ 
-		caption: 'vnc3', 
-		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5903 shellspace3;'
-	},
-	{ 
-		caption: 'test.mp4', 
-		command: 'vlc create vlc$newId;' +
-		         'vlc vlc$newId open /storage/extSdCard/Oculus/Shellspace/test.mp4;' +
-		         'vlc vlc$newId play'
-	},
-	{ caption: 'chrome', command: 'example create example$newId chrome' },
-	{ caption: 'terminal', command: 'example create example$newId terminal' },
+//	{ 
+//		caption: 'Public VNC 3: Apple ][', 
+//		command: 'vnc create vnc$newId; vnc connect vnc$newId wadeb.com:5903 shellspace3;'
+//	},
+//	{ 
+//		caption: 'test.mp4', 
+//		command: 'vlc create vlc$newId;' +
+//		         'vlc vlc$newId open /storage/extSdCard/Oculus/Shellspace/test.mp4;' +
+//		         'vlc vlc$newId play'
+//	},
+//	{ caption: 'chrome', command: 'example create example$newId chrome' },
+//	{ caption: 'terminal', command: 'example create example$newId terminal' },
 	// { id: 'test3', caption: 'hello', command: 'example spawn hello' },
 ]

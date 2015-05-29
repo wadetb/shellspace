@@ -21,6 +21,8 @@
     
 void Cmd_Frame();
 
+void Cmd_Echo( sbool enable );
+
 void Cmd_Add( const char *format, ... );
 void Cmd_AddFile( const char *fileName );
 

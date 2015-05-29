@@ -101,6 +101,7 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 	uint 	index;
 	GLuint 	vertexBuffer;
 	uint 	vertexSize;
+	void 	*data;
 
 	OVR::GL_CheckErrors( "before Geometry_ResizeVertexBuffer" );
 
@@ -114,7 +115,18 @@ void Geometry_ResizeVertexBuffer( SGeometry *geometry, uint vertexCount )
 	vertexSize = sizeof( float ) * 3 + sizeof( float ) * 2 + sizeof( byte ) * 4;
 
 	glBindBuffer( GL_ARRAY_BUFFER, vertexBuffer );
+
+#if 0
 	glBufferData( GL_ARRAY_BUFFER, vertexCount * vertexSize, NULL, GL_STATIC_DRAW );
+#else
+	data = calloc( vertexCount, vertexSize );
+	assert( data );
+
+	glBufferData( GL_ARRAY_BUFFER, vertexCount * vertexSize, data, GL_STATIC_DRAW );
+
+	free( data );
+#endif
+
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	geometry->vertexBuffers[index] = vertexBuffer; 
@@ -128,6 +140,7 @@ void Geometry_ResizeIndexBuffer( SGeometry *geometry, uint indexCount )
 {
 	uint 	index;
 	GLuint 	indexBuffer;
+	void 	*data;
 
 	OVR::GL_CheckErrors( "before Geometry_ResizeIndexBuffer" );
 
@@ -139,7 +152,18 @@ void Geometry_ResizeIndexBuffer( SGeometry *geometry, uint indexCount )
 	glGenBuffers( 1, &indexBuffer );
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, indexBuffer );
+
+#if 0
 	glBufferData( GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof( ushort ), NULL, GL_STATIC_DRAW );
+#else
+	data = calloc( indexCount, sizeof( ushort ) );
+	assert( data );
+
+	glBufferData( GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof( ushort ), data, GL_STATIC_DRAW );
+
+	free( data );
+#endif
+
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	geometry->indexBuffers[index] = indexBuffer;

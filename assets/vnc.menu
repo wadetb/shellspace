@@ -1,6 +1,5 @@
 [ 
-	{ caption: 'zpush-', command: 'vnc $activeId zpush -1;', closeMenu: false },
-	{ caption: 'zpush+', command: 'vnc $activeId zpush +1;', closeMenu: false },
-	// { id: 'close', caption: 'close', command: 'shell unregister $activeId;' },
+	{ caption: 'sendcursor on', command: 'vnc $activeId sendcursor 1;' },
+	{ caption: 'sendcursor off', command: 'vnc $activeId sendcursor 0;' },
 	{ caption: 'close', command: 'vnc destroy $activeId;' },
 ]

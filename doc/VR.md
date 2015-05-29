@@ -7,9 +7,21 @@
 
 # TODO for next build
 
-+ Push active app closer.
++ One present-per-frame is killing VNC cursor responsiveness.  Fix it!
++ Auto-push active app closer.
++ Menu text measurement auto-dimensionality.
++ Fix headmouse.
++ Intro text widget (IDs for slots, ability to spawn into slots)
++ Hide cursor until first update received
++ Render "Connecting..." into VNC widget while connecting.
++ Unregistering texture/geometry doesn't actually destroy the GL object.
++ Widgets can resize their cell to their own size temporarily, until unregistered.
 
 # Misc
+
++ Moving plugins to .so files will speed up my turnaround time thanks to a smaller .APK.
+
++ Consider serializing all API calls through something like the InQueue, to ensure correct ordering in the presence of performance throttling.
 
 + Hook into the Oculus console system to allow sending console commands w/o VNC.
 

@@ -297,6 +297,8 @@ SRef Registry_Alloc( ERegistry reg )
 	alloc->prev = S_NULL_REF;
 	alloc->next = S_NULL_REF;
 
+	memset( alloc + 1, 0, s_pool[reg].entrySize - sizeof( SRefLink ) );
+
 	s_pool[reg].count++;
 
 	return ref;

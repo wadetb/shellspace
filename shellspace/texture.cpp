@@ -72,6 +72,7 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 	uint 	texHeight;
 	GLuint 	texId;
 	GLuint 	glFormat;
+	void 	*data;
 
 	Prof_Start( PROF_TEXTURE_RESIZE );
 
@@ -97,7 +98,16 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 
 	glFormat = Texture_GetGLFormat( format );
 	
+#if 0
 	glTexStorage2D( GL_TEXTURE_2D, 1, glFormat, texWidth, texHeight );
+#else
+	data = calloc( width * height, 4 );
+	assert( data );
+
+	glTexImage2D( GL_TEXTURE_2D, 0, glFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+
+	free( data );
+#endif
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
 

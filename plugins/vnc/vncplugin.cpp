@@ -19,6 +19,7 @@
 #include "common.h"
 #include "vncplugin.h"
 #include "message.h"
+#include "registry.h"
 #include "thread.h"
 
 #include <android/keycodes.h>
@@ -42,6 +43,7 @@ enum EVNCState
 
 struct SVNCCursor
 {
+	sbool 				sendUpdates;
 	uint 				xPos;
 	uint 				yPos;
 	uint 				xHot;
@@ -183,7 +185,7 @@ void VNCThread_RebuildGeometry( SVNCWidget *vnc )
 }
 
 
-void VNCThread_BuildCursor( SVNCWidget *vnc )
+void VNCThread_BuildCursorGeometry( SVNCWidget *vnc )
 {
 	SxVector3 	positions[4];
 	SxVector2 	texCoords[4];
@@ -192,10 +194,10 @@ void VNCThread_BuildCursor( SVNCWidget *vnc )
 
 	g_pluginInterface.sizeGeometry( vnc->cursorId, 4, 6 );
 
-	Vec3Set( &positions[0], -1.0f, -1.0f, 0.0f );
-	Vec3Set( &positions[1],  1.0f, -1.0f, 0.0f );
-	Vec3Set( &positions[2], -1.0f,  1.0f, 0.0f );
-	Vec3Set( &positions[3],  1.0f,  1.0f, 0.0f );
+	Vec3Set( &positions[0], 0.0f, 0.0f, 0.0f );
+	Vec3Set( &positions[1], 0.0f, 0.0f, 0.0f );
+	Vec3Set( &positions[2], 0.0f, 0.0f, 0.0f );
+	Vec3Set( &positions[3], 0.0f, 0.0f, 0.0f );
 
 	Vec2Set( &texCoords[0], 0.0f, 1.0f );
 	Vec2Set( &texCoords[1], 1.0f, 1.0f );
@@ -222,7 +224,98 @@ void VNCThread_BuildCursor( SVNCWidget *vnc )
 }
 
 
-static rfbBool vnc_thread_resize( rfbClient *client ) 
+void VNCThread_BuildCursorTexture( SVNCWidget *vnc )
+{
+	g_pluginInterface.formatTexture( vnc->cursorId, SxTextureFormat_R8G8B8A8 );
+	g_pluginInterface.sizeTexture( vnc->cursorId, 9, 9 );
+
+	uint cursorPixels[9 * 9] = 
+	{
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xff000000, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xffffffff, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xffffffff, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+		0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 
+		0xff000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xff000000, 
+		0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xffffffff, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xffffffff, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+		0x00000000, 0x00000000, 0x00000000, 0xff000000, 0xff000000, 0xff000000, 0x00000000, 0x00000000, 0x00000000, 
+	};
+
+	g_pluginInterface.updateTextureRect( vnc->cursorId, 0, 0, 9, 9, 9 * 4, cursorPixels );
+	g_pluginInterface.presentTexture( vnc->cursorId );
+}
+
+
+void VNCThread_BuildCursor( SVNCWidget *vnc )
+{
+	char 			cursorBuf[ID_LIMIT];
+	SxOrientation	orient;
+	SxTrajectory 	tr;
+
+	snprintf( cursorBuf, ID_LIMIT, "%s_cursor", vnc->id );
+	vnc->cursorId = strdup( cursorBuf );
+
+	vnc->cursor.sendUpdates = strue;
+	vnc->cursor.width = 9;
+	vnc->cursor.height = 9;
+	vnc->cursor.xHot = 4;
+	vnc->cursor.yHot = 4;
+
+	g_pluginInterface.registerEntity( vnc->cursorId );
+
+	g_pluginInterface.registerTexture( vnc->cursorId );
+	g_pluginInterface.setEntityTexture( vnc->cursorId, vnc->cursorId );
+
+	VNCThread_BuildCursorTexture( vnc );
+
+	g_pluginInterface.registerGeometry( vnc->cursorId );
+	g_pluginInterface.setEntityGeometry( vnc->cursorId, vnc->cursorId );
+
+	VNCThread_BuildCursorGeometry( vnc );
+
+	tr.kind = SxTrajectoryKind_Instant;
+
+	IdentityOrientation( &orient );
+	orient.origin.z += 0.01f;
+
+	g_pluginInterface.orientEntity( vnc->cursorId, &orient, &tr );
+}
+
+
+void VNC_SetCursorPos( SVNCWidget *vnc, int x, int y )
+{
+	SxVector3 	positions[4];
+	int 		cursorX;
+	int 		cursorY;
+	float 		cursorLeft;
+	float 		cursorRight;
+	float 		cursorTop;
+	float 		cursorBottom;
+
+	vnc->cursor.xPos = x;
+	vnc->cursor.yPos = y;
+
+	cursorX = (int)x - vnc->cursor.xHot;
+	cursorY = (int)y - vnc->cursor.yHot;
+
+	cursorLeft = (float)cursorX / vnc->width;
+	cursorRight = (float)(cursorX + vnc->cursor.width) / vnc->width;
+
+	cursorTop = 1.0f - (float)(cursorY + vnc->cursor.height) / vnc->height;
+	cursorBottom = 1.0f - (float)cursorY / vnc->height;
+
+	VNCThread_GetGlobePosition( vnc, cursorLeft, cursorTop, &positions[0] );
+	VNCThread_GetGlobePosition( vnc, cursorRight, cursorTop, &positions[1] );
+	VNCThread_GetGlobePosition( vnc, cursorLeft, cursorBottom, &positions[2] );
+	VNCThread_GetGlobePosition( vnc, cursorRight, cursorBottom, &positions[3] );
+
+	g_pluginInterface.updateGeometryPositionRange( vnc->cursorId, 0, 4, positions );
+	g_pluginInterface.presentGeometry( vnc->cursorId );
+}
+
+
+rfbBool vnc_thread_resize( rfbClient *client ) 
 {
 	SVNCWidget 		*vnc;
 	int 			width;
@@ -524,13 +617,6 @@ void vnc_thread_got_cursor_shape( rfbClient *client, int xhot, int yhot, int wid
 static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 {
 	SVNCWidget 	*vnc;
-	SxVector3 	positions[4];
-	int 		cursorX;
-	int 		cursorY;
-	float 		cursorLeft;
-	float 		cursorRight;
-	float 		cursorTop;
-	float 		cursorBottom;
 
 	Prof_Start( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 
@@ -539,25 +625,7 @@ static rfbBool vnc_thread_handle_cursor_pos( rfbClient *client, int x, int y )
 	vnc = (SVNCWidget *)rfbClientGetClientData( client, &s_vncGlob );
 	assert( vnc );
 
-	vnc->cursor.xPos = x;
-	vnc->cursor.yPos = y;
-
-	cursorX = (int)x - vnc->cursor.xHot;
-	cursorY = (int)y - vnc->cursor.yHot;
-
-	cursorLeft = (float)cursorX / vnc->width;
-	cursorRight = (float)(cursorX + vnc->cursor.width) / vnc->width;
-
-	cursorTop = 1.0f - (float)(cursorY + vnc->cursor.height) / vnc->height;
-	cursorBottom = 1.0f - (float)cursorY / vnc->height;
-
-	VNCThread_GetGlobePosition( vnc, cursorLeft, cursorTop, &positions[0] );
-	VNCThread_GetGlobePosition( vnc, cursorRight, cursorTop, &positions[1] );
-	VNCThread_GetGlobePosition( vnc, cursorLeft, cursorBottom, &positions[2] );
-	VNCThread_GetGlobePosition( vnc, cursorRight, cursorBottom, &positions[3] );
-
-	g_pluginInterface.updateGeometryPositionRange( vnc->cursorId, 0, 4, positions );
-	g_pluginInterface.presentGeometry( vnc->cursorId );
+	VNC_SetCursorPos( vnc, x, y );
 
 	Prof_Stop( PROF_VNC_THREAD_HANDLE_CURSOR_POS );
 
@@ -846,26 +914,37 @@ void VNC_KeyCmd( const SMsg *msg, void *context )
 void VNC_MouseCmd( const SMsg *msg, void *context )
 {
 	SVNCWidget 	*vnc;
-	int 		x;
-	int 		y;
+	float 		x;
+	float 		y;
+	int 		xFrame;
+	int 		yFrame;
 	int 		buttons;
 
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
 
-	x = atoi( Msg_Argv( msg, 1 ) );
-	y = atoi( Msg_Argv( msg, 2 ) );
+	x = atof( Msg_Argv( msg, 1 ) );
+	y = atof( Msg_Argv( msg, 2 ) );
 
-	buttons = 0;
+	xFrame = round( (x * 0.5f + 0.5f) * vnc->width );
+	yFrame = round( (-y * 0.5f + 0.5f) * vnc->height );
 
-	if ( atoi( Msg_Argv( msg, 3 ) ) )
-		buttons |= rfbButton1Mask;
-	if ( atoi( Msg_Argv( msg, 4 ) ) )
-		buttons |= rfbButton2Mask;
-	if ( atoi( Msg_Argv( msg, 5 ) ) )
-		buttons |= rfbButton3Mask;
+	if ( xFrame != (int)vnc->cursor.xPos || yFrame != (int)vnc->cursor.yPos )
+	{
+		VNC_SetCursorPos( vnc, xFrame, yFrame );
 
-	SendPointerEvent( vnc->client, x, y, buttons );
+		buttons = 0;
+
+		if ( atoi( Msg_Argv( msg, 3 ) ) )
+			buttons |= rfbButton1Mask;
+		if ( atoi( Msg_Argv( msg, 4 ) ) )
+			buttons |= rfbButton2Mask;
+		if ( atoi( Msg_Argv( msg, 5 ) ) )
+			buttons |= rfbButton3Mask;
+
+		if ( vnc->cursor.sendUpdates )
+			SendPointerEvent( vnc->client, xFrame, yFrame, buttons );
+	}
 }
 
 
@@ -898,11 +977,24 @@ void VNC_ArcCmd( const SMsg *msg, void *context )
 // }
 
 
+void VNC_SendCursorCmd( const SMsg *msg, void *context )
+{
+	SVNCWidget 	*vnc;
+
+	vnc = (SVNCWidget *)context;
+	assert( vnc );
+
+	if ( !Msg_SetBoolCmd( msg, &vnc->cursor.sendUpdates ) )
+		return;
+}
+
+
 SMsgCmd s_vncWidgetCmds[] =
 {
 	{ "key", 			VNC_KeyCmd, 			"key <code> <down>" },
 	{ "mouse", 			VNC_MouseCmd, 			"mouse <x> <y> <buttons>" },
 	{ "arc",          	VNC_ArcCmd,             "arc <value>" },
+	{ "sendcursor",   	VNC_SendCursorCmd,      "sendcursor <true|false>" },
 	// { "zpush",          VNC_ZPushCmd,           "zpush <value>" },
 	{ NULL, NULL, NULL }
 };
@@ -1284,8 +1376,6 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	SxWidgetHandle 	id;
 	SVNCWidget 		*vnc;
 	char 			msgBuf[MSG_LIMIT];
-	SxOrientation	orient;
-	SxTrajectory 	tr;
 
 	id = Msg_Argv( msg, 1 );
 	
@@ -1311,25 +1401,6 @@ void VNC_CreateCmd( const SMsg *msg, void *context )
 	g_pluginInterface.setEntityGeometry( vnc->id, vnc->id );
 
 	// Cursor entity
-	snprintf( msgBuf, MSG_LIMIT, "%s_cursor", vnc->id );
-	vnc->cursorId = strdup( msgBuf );
-
-	g_pluginInterface.registerEntity( vnc->cursorId );
-
-	g_pluginInterface.registerTexture( vnc->cursorId );
-	g_pluginInterface.formatTexture( vnc->cursorId, SxTextureFormat_R8G8B8A8 );
-	g_pluginInterface.setEntityTexture( vnc->cursorId, vnc->cursorId );
-
-	g_pluginInterface.registerGeometry( vnc->cursorId );
-	g_pluginInterface.setEntityGeometry( vnc->cursorId, vnc->cursorId );
-
-	IdentityOrientation( &orient );
-	orient.origin.z += 0.01f;
-
-	tr.kind = SxTrajectoryKind_Instant;
-
-	g_pluginInterface.orientEntity( vnc->cursorId, &orient, &tr );
-
 	VNCThread_BuildCursor( vnc );
 
 	g_pluginInterface.parentEntity( vnc->cursorId, vnc->id );

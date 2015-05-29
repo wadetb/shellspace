@@ -498,6 +498,19 @@ sbool App_Command()
 		return strue;
 	}
 
+	if ( strcasecmp( Cmd_Argv( 0 ), "echo" ) == 0 )
+	{
+		if ( Cmd_Argc() != 2 )
+		{
+			LOG( "Usage: echo <1|0>" );
+			return strue;
+		}
+
+		Cmd_Echo( atoi( Cmd_Argv( 1 ) ) );
+
+		return strue;
+	}
+
 	if ( Entity_Command() )
 		return strue;
 	

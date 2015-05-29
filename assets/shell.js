@@ -452,16 +452,16 @@ function gazeMouseDir() {
 	gazeYz[0] = 0;
 	vec3.normalize( gazeYz, gazeYz );
 
-	var xzAngle = Math.acos( gazeXz.z );
-	var yzAngle = Math.acos( gazeYz.z );
+	var xzAngle = radToDeg( Math.acos( Math.abs( gazeXz[2] ) ) );
+	var yzAngle = radToDeg( Math.acos( Math.abs( gazeYz[2] ) ) );
 
-	var x = xzAngle / cell.lonArc;
-	var y = yzAngle / cell.latArc;
+	var x = xzAngle / (0.5*cell.lonArc);
+	var y = yzAngle / (0.5*cell.latArc);
 
-	if ( gazeDir[0] < 0 )
+	if ( localGazeDir[0] < 0 )
 		x = -x;
 
-	if ( gazeDir[1] < 0 )
+	if ( localGazeDir[1] < 0 )
 		y = -y;
 
 	gazeMouse.x = x;

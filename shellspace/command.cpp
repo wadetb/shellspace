@@ -41,10 +41,18 @@ struct SCmdGlob
 	char 	argNull[1];
 	char	*args[MAX_CMD_ARGS];
 	uint 	argCount;
+
+	sbool 	echo;
 };
 
 
 static SCmdGlob s_cmdGlob;
+
+
+void Cmd_Echo( sbool enable )
+{
+	s_cmdGlob.echo = enable;
+}
 
 
 sbool Cmd_IsSpace( char ch )
@@ -269,7 +277,8 @@ void Cmd_Frame()
 	
 	p = s_cmdGlob.buffer;
 
-	S_Log( "> %s", s_cmdGlob.buffer );
+	if ( s_cmdGlob.echo )
+		S_Log( "> %s", s_cmdGlob.buffer );
 
 	while ( *p )
 	{
