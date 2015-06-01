@@ -134,6 +134,8 @@ void InQueue_CheckAdvance( uint count )
 	SItem 		*in;
 	STexture 	*texture;
 	SGeometry 	*geometry;
+	int 		index2;
+	SItem 		*in2;
 
 	for ( index = 0; index < count; index++ )
 	{
@@ -174,6 +176,33 @@ void InQueue_CheckAdvance( uint count )
 
 		default: 
 			break;
+		}
+	}
+
+	for ( index = count - 1; (int)index >= 0; index-- )
+	{
+		in = &s_iq.queue[index];
+
+		if ( in->kind == INQUEUE_TEXTURE_PRESENT )
+		{
+			for ( index2 = index - 1; (int)index2 >= 0; index2-- )
+			{
+				in2 = &s_iq.queue[index2];
+				
+				if ( in2->kind == INQUEUE_TEXTURE_PRESENT && in2->texture.ref == in->texture.ref )
+					in2->kind = INQUEUE_NOP;
+			}
+		}
+
+		if ( in->kind == INQUEUE_GEOMETRY_PRESENT )
+		{
+			for ( index2 = index - 1; (int)index2 >= 0; index2-- )
+			{
+				in2 = &s_iq.queue[index2];
+
+				if ( in2->kind == INQUEUE_GEOMETRY_PRESENT && in2->geometry.ref == in->geometry.ref )
+					in2->kind = INQUEUE_NOP;
+			}
 		}
 	}
 }
