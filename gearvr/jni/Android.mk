@@ -352,12 +352,14 @@ LOCAL_LDLIBS += \
 	-lupnp -lthreadutil -lixml \
 	$(EXTRA_LDFLAGS)
 
+ABSOLUTE_ROOT_PATH     = $(LOCAL_PATH)/../..
+
 LOCAL_CFLAGS	 += -Wall -x c++ -std=c++11 
-LOCAL_CFLAGS     += -I../core -I../shellspace
-LOCAL_CFLAGS     += -isystem ../external/libvncserver -isystem ../external/libvncserver/common 
-LOCAL_CFLAGS     += -isystem ../external
-LOCAL_CFLAGS     += -isystem ../external/v8
-LOCAL_CFLAGS     += -isystem ../external/skia/include
-LOCAL_CFLAGS     += -isystem ../external/skia/include/config
+LOCAL_CFLAGS     += -I$(ABSOLUTE_ROOT_PATH)/core -I$(ABSOLUTE_ROOT_PATH)/shellspace
+LOCAL_CFLAGS     += -isystem $(ABSOLUTE_ROOT_PATH)/external/libvncserver -isystem $(ABSOLUTE_ROOT_PATH)/external/libvncserver/common 
+LOCAL_CFLAGS     += -isystem $(ABSOLUTE_ROOT_PATH)/external
+LOCAL_CFLAGS     += -isystem $(ABSOLUTE_ROOT_PATH)/external/v8
+LOCAL_CFLAGS     += -isystem $(ABSOLUTE_ROOT_PATH)/external/skia/include
+LOCAL_CFLAGS     += -isystem $(ABSOLUTE_ROOT_PATH)/external/skia/include/config
 
 include $(BUILD_SHARED_LIBRARY)

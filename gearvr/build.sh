@@ -2,9 +2,9 @@
 source ../bin/android_dev.sh
 set -e
 
-#pushd $(OVR_MOBILE_SDK)/VRLib
-#./build.sh $1
-#popd
+pushd $OVR_MOBILE_SDK/VRLib
+./build.sh $1
+popd
 
 export BUILD_MODULE=Shellspace
 
