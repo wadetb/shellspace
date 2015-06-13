@@ -101,10 +101,10 @@ void Texture_Resize( STexture *texture, uint width, uint height, SxTextureFormat
 #if 0
 	glTexStorage2D( GL_TEXTURE_2D, 1, glFormat, texWidth, texHeight );
 #else
-	data = calloc( width * height, 4 );
+	data = calloc( texWidth * texHeight, 4 );
 	assert( data );
 
-	glTexImage2D( GL_TEXTURE_2D, 0, glFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+	glTexImage2D( GL_TEXTURE_2D, 0, glFormat, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
 
 	free( data );
 #endif

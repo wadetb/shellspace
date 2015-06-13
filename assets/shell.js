@@ -408,13 +408,13 @@ function unregisterCmd( args ) {
 	// $$$ VNC hack to deal w/the bug where the VNC thread exit
 	// is never detected by VNC_Destroy, so the VNC plugin thread freezes.
 	// Instead, just unregister the entity and pretend it's working.
-	if ( wid.match( /vnc/ ) ) {
-		log( 'VNC shutdown hack on ' + wid );
-		try { unregisterWidget( wid ); } catch ( e ) {}
-		try { unregisterEntity( wid ); } catch ( e ) {}
-		try { unregisterTexture( wid ); } catch ( e ) {}
-		try { unregisterGeometry( wid ); } catch ( e ) {}
-	}
+	// if ( wid.match( /vnc/ ) ) {
+	// 	log( 'VNC shutdown hack on ' + wid );
+	// 	try { unregisterWidget( wid ); } catch ( e ) {}
+	// 	try { unregisterEntity( wid ); } catch ( e ) {}
+	// 	try { unregisterTexture( wid ); } catch ( e ) {}
+	// 	try { unregisterGeometry( wid ); } catch ( e ) {}
+	// }
 
 	var cell = findCellByWidget( wid );
 	if ( !cell ) {
@@ -519,13 +519,21 @@ function refreshActiveCell() {
 	}
 
 	if ( cell != activeCell ) {
+		if ( activeCell && activeCell.kind == 'widget' )
+			postMessage( sprintf( '%s %s deactivate', activeCell.plugin, activeCell.widget ) );
+
 		activeCell = cell;
-		if ( cell && cell.kind == 'widget' )
+
+		if ( cell && cell.kind == 'widget' ) {
+			postMessage( sprintf( '%s %s activate', cell.plugin, cell.widget ) );
 			postMessage( 'menu activate ' + cell.plugin + ' ' + cell.widget );
-		else if ( cell && cell.kind == 'empty' )
+		}
+		else if ( cell && cell.kind == 'empty' ) {
 			postMessage( 'menu activate empty' );
-		else
+		}
+		else {
 			postMessage( 'menu activate none' );
+		}
 	}
 }
 

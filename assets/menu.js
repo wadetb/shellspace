@@ -30,7 +30,7 @@ var menuRight = vec3.fromValues( 1, 0, 0 );
 
 function renderCaption( texture, text, hilite ) {
 	var bitmap = new Bitmap();
-	bitmap.setInfo( { width: 200, height: 40 } );
+	bitmap.setInfo( { width: 400, height: 40 } );
 	bitmap.allocPixels();
 
 	var canvas = new Canvas( bitmap );
@@ -95,7 +95,7 @@ function showItems( menu ) {
 		vec3.scaleAndAdd( origin, origin, menuUp, 1 + row * -0.4 );
 
 		m.origin = [0, 1 + row * -0.4, -5];
-		m.scale = [1, 0.19, 1];
+		m.scale = [2, 0.19, 1];
 
 		orientEntity( m.entity, { origin: m.origin, scale: m.scale } );
 
@@ -159,9 +159,9 @@ function openMenu( args ) {
 			children = children.concat( menu );
 	}
 
-	children = children.concat(
-		{ caption: 'reset', command: 'exec reset.cfg' }
-	);
+	// children = children.concat(
+	// 	{ caption: 'reset', command: 'exec reset.cfg' }
+	// );
 
 	rootMenu.children = children;
 

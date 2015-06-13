@@ -7,15 +7,20 @@
 
 # TODO for next build
 
-+ One present-per-frame is killing VNC cursor responsiveness.  Fix it!
 + Auto-push active app closer.
+  Can reduce depth, or increase scale, or simply translate, or both.  
+  Any change will affect the behavior of the gaze cursor and needs to be compensated for.  
+  The larger widget will now have a larger effective latArc/lonArc and this needs to be accounted for.  It can potentially make the widget overlap other widgets that it didn't previously overlap and the raycasting needs to give preference to the active cell.  (And the raycasting also needs to sort by depth somehow)
++ Cursor Y offset doesn't match mouse Y.  Server bug or my bug?
 + Menu text measurement auto-dimensionality.
-+ Fix headmouse.
+  Need Skia API to measure text.  (Should consider what kind of text flow
+  support is needed)
 + Intro text widget (IDs for slots, ability to spawn into slots)
-+ Hide cursor until first update received
 + Render "Connecting..." into VNC widget while connecting.
 + Unregistering texture/geometry doesn't actually destroy the GL object.
-+ Widgets can resize their cell to their own size temporarily, until unregistered.
++ Widgets can resize their cell to their own size (post aspect correction), until unregistered.  This will fix headmouse scaling.
+  Widgets will send an arc message back to the shell with their local figures.  The arc message could include the plugin & widget id, or else the cell id once I have that.
++ VNC plugin hide cursor when activeness is lost.
 
 # Misc
 
@@ -45,7 +50,7 @@
 
 + Test a radial arrangement.
 
-+ Support simple float/int slider, checkbox, enum controls such that data is communicated to/from the widget.
++ Support simple float/int slider, checkbox, enum controls such that data is communicated to/from the widget (somehow).
 
 + Support commands with editable completion, e.g. "vnc open ..." where the ... is editable with an onscreen keyboard.
 
@@ -53,13 +58,13 @@
 
 + Automatically zoom in on the active widget.
  
-+ A Ctrl-Alt-Delete-like hotkey that exects 'reset.cfg' to recover from scripting errors that break the shell.
++ A Ctrl-Alt-Delete-like hotkey that execs 'reset.cfg' to recover from scripting errors that break the shell.
 
 # VNC
 
 + When the connection is closed, we stop accepting messages and the queue fills up with Gaze events.  Probably need to make the connection status separate from the thread status and spawn widget-per-thread, like the VLC widget.
 
-+ Did toasts disappear somehow?
++ Did toasts disappear somehow?  Connection toast did.
 
 + Also the "already connected to %s" thing prints NULL if the connection is closed after being initiated, likely because "thread" is not cleared.
 
@@ -72,6 +77,8 @@
 + Use a Skia filter to darken and draw "disconnected" when the connection is lost.  Actually, use Skia in general to draw connection status.
 
 # VLC
+
++ Figure out why spawning a VLC widget hangs the shell.
 
 + Thread about efficient display formats using OpenGL.
 https://forum.videolan.org/viewtopic.php?t=97672
@@ -97,8 +104,6 @@ vlc vlc0 open /storage/extSdCard/Oculus/Shellspace/test.mp4
 
 # Performance
 
-+ Textures should start initially cleared, NOT uninitialized.  Same goes for geometry.  Currently if a texture is created and never updated, it will hold garbage memory.
- 
 + Investigate https://vec.io/posts/faster-alternatives-to-glreadpixels-and-glteximage2d-in-opengl-es PBOs for texture updates.  Not clear whether this is better than triple buffered texture objects, but maybe?
 
 + VNC stuff:
@@ -146,6 +151,8 @@ It could hold the API mutex, though this starts to act more like a global mutex 
 make i18nsupport=off android_arm.release
 
 remove -lrt from ./tools/gyp/mksnapshot.host.android_arm.release.mk
+
+repeat make command
 
 + Expose API via a global "sx" object instead of global namespace functions.
 
