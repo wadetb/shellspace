@@ -44,6 +44,7 @@ enum EVNCState
 struct SVNCCursor
 {
 	sbool 				sendUpdates;
+	uint 				buttons;
 	uint 				xPos;
 	uint 				yPos;
 	uint 				xHot;
@@ -918,7 +919,7 @@ void VNC_MouseCmd( const SMsg *msg, void *context )
 	float 		y;
 	int 		xFrame;
 	int 		yFrame;
-	int 		buttons;
+	uint 		buttons;
 
 	vnc = (SVNCWidget *)context;
 	assert( vnc );
@@ -929,21 +930,23 @@ void VNC_MouseCmd( const SMsg *msg, void *context )
 	xFrame = round( (x * 0.5f + 0.5f) * vnc->width );
 	yFrame = round( (-y * 0.5f + 0.5f) * vnc->height );
 
-	if ( xFrame != (int)vnc->cursor.xPos || yFrame != (int)vnc->cursor.yPos )
+	buttons = 0;
+
+	if ( atoi( Msg_Argv( msg, 3 ) ) )
+		buttons |= rfbButton1Mask;
+	if ( atoi( Msg_Argv( msg, 4 ) ) )
+		buttons |= rfbButton2Mask;
+	if ( atoi( Msg_Argv( msg, 5 ) ) )
+		buttons |= rfbButton3Mask;
+
+	if ( xFrame != (int)vnc->cursor.xPos || yFrame != (int)vnc->cursor.yPos || buttons != vnc->cursor.buttons )
 	{
 		VNC_SetCursorPos( vnc, xFrame, yFrame );
 
-		buttons = 0;
-
-		if ( atoi( Msg_Argv( msg, 3 ) ) )
-			buttons |= rfbButton1Mask;
-		if ( atoi( Msg_Argv( msg, 4 ) ) )
-			buttons |= rfbButton2Mask;
-		if ( atoi( Msg_Argv( msg, 5 ) ) )
-			buttons |= rfbButton3Mask;
-
-		if ( vnc->cursor.sendUpdates )
+		if ( vnc->cursor.sendUpdates || buttons || buttons != vnc->cursor.buttons )
 			SendPointerEvent( vnc->client, xFrame, yFrame, buttons );
+
+		vnc->cursor.buttons = buttons;
 	}
 }
 
