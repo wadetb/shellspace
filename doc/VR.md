@@ -11,7 +11,6 @@
   Can reduce depth, or increase scale, or simply translate, or both.  
   Any change will affect the behavior of the gaze cursor and needs to be compensated for.  
   The larger widget will now have a larger effective latArc/lonArc and this needs to be accounted for.  It can potentially make the widget overlap other widgets that it didn't previously overlap and the raycasting needs to give preference to the active cell.  (And the raycasting also needs to sort by depth somehow)
-+ Cursor Y offset doesn't match mouse Y.  Server bug or my bug?
 + Menu text measurement auto-dimensionality.
   Need Skia API to measure text.  (Should consider what kind of text flow
   support is needed)
@@ -20,11 +19,8 @@
 + Unregistering texture/geometry doesn't actually destroy the GL object.
 + Widgets can resize their cell to their own size (post aspect correction), until unregistered.  This will fix headmouse scaling.
   Widgets will send an arc message back to the shell with their local figures.  The arc message could include the plugin & widget id, or else the cell id once I have that.
-+ VNC plugin hide cursor when activeness is lost.
 
 # Misc
-
-+ Moving plugins to .so files will speed up my turnaround time thanks to a smaller .APK.
 
 + Consider serializing all API calls through something like the InQueue, to ensure correct ordering in the presence of performance throttling.
 
@@ -39,8 +35,6 @@
 + Implement 3D transition animation support so things can animate smoothly.
 
 + Make a chain of event handlers like in the DOM, such that something can be added to intercept "key" events to make a watchdog script that resets things but never has to unload.
-
-+ Move VNC to a .so plugin as an example so others can start to actually write plugins, and so C++ plugins can be fetched via HTTP.
 
 + The browser model for Shellspace over HTTP would be to execute a "shellspace.org/somespace/index.cfg" script file to populate everything.
 

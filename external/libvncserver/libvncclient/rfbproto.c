@@ -1945,6 +1945,9 @@ HandleRFBServerMessage(rfbClient* client)
         
         int y=rect.r.y, h=rect.r.h;
 
+        if (rect.r.w == 0)
+          break;
+
         bytesPerLine = rect.r.w * client->format.bitsPerPixel / 8;
         linesToRead = RFB_BUFFER_SIZE / bytesPerLine;
 
